@@ -1,34 +1,400 @@
-<!doctype html>
-<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
-<!--[if IE 7]> <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
-<!--[if IE 8]> <html class="no-js lt-ie9" lang="en"> <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-        <title>Example Cozy application</title>
-        <meta name="description" content="">
-        <meta name="viewport" content="width=device-width">
+<!DOCTYPE html>
 
-        <!-- Place favicon.ico and apple-touch-icon.png in the root directory: mathiasbynens.be/notes/touch-icons -->
+  <!--[if lt IE 7]>
+    <html class="lt-ie9 lt-ie8 lt-ie7" lang="en">
+  <![endif]-->
 
-        <!--script>
-            // Enable Brunch HTML/CSS Auto Reload
-            window.brunch = window.brunch || {};
-            window.brunch['auto-reload'] = { enabled: true };
-        </script-->
-        <script src="javascripts/modernizr-2.6.1.js"></script>
-        <link rel="stylesheet" href="stylesheets/app.css">
-    </head>
+  <!--[if IE 7]>
+    <html class="lt-ie9 lt-ie8" lang="en">
+  <![endif]-->
 
-    <body class="application">
-        <!--[if lt IE 8]>
-<p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
-<![endif]-->
+  <!--[if IE 8]>
+    <html class="lt-ie9" lang="en">
+  <![endif]-->
 
-        <!-- Your Markup -->
+  <!--[if gt IE 8]>
+    <!-->
+    <html lang="en">
+    <!--
+  <![endif]-->
 
-        <script src="javascripts/vendor.js"></script>
-        <script src="javascripts/app.js" onload="require('initialize');"></script>
-</body>
+  <head>
+    <meta charset="utf-8">
+    <title>Relevé Bancaire Intelligent</title>
+    <meta name="author" content="Loïc TRUCHOT">
+    <meta content="width=device-width, initial-scale=1.0, user-scalable=no" name="viewport">
+    <meta name="description" content="Relevé Bancaire Intelligen">
+    <!-- <script src="js/html5-trunk.js"></script> -->
+    <link href="icomoon/style.css" rel="stylesheet">
+
+    <!-- custom css -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+
+    <!-- Place favicon.ico and apple-touch-icon.png in the root directory: mathiasbynens.be/notes/touch-icons -->
+
+    <!--script>
+        // Enable Brunch HTML/CSS Auto Reload
+        window.brunch = window.brunch || {};
+        window.brunch['auto-reload'] = { enabled: true };
+    </script-->
+    <script src="javascripts/modernizr-2.6.1.js"></script>
+    <link rel="stylesheet" href="stylesheets/app.css">
+
+  </head>
+
+  <body>
+
+    <!-- Header start -->
+    <header>
+
+      <!-- Logo start -->
+      <div class="logo">
+        R<span>BI</span>
+      </div>
+      <!-- Logo end -->
+
+      <!-- Mini navigation start -->
+      <div id="mini-nav">
+        GRAPHIQUE
+      </div>
+      <!-- Mini navigation end -->
+
+    </header>
+    <!-- Header end -->
+
+    <!-- Main Container start -->
+    <div class="main-container">
+
+      <!-- Mian navigation start -->
+      <div id="mainnav">
+        
+        <!-- User pic start -->
+        <div class="user-profile-pic">
+          me
+        </div>
+        <!-- User pic end -->
+
+        <ul>
+          <li class="active">
+            <span class="current-arrow">&nbsp;</span>
+            <a href="index.html">
+              <div class="icon">
+                <span class="fs1" aria-hidden="true" data-icon="&#xe0a2;"></span>
+              </div>
+              Analyse mensuelle
+            </a>
+          </li>
+          <li>
+            <a href="ui-elements.html">
+              <div class="icon">
+                <span class="fs1" aria-hidden="true" data-icon="&#xe0d2;"></span>
+              </div>
+              Analyse mensuelle comparée
+            </a>
+          </li>
+          <li>
+            <a href="forms.html">
+              <div class="icon">
+                <span class="fs1" aria-hidden="true" data-icon="&#xe0b8;"></span>
+              </div>
+              Achats en ligne
+            </a>
+          </li>
+          <li>
+            <a href="charts.html">
+              <div class="icon">
+                <span class="fs1" aria-hidden="true" data-icon="&#xe096;"></span>
+              </div>
+              Alertes
+            </a>
+          </li>
+          <li>
+            <a href="invoice.html">
+              <div class="icon">
+                <span class="fs1" aria-hidden="true" data-icon="&#xe099;"></span>
+              </div>
+              Paramètrage
+            </a>           
+        </ul>
+      </div>
+      <!-- Mian navigation end -->
+
+      <!-- Dashboard wrapper start -->
+      <div class="dashboard-wrapper">
+
+         <!-- Row start -->
+        <div class="row">
+          <div class="col-md-12">
+            <div class="widget">
+              <div class="widget-header">
+                <div class="title">
+                  <span class="fs1" aria-hidden="true" data-icon="&#xe098;"></span> Evolution du solde
+                </div>
+              </div>
+              <div class="widget-body">
+                <div id="social-stats" style="height:160px"></div>
+                <hr>
+                <!--
+                <ul class="statistics">
+                  <li>
+                    <div class="main-info">
+                      <a href="#" class="jet-blue-bg" data-original-title="">
+                        <span class="fs1" aria-hidden="true" data-icon=""></span>
+                      </a>
+                      <strong>12,476</strong>
+                    </div>
+                    <span>Comments</span>
+                  </li>
+                  <li>
+                    <div class="main-info">
+                      <a href="#" class="go-green-bg" data-original-title="">
+                        <span class="fs1" aria-hidden="true" data-icon=""></span>
+                      </a>
+                      <strong>2289</strong>
+                    </div>
+                    <span>Locations</span>
+                  </li>
+                  <li>
+                    <div class="main-info">
+                      <a href="#" class="nagpur-orange-bg" data-original-title="">
+                        <span class="fs1" aria-hidden="true" data-icon=""></span>
+                      </a>
+                      <strong>1679</strong>
+                    </div>
+                    <span>Orders</span>
+                  </li>
+                  <li>
+                    <div class="main-info">
+                      <a href="#" class="sea-green-bg" data-original-title="">
+                        <span class="fs1" aria-hidden="true" data-icon=""></span>
+                      </a>
+                      <strong>$45,360</strong>
+                    </div>
+                    <span>Balance</span>
+                  </li>
+                  <li>
+                    <div class="main-info">
+                      <a href="#" class="light-red-bg" data-original-title="">
+                        <span class="fs1" aria-hidden="true" data-icon=""></span>
+                      </a>
+                      <strong>649K</strong>
+                    </div>
+                    <span>Fans</span>
+                  </li>
+                  <li>
+                    <div class="main-info">
+                      <a href="#" class="light-grey-bg" data-original-title="">
+                        <span class="fs1" aria-hidden="true" data-icon=""></span>
+                      </a>
+                      <strong>36,290+</strong>
+                    </div>
+                    <span>Downloads</span>
+                  </li>
+                </ul>
+                -->
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Row end -->
+          
+
+
+        <!-- Row start -->
+        <div class="row">
+    
+        </div>
+        <!-- Row end -->        
+      
+      </div>
+      <!-- Dashboard wrapper end -->
+    
+    </div>
+    <!-- Main Container end -->
+
+
+    <!-- Scripts -->
+    <!--
+    <script src="js/wysiwyg/wysihtml5-0.3.0.js"></script>
+
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.js"></script>
+    <script src="js/jquery-ui-1.8.23.custom.min.js"></script>
+    -->
+
+    <!-- Flot charts -->
+    <!--
+    <script src="js/flot/jquery.flot.js"></script>
+    <script src="js/flot/jquery.flot.resize.min.js"></script>
+    <script src="js/flot/jquery.flot.tooltip.js"></script>
+    -->
+    <!-- Easy pie charts -->
+    <!--
+    <script src="js/jquery.easy-pie-chart.js"></script>
+    -->
+
+    <!-- Tiny Scrollbar JS -->
+    <!--
+    <script src="js/tiny-scrollbar.js"></script>
+    -->
+
+    <!-- custom Js -->
+    <!--
+    <script src="js/custom-index.js"></script>
+    <script src="js/custom.js"></script>
+    -->
+
+
+    
+    <script src="javascripts/vendor.js"></script>
+    <script src="javascripts/app.js" onload="require('initialize');"></script>
+    <script>
+    var $border_color = "#efefef";
+var $grid_color = "#ddd";
+var $default_black = "#666";
+var $green = "#8ecf67";
+var $yellow = "#fac567";
+var $orange = "#F08C56";
+var $blue = "#87ceeb";
+var $red = "#f74e4d";
+var $teal = "#28D8CA";
+var $grey = "#999999";
+
+
+$(document).ready(function () {
+  setupFlots();
+});
+
+// Flot charts
+function setupFlots() {
+  var sin = [],
+      ammount = [
+        [1, 1500], 
+        [2, 1200], 
+        [3, 900], 
+        [4, 2100], 
+        [5, 1500], 
+        [6, 1600], 
+        [7, 1750], 
+        [8, 2200], 
+        [9, 2400], 
+        [10, 2000], 
+        [11, 1900], 
+        [12, 1800]
+      ];
+    for (var i = 0; i < 13; i += 0.5) {
+      sin.push([i, Math.sin(i)]);
+    }
+
+    var plot = $.plot("#social-stats", [
+      { data: ammount, label: "Solde"}
+    ], {
+      series: {
+        lines: {
+          show: true,
+          lineWidth: 1
+        },
+        points: {
+          show: true
+        }
+      },
+      grid:{
+        hoverable: true,
+        clickable: true,
+        borderWidth: 1,
+        tickColor: $border_color,
+        borderColor: '#eeeeee'
+      },
+      colors: [$red],
+      shadowSize: 0,
+      yaxis: {
+        min: 500,
+        max: 2500
+      },
+      xaxis: {
+        ticks: [
+          [1, "janvier"], 
+          [2, "février"], 
+          [3, "mars"], 
+          [4, "avril"], 
+          [5, "mai"], 
+          [6, "juin"], 
+          [7, "juillet"], 
+          [8, "aout"], 
+          [9, "septembre"], 
+          [10, "octobre"], 
+          [11, "novembre"], 
+          [12, "décembre"]
+        ]
+      }
+
+
+
+    });
+
+    function showTooltip(x, y, contents) {
+      $("<div id='tooltip'>" + contents + "</div>").css({
+        position: "absolute",
+        display: "none",
+        top: y + 5,
+        left: x + 5,
+        border: "1px solid #fdd",
+        padding: "2px",
+        "background-color": "#fee",
+        opacity: 0.80
+      }).appendTo("body").fadeIn(200);
+    }
+
+    var previousPoint = null;
+    $("#placeholder").bind("plothover", function (event, pos, item) {
+
+      if ($("#enablePosition:checked").length > 0) {
+        var str = "(" + pos.x.toFixed(2) + ", " + pos.y.toFixed(2) + ")";
+        $("#hoverdata").text(str);
+      }
+
+      if ($("#enableTooltip:checked").length > 0) {
+        if (item) {
+          if (previousPoint != item.dataIndex) {
+
+            previousPoint = item.dataIndex;
+
+            $("#tooltip").remove();
+            var x = item.datapoint[0].toFixed(2),
+            y = item.datapoint[1].toFixed(2);
+
+            showTooltip(item.pageX, item.pageY,
+                item.series.label + " of " + x + " = " + y);
+          }
+        } else {
+          $("#tooltip").remove();
+          previousPoint = null;            
+        }
+      }
+    });
+
+    $("#placeholder").bind("plotclick", function (event, pos, item) {
+      if (item) {
+        $("#clickdata").text(" - click point " + item.dataIndex + " in " + item.series.label);
+        plot.highlight(item.series, item.datapoint);
+      }
+    });
+
+    // Add the Flot version string to the footer
+
+    $("#footer").prepend("Flot " + $.plot.version + " &ndash; ");
+};
+
+
+//Resize charts and graphs on window resize
+$(document).ready(function () {
+  $(window).resize(function(){
+    setupFlots();
+  });
+});
+    </script>
+  </body>
 </html>
