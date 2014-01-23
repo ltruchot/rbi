@@ -13,7 +13,14 @@
   "main": "server.coffee",
   "dependencies": {
     "americano": "0.2.10",
-    "americano-cozy": "0.1.4"
+    "americano-cozy": "0.1.4",
+    "async": "0.2.9",
+    "request-json": "0.4.4",
+    "moment": "2.4.0",
+    "cozy-notifications-helper": "1.0.2",
+    "jade": "0.35.0",
+    "nock": "0.23.0",
+    "cozy-i18n-helper": "0.0.4"
   },
   "devDependencies": {
     "should": "2.0.1",

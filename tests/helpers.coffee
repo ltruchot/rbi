@@ -1,6 +1,4 @@
 
-# See cozy-fixtures documentation for testing on
-# https://github.com/jsilvestre/cozy-fixtures#automatic-tests
 fixtures = require 'cozy-fixtures'
 
 helpers = {}
@@ -11,14 +9,15 @@ helpers.app = null
 
 helpers.startApp = (done) ->
     americano = require 'americano'
+    init = require '../server/init'
 
     host = helpers.options.serverHost || "127.0.0.1"
-    port = helpers.options.serverPort || 9250
+    port = helpers.options.serverPort || 9875
 
-    americano.start name: 'template', host: host, port: port, (app, server) =>
+    americano.start name: 'pfm', host: host, port: port, (app, server) =>
         @app = app
         @app.server = server
-        done()
+        init done
 
 helpers.stopApp = (done) ->
     @app.server.close done

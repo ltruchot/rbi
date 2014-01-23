@@ -22,6 +22,7 @@ exports.config =
                     'vendor/scripts/bootstrap-3.0.3.js'
                     'vendor/scripts/jquery.flot-0.8.2.js'
                     'vendor/scripts/jquery.easypiechart-2.1.3'
+                    'vendor/scripts/async-0.2.10.js'
                 ]
 
         stylesheets:
