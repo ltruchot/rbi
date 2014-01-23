@@ -7971,7 +7971,8 @@ body {
   font: normal 12px 'Open Sans', arial, sans-serif;
   line-height: 20px;
   color: #333333;
-  background: #2b2b2b; }
+  /* background: #2b2b2b; */
+}
 
 a:hover {
   text-decoration: none; }
@@ -8216,7 +8217,7 @@ img.media-object {
   margin: 0 10px; }
 
 header {
-  height: 50px;
+  height: 200px;
   vertical-align: middle; }
   header .logo {
     width: 100px;
@@ -8723,26 +8724,17 @@ header {
       margin: 0; }
 
 #mainnav {
+  background-color:#2b2b2b;
   float: left;
-  width: 80px;
+  width: 100px;
   position: absolute; }
-  #mainnav .user-profile-pic {
-    margin-bottom: 10px;
-    text-align: center; }
-    #mainnav .user-profile-pic img {
-      background: white;
-      border: 2px solid white;
-      width: 76px;
-      height: 60px;
-      -webkit-border-radius: 2px;
-      -moz-border-radius: 2px;
-      border-radius: 2px; }
   #mainnav ul li {
     display: block;
     position: relative; }
     #mainnav ul li .icon [data-icon]:before {
       font-size: 16px; }
     #mainnav ul li a {
+      min-height: 80px;
       display: block;
       outline: 0;
       padding: 6px 0;

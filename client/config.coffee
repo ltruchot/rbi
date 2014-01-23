@@ -20,8 +20,8 @@ exports.config =
                     'vendor/scripts/underscore-1.5.2.js'
                     'vendor/scripts/backbone-1.1.0.js'
                     'vendor/scripts/bootstrap-3.0.3.js'
-                    'vendor/scripts/jquery.sparkline-2.1.2.js'
                     'vendor/scripts/jquery.flot-0.8.2.js'
+                    'vendor/scripts/jquery.easypiechart-2.1.3'
                 ]
 
         stylesheets:
