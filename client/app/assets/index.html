@@ -53,20 +53,29 @@
       <!-- Row start -->
       <div class="row">
         <div class="col-md-2" style="padding-top:50px; text-align:center; line-height:1;">
-          <span class="fs1" aria-hidden="true" data-icon=""></span>
-          45 360 &euro;
-          <hr style="margin:5px;" />
-          Solde au : 23/01/2014
-
+          <div id="account-amount">
+            <div id="account-amount-info">
+              <span class="fs1" id="account-amount-icon" aria-hidden="true" data-icon=""></span>
+              <span id="account-amount-balance">0</span> &euro;
+            </div>
+            <hr style="margin:5px;" />
+            <div id="account-amount-date">
+              Solde au : 23/01/2014
+            </div>
+          </div>
         </div>
         <div class="col-md-2">
           <div class="pie-chart">
-            <div class="chart1 easyPieChart" data-percent="48" style="width: 110px; height: 110px; line-height: 110px;">
-              544€
+            <div class="chart1 easyPieChart" data-percent="0" style="width: 110px; height: 110px; line-height: 110px;">
+              0€
             <canvas width="110" height="110"></canvas></div>
-            <p class="name">
+            <p class="name margin2" style="padding-top:2px;">
               Budget du mois
             </p>
+            <div id="account-budget">
+              <input type="text" id="account-budget-amount" value="0" /> &euro;
+              <span id="account-budget-icon" class="fs1" aria-hidden="true" data-icon=""></span>
+            </div>
           </div>
         </div>
         <div class="col-md-8">
@@ -76,8 +85,8 @@
                 <span class="fs1" aria-hidden="true" data-icon="&#xe098;"></span> Evolution du solde
               </div>
             </div>
-            <div class="widget-body" style="height:145px;border:1px solid #ededed;">
-              <div id="social-stats" style="height:140px"></div>
+            <div class="widget-body" style="height:160px;border:1px solid #ededed;">
+              <div id="social-stats" style="height:155px"></div>
             </div>
           </div>
         </div>
@@ -98,7 +107,7 @@
             <span class="current-arrow">&nbsp;</span>
             <a href="index.html">
               <div class="icon">
-                <span class="fs1" aria-hidden="true" data-icon="&#xe0a2;"></span>
+                <span class="fs1" aria-hidden="true" data-icon=""></span>
               </div>
               Analyse mensuelle
             </a>
@@ -106,7 +115,7 @@
           <li>
             <a href="ui-elements.html">
               <div class="icon">
-                <span class="fs1" aria-hidden="true" data-icon="&#xe0d2;"></span>
+                <span class="fs1" aria-hidden="true" data-icon=""></span><span class="fs1" aria-hidden="true" data-icon=""></span>
               </div>
               Analyse mensuelle comparée
             </a>
@@ -114,7 +123,7 @@
           <li>
             <a href="forms.html">
               <div class="icon">
-                <span class="fs1" aria-hidden="true" data-icon="&#xe0b8;"></span>
+                <span class="fs1" aria-hidden="true" data-icon=""></span>
               </div>
               Achats en ligne
             </a>
@@ -122,18 +131,11 @@
           <li>
             <a href="charts.html">
               <div class="icon">
-                <span class="fs1" aria-hidden="true" data-icon="&#xe096;"></span>
+                <span class="fs1" aria-hidden="true" data-icon=""></span>
               </div>
               Alertes
             </a>
           </li>
-          <li>
-            <a href="invoice.html">
-              <div class="icon">
-                <span class="fs1" aria-hidden="true" data-icon="&#xe099;"></span>
-              </div>
-              Paramètrage
-            </a>
         </ul>
       </div>
       <!-- Mian navigation end -->
@@ -293,9 +295,9 @@ function pie_chart() {
     //create instance
     $('.chart1').easyPieChart({
       animate: 2000,
-      barColor: $red,
+      barColor: $blue,
       trackColor: $border_color,
-      scaleColor: $red,
+      scaleColor: $blue,
       lineWidth: 2,
     });
   });

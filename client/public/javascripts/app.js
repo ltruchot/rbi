@@ -689,8 +689,17 @@ module.exports = AppView = (function(_super) {
 
   AppView.prototype.el = '#content';
 
+  AppView.prototype.currentAccountId = 1;
+
+  AppView.prototype.accountCount = 0;
+
   AppView.prototype.afterRender = function() {
+    var thisAppView;
     console.log('afterrender');
+    thisAppView = this;
+    $('#account-budget-amount').on('keyup', function() {
+      return $("#budget" + thisAppView.currentAccountId).val(parseInt($(this).val()));
+    });
     return window.collections.banks.fetch({
       data: {
         withAccountOnly: true
@@ -704,14 +713,37 @@ module.exports = AppView = (function(_super) {
             treatment = function(bank, callback) {
               return bank.accounts.fetch({
                 success: function(col, data) {
-                  var account, _i, _len, _ref1, _results;
+                  var account, accountAmount, accountList, accountListItem, accountTitle, bankName, _i, _len, _ref1;
+                  bankName = bank.get('name');
+                  $('#content').append('<div id="parameters" class="parameters"></div>');
+                  $('#parameters').append('<h2>' + bankName + '</h2>');
+                  accountList = $('<ul></ul>');
                   _ref1 = col.models;
-                  _results = [];
                   for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
                     account = _ref1[_i];
-                    _results.push(console.log(account.get('title')));
+                    thisAppView.accountCount++;
+                    accountListItem = $('<li></li>');
+                    accountTitle = account.get('title');
+                    accountAmount = account.get('amount');
+                    accountListItem.append('<input type="radio" id="account' + thisAppView.accountCount + '" name="accountTitle" class="accountTitle" />' + '<label for="accountTitle">' + accountTitle + '</label>');
+                    accountListItem.append(' - Solde : <input type="text" class="accountAmount" value="' + accountAmount + '" disabled="true" />');
+                    accountListItem.append(' - Budget : <input type="text" id="budget' + thisAppView.accountCount + '" class="accountBudget" value="0" /><br />');
+                    accountList.append(accountListItem);
                   }
-                  return _results;
+                  $('#parameters').append(accountList);
+                  $('.accountTitle').on('change', function() {
+                    thisAppView.currentAccountId = parseInt($(this).attr('id').replace('account', ''));
+                    $('#account-budget-amount').removeClass();
+                    $('#account-budget-amount').addClass('current' + thisAppView.currentAccountId);
+                    $("#account-amount-balance").text($(this).parent().children('input.accountAmount').val());
+                    return $("#account-budget-amount").val($(this).parent().children('input.accountBudget').val());
+                  });
+                  $('.accountBudget').on('keyup', function() {
+                    if ($("#account-budget-amount").hasClass('current' + parseInt($(this).attr('id').replace('budget', '')))) {
+                      return $("#account-budget-amount").val(parseInt($(this).val()));
+                    }
+                  });
+                  return $('.accountTitle:eq(0)').click();
                 }
               });
             };
