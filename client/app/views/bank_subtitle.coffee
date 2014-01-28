@@ -63,7 +63,7 @@ module.exports = class BankSubTitleView extends BaseView
         while i < numberOfDays
             if formattedAmounts[currentDate.getTime()]
                 lastAmount = formattedAmounts[currentDate.getTime()]
-            flotReadyAmounts.push [numberOfDays - i, lastAmount]
+            flotReadyAmounts.push [currentDate.getTime(), lastAmount]
             currentDate.setDate(currentDate.getDate() - 1)
             if lastAmount < minAmount
                 minAmount = lastAmount
@@ -72,7 +72,7 @@ module.exports = class BankSubTitleView extends BaseView
             i++
         minAmount = (parseFloat minAmount) - 500
         maxAmount = (parseFloat maxAmount) + 500
-        console.log maxAmount + " - " + minAmount
+        console.log flotReadyAmounts
         flotReadyAmounts.reverse()
         plot = $.plot "#social-stats", [{ data: flotReadyAmounts, label: "Solde"}],
             series:
@@ -93,6 +93,10 @@ module.exports = class BankSubTitleView extends BaseView
             yaxis:
                 min: minAmount
                 max: maxAmount
+            xaxis:
+                mode: "time", minTickSize: [1, "month"]
+                min: (new Date("2013/02/28")).getTime()
+                max: (new Date("2014/01/28")).getTime()
             # xaxis:
             #     ticks: [
             #         [1, "janvier"],

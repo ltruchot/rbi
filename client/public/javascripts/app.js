@@ -910,7 +910,7 @@ module.exports = BankSubTitleView = (function(_super) {
       if (formattedAmounts[currentDate.getTime()]) {
         lastAmount = formattedAmounts[currentDate.getTime()];
       }
-      flotReadyAmounts.push([numberOfDays - i, lastAmount]);
+      flotReadyAmounts.push([currentDate.getTime(), lastAmount]);
       currentDate.setDate(currentDate.getDate() - 1);
       if (lastAmount < minAmount) {
         minAmount = lastAmount;
@@ -922,7 +922,7 @@ module.exports = BankSubTitleView = (function(_super) {
     }
     minAmount = (parseFloat(minAmount)) - 500;
     maxAmount = (parseFloat(maxAmount)) + 500;
-    console.log(maxAmount + " - " + minAmount);
+    console.log(flotReadyAmounts);
     flotReadyAmounts.reverse();
     return plot = $.plot("#social-stats", [
       {
@@ -951,6 +951,12 @@ module.exports = BankSubTitleView = (function(_super) {
       yaxis: {
         min: minAmount,
         max: maxAmount
+      },
+      xaxis: {
+        mode: "time",
+        minTickSize: [1, "month"],
+        min: (new Date("2013/02/28")).getTime(),
+        max: (new Date("2014/01/28")).getTime()
       }
     });
   };
