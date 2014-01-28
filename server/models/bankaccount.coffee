@@ -113,11 +113,37 @@ BankAccount.calculateBalance = (accounts, callback) ->
 
         callback err, accounts
 
+# Adds array of last year amounts for a list of accounts
+BankAccount.prepareLastYearAmounts = (account, callback) ->
+    arrayOfAmounts = []
+    BankOperation.rawRequest "getBalance", group: true, (err, balances) ->
+        for balance in balances
+            if balance.key is account.accountNumber
+                amount = (account.initialAmount + balance.value).toFixed 2
+                account.setBalance parseFloat amount
+        currentAmount = account.getBalance()
+        currentDate = (new Date()).setHours(0,0,0,0)
+        BankOperation.allFromBankAccountDate account, (err, operations) ->
+            for operation in operations
+                currentAmount = (currentAmount - operation.amount).toFixed 2
+                operationDate = (operation.date).setHours(0,0,0,0)
+                if currentDate isnt operationDate
+                    arrayOfAmounts.push
+                        date : operation.date
+                        amount : currentAmount
+                    currentDate = operationDate
+            console.log arrayOfAmounts
+            callback err, arrayOfAmounts
+
+
 BankAccount::getBalance = ->
     return @__data.amount
 
 BankAccount::setBalance = (balance) ->
     @__data.amount = balance
+
+BankAccount::setArrayOfAmounts = (arrayOfAmounts) ->
+    @__data.arrayOfAmount = arrayOfAmounts
 
 BankAccount::toJSON = ->
     json = @toObject true

@@ -34,6 +34,13 @@ module.exports.getOperations = (req, res) ->
         else
             res.send 200, operations
 
+module.exports.getLastYearAmounts = (req, res) ->
+    BankAccount.prepareLastYearAmounts @account, (err, operations) ->
+        if err?
+            res.send 500, error: 'Server error occurred while retrieving data'
+        else
+            res.send 200, operations
+
 module.exports.retrieveOperations = (req, res) ->
     BankAccess.find @account.bankAccess, (err, access) =>
         if err?

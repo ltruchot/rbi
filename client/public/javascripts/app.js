@@ -91,13 +91,15 @@
   globals.require.brunch = true;
 })();
 require.register("application", function(exports, require, module) {
-var AppView, BankOperationsCollection, BanksCollection;
+var AppView, BankAmountsCollection, BankOperationsCollection, BanksCollection;
 
-AppView = require('views/app_view');
+AppView = require('views/app');
 
 BanksCollection = require('collections/banks');
 
 BankOperationsCollection = require('collections/bank_operations');
+
+BankAmountsCollection = require('collections/bank_amounts');
 
 module.exports = {
   initialize: function() {
@@ -110,6 +112,7 @@ module.exports = {
     window.collections.allBanks = new BanksCollection();
     window.collections.banks = new BanksCollection();
     window.collections.operations = new BankOperationsCollection();
+    window.collections.amounts = new BankAmountsCollection();
     /*
             views
     */
@@ -210,6 +213,36 @@ module.exports = BankAlerts = (function(_super) {
   BankAlerts.prototype.url = "bankalerts";
 
   return BankAlerts;
+
+})(Backbone.Collection);
+
+});
+
+;require.register("collections/bank_amounts", function(exports, require, module) {
+var BankAmount, BankAmounts, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BankAmount = require('../models/bank_amount');
+
+module.exports = BankAmounts = (function(_super) {
+  __extends(BankAmounts, _super);
+
+  function BankAmounts() {
+    _ref = BankAmounts.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  BankAmounts.prototype.model = BankAmount;
+
+  BankAmounts.prototype.url = "bankaccounts";
+
+  BankAmounts.prototype.setAccount = function(account) {
+    this.account = account;
+    return this.url = "bankaccounts/getLastYearAmounts/" + this.account.get("id");
+  };
+
+  return BankAmounts;
 
 })(Backbone.Collection);
 
@@ -365,6 +398,48 @@ $(function() {
   })();
 })();
 
+Number.prototype.formatMoney = function(decPlaces, thouSeparator, decSeparator) {
+  var i, j, n, sign;
+  n = this;
+  decPlaces = (isNaN(decPlaces = Math.abs(decPlaces)) ? 2 : decPlaces);
+  decSeparator = (decSeparator === undefined ? "." : decSeparator);
+  thouSeparator = (thouSeparator === undefined ? "," : thouSeparator);
+  sign = (n < 0 ? "-" : "");
+  i = parseInt(n = Math.abs(+n || 0).toFixed(decPlaces)) + "";
+  j = ((j = i.length) > 3 ? j % 3 : 0);
+  return sign + (j ? i.substr(0, j) + thouSeparator : "") + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + thouSeparator) + (decPlaces ? decSeparator + Math.abs(n - i).toFixed(decPlaces).slice(2) : "");
+};
+
+Number.prototype.money = function() {
+  return this.formatMoney(2, " ", ",");
+};
+
+Date.prototype.dateString = function() {
+  var addZeros, myDate;
+  addZeros = function(num) {
+    if (Number(num) < 10) {
+      return "0" + num;
+    } else {
+      return num;
+    }
+  };
+  myDate = this;
+  return addZeros(myDate.getDate() + 1) + "/" + addZeros(myDate.getMonth() + 1) + "/" + myDate.getFullYear();
+};
+
+Date.prototype.timeString = function() {
+  var addZeros, myDate;
+  addZeros = function(num) {
+    if (Number(num) < 10) {
+      return "0" + num;
+    } else {
+      return num;
+    }
+  };
+  myDate = this;
+  return addZeros(myDate.getHours()) + ":" + addZeros(myDate.getMinutes());
+};
+
 });
 
 ;require.register("lib/base_view", function(exports, require, module) {
@@ -385,9 +460,8 @@ module.exports = BaseView = (function(_super) {
   BaseView.prototype.initialize = function() {};
 
   BaseView.prototype.getRenderData = function() {
-    var _ref1;
     return {
-      model: (_ref1 = this.model) != null ? _ref1.toJSON() : void 0
+      model: this.model
     };
   };
 
@@ -630,6 +704,25 @@ module.exports = BankAlert = (function(_super) {
 
 });
 
+;require.register("models/bank_amount", function(exports, require, module) {
+var BankAmount, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+module.exports = BankAmount = (function(_super) {
+  __extends(BankAmount, _super);
+
+  function BankAmount() {
+    _ref = BankAmount.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  return BankAmount;
+
+})(Backbone.Model);
+
+});
+
 ;require.register("models/bank_operation", function(exports, require, module) {
 var BankOperation, _ref,
   __hasProp = {}.hasOwnProperty,
@@ -654,7 +747,7 @@ var AppView, Router, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-AppView = require('views/app_view');
+AppView = require('views/app');
 
 module.exports = Router = (function(_super) {
   __extends(Router, _super);
@@ -664,18 +757,31 @@ module.exports = Router = (function(_super) {
     return _ref;
   }
 
+  Router.prototype.routes = {
+    '': 'parametres'
+  };
+
+  Router.prototype.parametres = function() {
+    var _ref1;
+    return (_ref1 = window.views.configurationView) != null ? _ref1.render() : void 0;
+  };
+
   return Router;
 
 })(Backbone.Router);
 
 });
 
-;require.register("views/app_view", function(exports, require, module) {
-var AppView, BaseView, _ref,
+;require.register("views/app", function(exports, require, module) {
+var AppView, BaseView, ConfigurationView, NewBankView, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
+
+ConfigurationView = require('views/configuration');
+
+NewBankView = require('views/new_bank');
 
 module.exports = AppView = (function(_super) {
   __extends(AppView, _super);
@@ -687,19 +793,9 @@ module.exports = AppView = (function(_super) {
 
   AppView.prototype.template = require('./templates/app');
 
-  AppView.prototype.el = '#content';
-
-  AppView.prototype.currentAccountId = 1;
-
-  AppView.prototype.accountCount = 0;
+  AppView.prototype.el = 'body.application';
 
   AppView.prototype.afterRender = function() {
-    var thisAppView;
-    console.log('afterrender');
-    thisAppView = this;
-    $('#account-budget-amount').on('keyup', function() {
-      return $("#budget" + thisAppView.currentAccountId).val(parseInt($(this).val()));
-    });
     return window.collections.banks.fetch({
       data: {
         withAccountOnly: true
@@ -707,58 +803,17 @@ module.exports = AppView = (function(_super) {
       success: function() {
         return window.collections.allBanks.fetch({
           success: function() {
-            var treatment, view;
-            console.log('all bank ok');
-            view = this;
-            treatment = function(bank, callback) {
-              return bank.accounts.fetch({
-                success: function(col, data) {
-                  var account, accountAmount, accountList, accountListItem, accountTitle, bankName, _i, _len, _ref1;
-                  bankName = bank.get('name');
-                  $('#content').append('<div id="parameters" class="parameters"></div>');
-                  $('#parameters').append('<h2>' + bankName + '</h2>');
-                  accountList = $('<ul></ul>');
-                  _ref1 = col.models;
-                  for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-                    account = _ref1[_i];
-                    thisAppView.accountCount++;
-                    accountListItem = $('<li></li>');
-                    accountTitle = account.get('title');
-                    accountAmount = account.get('amount');
-                    accountListItem.append('<input type="radio" id="account' + thisAppView.accountCount + '" name="accountTitle" class="accountTitle" />' + '<label for="accountTitle">' + accountTitle + '</label>');
-                    accountListItem.append(' - Solde : <input type="text" class="accountAmount" value="' + accountAmount + '" disabled="true" />');
-                    accountListItem.append(' - Budget : <input type="text" id="budget' + thisAppView.accountCount + '" class="accountBudget" value="0" /><br />');
-                    accountList.append(accountListItem);
-                  }
-                  $('#parameters').append(accountList);
-                  $('.accountTitle').on('change', function() {
-                    thisAppView.currentAccountId = parseInt($(this).attr('id').replace('account', ''));
-                    $('#account-budget-amount').removeClass();
-                    $('#account-budget-amount').addClass('current' + thisAppView.currentAccountId);
-                    $("#account-amount-balance").text($(this).parent().children('input.accountAmount').val());
-                    return $("#account-budget-amount").val($(this).parent().children('input.accountBudget').val());
-                  });
-                  $('.accountBudget').on('keyup', function() {
-                    if ($("#account-budget-amount").hasClass('current' + parseInt($(this).attr('id').replace('budget', '')))) {
-                      return $("#account-budget-amount").val(parseInt($(this).val()));
-                    }
-                  });
-                  return $('.accountTitle:eq(0)').click();
-                }
-              });
-            };
-            console.log(window.collections.banks.models);
-            async.concat(window.collections.banks.models, treatment, function(err, results) {
-              if (err) {
-                console.log(err);
-                return alert(window.i18n("error_loading_accounts"));
-              }
-            });
+            if (!this.newbankView) {
+              this.newbankView = new NewBankView();
+            }
+            if (!window.views.configurationView) {
+              window.views.configurationView = new ConfigurationView();
+            }
+            this.newbankView.render();
             return Backbone.history.start();
           },
           error: function() {
-            console.log("Fatal error: could not get the banks list");
-            return alert(window.i18n("fatal_error"));
+            return console.log("Fatal error: could not get the banks list");
           }
         });
       }
@@ -771,6 +826,454 @@ module.exports = AppView = (function(_super) {
 
 });
 
+;require.register("views/bank_subtitle", function(exports, require, module) {
+var BankSubTitleView, BaseView,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+module.exports = BankSubTitleView = (function(_super) {
+  __extends(BankSubTitleView, _super);
+
+  BankSubTitleView.prototype.template = require('./templates/configuration_bank_subtitle');
+
+  function BankSubTitleView(model) {
+    this.model = model;
+    BankSubTitleView.__super__.constructor.call(this);
+  }
+
+  BankSubTitleView.prototype.events = {
+    "change .accountTitle": 'chooseAccount'
+  };
+
+  BankSubTitleView.prototype.initialize = function() {
+    this.listenTo(this.model, 'change', this.render);
+    return this.listenTo(window.activeObjects, 'changeActiveAccount', this.checkActive);
+  };
+
+  BankSubTitleView.prototype.chooseAccount = function(event) {
+    window.activeObjects.trigger("changeActiveAccount", this.model);
+    $("#account-amount-balance").text($(event.currentTarget).parent().children('input.accountAmount').val());
+    return this.loadLastYearAmounts(this.model);
+  };
+
+  BankSubTitleView.prototype.checkActive = function(account) {
+    this.$(".row").removeClass("active");
+    if (account === this.model) {
+      return this.$(".row").addClass("active");
+    }
+  };
+
+  BankSubTitleView.prototype.loadLastYearAmounts = function(account) {
+    var _this = this;
+    window.collections.amounts.reset();
+    window.collections.amounts.setAccount(account);
+    window.collections.amounts.fetch({
+      success: function(amounts) {
+        console.log(amounts);
+        return _this.setupLastYearAmountsFlot(amounts);
+      },
+      error: function() {
+        return console.log("error fetching amounts of last year");
+      }
+    });
+    return this;
+  };
+
+  BankSubTitleView.prototype.setupLastYearAmountsFlot = function(amounts) {
+    var currentDate, flotReadyAmounts, formattedAmounts, i, lastAmount, maxAmount, minAmount, numberOfDays, plot;
+    formattedAmounts = [];
+    flotReadyAmounts = [];
+    amounts.each(function(amount) {
+      var amountDate, currentDate, i;
+      currentDate = new Date();
+      currentDate.setHours(0, 0, 0, 0);
+      amountDate = new Date(amount.get('date'));
+      i = 0;
+      while (amountDate.getTime() !== currentDate.getTime() && i < 365) {
+        currentDate.setDate(currentDate.getDate() - 1);
+        i++;
+      }
+      if (i < 364) {
+        return formattedAmounts[currentDate.getTime()] = amount.get('amount');
+      }
+    });
+    numberOfDays = 365;
+    currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    lastAmount = this.model.get('amount');
+    minAmount = 0;
+    maxAmount = 0;
+    i = 0;
+    while (i < numberOfDays) {
+      if (formattedAmounts[currentDate.getTime()]) {
+        lastAmount = formattedAmounts[currentDate.getTime()];
+      }
+      flotReadyAmounts.push([numberOfDays - i, lastAmount]);
+      currentDate.setDate(currentDate.getDate() - 1);
+      if (lastAmount < minAmount) {
+        minAmount = lastAmount;
+      }
+      if (lastAmount > maxAmount) {
+        maxAmount = lastAmount;
+      }
+      i++;
+    }
+    minAmount = (parseFloat(minAmount)) - 500;
+    maxAmount = (parseFloat(maxAmount)) + 500;
+    console.log(maxAmount + " - " + minAmount);
+    flotReadyAmounts.reverse();
+    return plot = $.plot("#social-stats", [
+      {
+        data: flotReadyAmounts,
+        label: "Solde"
+      }
+    ], {
+      series: {
+        lines: {
+          show: true,
+          lineWidth: 1
+        },
+        points: {
+          show: false
+        }
+      },
+      grid: {
+        hoverable: true,
+        clickable: true,
+        borderWidth: 1,
+        tickColor: $border_color,
+        borderColor: '#eeeeee'
+      },
+      colors: ["#f74e4d"],
+      shadowSize: 0,
+      yaxis: {
+        min: minAmount,
+        max: maxAmount
+      }
+    });
+  };
+
+  return BankSubTitleView;
+
+})(BaseView);
+
+});
+
+;require.register("views/bank_title", function(exports, require, module) {
+var BankTitleView, BaseView,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+module.exports = BankTitleView = (function(_super) {
+  __extends(BankTitleView, _super);
+
+  BankTitleView.prototype.template = require('./templates/configuration_bank_title');
+
+  function BankTitleView(model) {
+    this.model = model;
+    BankTitleView.__super__.constructor.call(this);
+  }
+
+  BankTitleView.prototype.initialize = function() {
+    this.listenTo(this.model, 'change', this.update);
+    this.listenTo(this.model.accounts, "add", this.update);
+    this.listenTo(this.model.accounts, "destroy", this.update);
+    this.listenTo(this.model.accounts, "request", this.displayLoading);
+    return this.listenTo(this.model.accounts, "change", this.hideLoading);
+  };
+
+  BankTitleView.prototype.displayLoading = function() {
+    return this.$(".bank-title-loading").show();
+  };
+
+  BankTitleView.prototype.hideLoading = function() {
+    return this.$(".bank-title-loading").hide();
+  };
+
+  BankTitleView.prototype.update = function() {
+    this.model.set("amount", this.model.accounts.getSum());
+    this.$(".bank-amount").html(Number(this.model.get('amount')).money());
+    if (this.model.accounts.length === 0) {
+      this.$(".bank-title").hide();
+      this.$(".bank-balance").hide();
+    } else {
+      this.$(".bank-title").show();
+      this.$(".bank-balance").show();
+    }
+    return this.$(".bank-title-loading").hide();
+  };
+
+  BankTitleView.prototype.render = function() {
+    BankTitleView.__super__.render.call(this);
+    this.update();
+    return this;
+  };
+
+  return BankTitleView;
+
+})(BaseView);
+
+});
+
+;require.register("views/configuration", function(exports, require, module) {
+var BaseView, ConfigurationBankView, ConfigurationView, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+ConfigurationBankView = require('./configuration_bank');
+
+module.exports = ConfigurationView = (function(_super) {
+  __extends(ConfigurationView, _super);
+
+  function ConfigurationView() {
+    _ref = ConfigurationView.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  ConfigurationView.prototype.template = require('./templates/configuration');
+
+  ConfigurationView.prototype.el = 'div#content';
+
+  ConfigurationView.prototype.elAccounts = 'ul#account-choice';
+
+  ConfigurationView.prototype.accounts = 0;
+
+  ConfigurationView.prototype.subViews = [];
+
+  ConfigurationView.prototype.initialize = function() {
+    return this.listenTo(window.activeObjects, "new_access_added_successfully", this.noMoreEmpty);
+  };
+
+  ConfigurationView.prototype.noMoreEmpty = function() {
+    var _this = this;
+    return window.collections.banks.fetch({
+      success: function() {
+        return _this.render();
+      }
+    });
+  };
+
+  ConfigurationView.prototype.render = function() {
+    var treatment, view;
+    ConfigurationView.__super__.render.call(this);
+    view = this;
+    treatment = function(bank, callback) {
+      var viewBank;
+      viewBank = new ConfigurationBankView(bank);
+      view.subViews.push(viewBank);
+      $(view.elAccounts).append(viewBank.el);
+      return bank.accounts.fetch({
+        success: function(col) {
+          callback(null, col.length);
+          if (col.length > 0) {
+            return viewBank.render();
+          }
+        },
+        error: function(col, err, opts) {
+          callback(null, col.length);
+          return viewBank.$el.html("");
+        }
+      });
+    };
+    async.concat(window.collections.banks.models, treatment, function(err, results) {
+      if (err) {
+        console.log(err);
+        alert(window.i18n("error_loading_accounts"));
+      }
+      this.accounts = results.length;
+      return $(".accountTitle:eq(0)").click();
+    });
+    return this;
+  };
+
+  ConfigurationView.prototype.empty = function() {
+    var view, _i, _len, _ref1, _ref2, _results;
+    if ((_ref1 = this.operationsView) != null) {
+      _ref1.destroy();
+    }
+    _ref2 = this.subViews;
+    _results = [];
+    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+      view = _ref2[_i];
+      _results.push(view.destroy());
+    }
+    return _results;
+  };
+
+  return ConfigurationView;
+
+})(BaseView);
+
+});
+
+;require.register("views/configuration_bank", function(exports, require, module) {
+var BankSubTitleView, BankTitleView, BaseView, ConfigurationBankView,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+BankTitleView = require('./bank_title');
+
+BankSubTitleView = require('./bank_subtitle');
+
+module.exports = ConfigurationBankView = (function(_super) {
+  __extends(ConfigurationBankView, _super);
+
+  ConfigurationBankView.prototype.className = 'bank';
+
+  ConfigurationBankView.prototype.sum = 0;
+
+  ConfigurationBankView.prototype.subViews = [];
+
+  function ConfigurationBankView(bank) {
+    this.bank = bank;
+    ConfigurationBankView.__super__.constructor.call(this);
+  }
+
+  ConfigurationBankView.prototype.initialize = function() {
+    this.listenTo(this.bank.accounts, "add", this.addOne);
+    return this.listenTo(this.bank.accounts, "destroy", this.render);
+  };
+
+  ConfigurationBankView.prototype.addOne = function(account) {
+    var viewAccount;
+    viewAccount = new BankSubTitleView(account);
+    this.subViews.push(viewAccount);
+    account.view = viewAccount;
+    return this.$el.append(viewAccount.render().el);
+  };
+
+  ConfigurationBankView.prototype.render = function() {
+    var account, _i, _len, _ref;
+    this.viewTitle = new BankTitleView(this.bank);
+    this.$el.html(this.viewTitle.render().el);
+    this.viewTitle = null;
+    this.sum = 0;
+    _ref = this.bank.accounts.models;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      account = _ref[_i];
+      this.addOne(account);
+    }
+    return this;
+  };
+
+  ConfigurationBankView.prototype.destroy = function() {
+    var view, _i, _len, _ref, _ref1;
+    if ((_ref = this.viewTitle) != null) {
+      _ref.destroy();
+    }
+    _ref1 = this.subViews;
+    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+      view = _ref1[_i];
+      view.destroy();
+    }
+    return ConfigurationBankView.__super__.destroy.call(this);
+  };
+
+  return ConfigurationBankView;
+
+})(BaseView);
+
+});
+
+;require.register("views/new_bank", function(exports, require, module) {
+var BankAccessModel, BaseView, NewBankView, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+BankAccessModel = require('../models/bank_access');
+
+module.exports = NewBankView = (function(_super) {
+  __extends(NewBankView, _super);
+
+  function NewBankView() {
+    _ref = NewBankView.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  NewBankView.prototype.el = 'div#add-bank-window';
+
+  NewBankView.prototype.initialize = function() {
+    return this.render();
+  };
+
+  NewBankView.prototype.saveBank = function(event) {
+    var bankAccess, button, data, oldText, view;
+    event.preventDefault();
+    view = this;
+    button = $(event.target);
+    oldText = button.html();
+    button.addClass("disabled");
+    button.html(window.i18n("verifying") + "<img src='./loader_green.gif' />");
+    button.removeClass('btn-warning');
+    button.addClass('btn-success');
+    this.$(".message-modal").html("");
+    data = {
+      login: $("#inputLogin").val(),
+      password: $("#inputPass").val(),
+      bank: $("#inputBank").val()
+    };
+    bankAccess = new BankAccessModel(data);
+    return bankAccess.save(data, {
+      success: function(model, response, options) {
+        var bank;
+        button.html(window.i18n("sent") + " <img src='./loader_green.gif' />");
+        bank = window.collections.allBanks.get(data.bank);
+        if (bank != null) {
+          console.log("Fetching for new accounts in bank" + bank.get("name"));
+          bank.accounts.trigger("loading");
+          bank.accounts.fetch();
+        }
+        $("#add-bank-window").modal("hide");
+        button.removeClass("disabled");
+        button.html(oldText);
+        window.activeObjects.trigger("new_access_added_successfully", model);
+        return setTimeout(function() {
+          var router;
+          $("#add-bank-window").modal("hide");
+          router = window.app.router;
+          return router.navigate('/', {
+            trigger: true,
+            replace: true
+          });
+        }, 500);
+      },
+      error: function(model, xhr, options) {
+        button.removeClass('btn-success');
+        button.removeClass('disabled');
+        button.addClass('btn-warning');
+        if (((xhr != null ? xhr.status : void 0) != null) && xhr.status === 409) {
+          this.$(".message-modal").html("<div class='alert alert-danger'>" + window.i18n("access already exists") + "</div>");
+          return button.html(window.i18n("access already exists button"));
+        } else {
+          this.$(".message-modal").html("<div class='alert alert-danger'>" + window.i18n("error_check_credentials") + "</div>");
+          return button.html(window.i18n("error_check_credentials_btn"));
+        }
+      }
+    });
+  };
+
+  NewBankView.prototype.getRenderData = function() {
+    return {
+      banks: window.collections.allBanks.models
+    };
+  };
+
+  return NewBankView;
+
+})(BaseView);
+
+});
+
 ;require.register("views/templates/app", function(exports, require, module) {
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
 attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
@@ -778,6 +1281,55 @@ var buf = [];
 with (locals || {}) {
 var interp;
 buf.push('<p>Contenu</p>');
+}
+return buf.join("");
+};
+});
+
+;require.register("views/templates/configuration", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<div><ul id="account-choice"></ul></div>');
+}
+return buf.join("");
+};
+});
+
+;require.register("views/templates/configuration_bank", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+}
+return buf.join("");
+};
+});
+
+;require.register("views/templates/configuration_bank_subtitle", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<input type="radio" name="accountTitle" class="accountTitle"/><label for="accountTitle">' + escape((interp = model.get('title')) == null ? '' : interp) + ' n°' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</label><span>Solde :</span><input');
+buf.push(attrs({ 'type':("text"), 'value':("" + (Number(model.get('amount')).money()) + ""), 'disabled':("true"), "class": ('accountAmount') }, {"type":true,"value":true,"disabled":true}));
+buf.push('/><span>&euro;</span>');
+}
+return buf.join("");
+};
+});
+
+;require.register("views/templates/configuration_bank_title", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<li><span class="bank-title-loading"><img src="./loader.gif"/></span><span class="bank-title">' + escape((interp = model.get('name')) == null ? '' : interp) + '</span></li>');
 }
 return buf.join("");
 };

@@ -41,6 +41,8 @@ module.exports =
         get: bankaccounts.getOperations
     'bankaccounts/retrieveOperations/:bankAccountID':
         get: bankaccounts.retrieveOperations
+    'bankaccounts/getLastYearAmounts/:bankAccountID':
+        get: bankaccounts.getLastYearAmounts
 
     'bankoperations':
         get: bankoperations.index

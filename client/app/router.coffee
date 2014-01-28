@@ -1,10 +1,9 @@
-AppView = require 'views/app_view'
+AppView = require 'views/app'
 
 module.exports = class Router extends Backbone.Router
 
-    # routes:
-    #     '': 'main'
+  routes:
+      '': 'parametres'
 
-    # main: ->
-    #     mainView = new AppView()
-    #     mainView.render()
+  parametres: ->
+    window.views.configurationView?.render()

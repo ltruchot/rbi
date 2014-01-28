@@ -1,7 +1,8 @@
-AppView = require 'views/app_view'
+AppView = require 'views/app'
 
 BanksCollection = require 'collections/banks'
 BankOperationsCollection = require 'collections/bank_operations'
+BankAmountsCollection = require 'collections/bank_amounts'
 
 module.exports =
 
@@ -35,6 +36,7 @@ module.exports =
         window.collections.allBanks = new BanksCollection()
         window.collections.banks = new BanksCollection()
         window.collections.operations = new BankOperationsCollection()
+        window.collections.amounts = new BankAmountsCollection()
 
         ###
                 views
