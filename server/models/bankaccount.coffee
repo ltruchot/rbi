@@ -122,11 +122,11 @@ BankAccount.prepareLastYearAmounts = (account, callback) ->
                 amount = (account.initialAmount + balance.value).toFixed 2
                 account.setBalance parseFloat amount
         currentAmount = account.getBalance()
-        currentDate = (new Date()).setHours(0,0,0,0)
+        currentDate = (new Date()).setHours 12,0,0,0
         BankOperation.allFromBankAccountDate account, (err, operations) ->
             for operation in operations
                 currentAmount = (currentAmount - operation.amount).toFixed 2
-                operationDate = (operation.date).setHours(0,0,0,0)
+                operationDate = (operation.date).setHours 12,0,0,0
                 if currentDate isnt operationDate
                     arrayOfAmounts.push
                         date : operation.date

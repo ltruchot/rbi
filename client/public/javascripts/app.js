@@ -113,6 +113,18 @@ module.exports = {
     window.collections.banks = new BanksCollection();
     window.collections.operations = new BankOperationsCollection();
     window.collections.amounts = new BankAmountsCollection();
+    window.rbiColors = {
+      border_color: "#efefef",
+      grid_color: "#ddd",
+      default_black: "#666",
+      green: "#8ecf67",
+      yellow: "#fac567",
+      orange: "#F08C56",
+      blue: "#87ceeb",
+      red: "#f74e4d",
+      teal: "#28D8CA",
+      grey: "#999999"
+    };
     /*
             views
     */
@@ -871,8 +883,10 @@ module.exports = BankSubTitleView = (function(_super) {
     window.collections.amounts.setAccount(account);
     window.collections.amounts.fetch({
       success: function(amounts) {
-        console.log(amounts);
-        return _this.setupLastYearAmountsFlot(amounts);
+        _this.setupLastYearAmountsFlot(amounts);
+        return $(window).resize(function() {
+          return _this.setupLastYearAmountsFlot(amounts);
+        });
       },
       error: function() {
         return console.log("error fetching amounts of last year");
@@ -882,13 +896,24 @@ module.exports = BankSubTitleView = (function(_super) {
   };
 
   BankSubTitleView.prototype.setupLastYearAmountsFlot = function(amounts) {
-    var currentDate, flotReadyAmounts, formattedAmounts, i, lastAmount, maxAmount, minAmount, numberOfDays, plot;
+    var currentDate, dayRatio, daysPerMonth, flotReadyAmounts, formattedAmounts, i, lastAmount, maxAmount, minAmount, numberOfDays, plot, sixMonthAgo, threeMonthAgo;
     formattedAmounts = [];
     flotReadyAmounts = [];
+    daysPerMonth = {
+      twelve: 365,
+      six: 365 / 2,
+      three: 365 / 4
+    };
+    numberOfDays = daysPerMonth.three;
+    threeMonthAgo = new Date();
+    threeMonthAgo = threeMonthAgo.setMonth(threeMonthAgo.getMonth() - 3);
+    sixMonthAgo = new Date();
+    sixMonthAgo = sixMonthAgo.setMonth(sixMonthAgo.getMonth() - 6);
+    dayRatio = 4;
     amounts.each(function(amount) {
       var amountDate, currentDate, i;
       currentDate = new Date();
-      currentDate.setHours(0, 0, 0, 0);
+      currentDate.setHours(12, 0, 0, 0);
       amountDate = new Date(amount.get('date'));
       i = 0;
       while (amountDate.getTime() !== currentDate.getTime() && i < 365) {
@@ -896,12 +921,16 @@ module.exports = BankSubTitleView = (function(_super) {
         i++;
       }
       if (i < 364) {
-        return formattedAmounts[currentDate.getTime()] = amount.get('amount');
+        formattedAmounts[currentDate.getTime()] = amount.get('amount');
+      }
+      if (currentDate.getTime() < threeMonthAgo) {
+        return numberOfDays = daysPerMonth.six;
+      } else if (currentDate.getTime() < sixMonthAgo) {
+        return numberOfDays = daysPerMonth.twelve;
       }
     });
-    numberOfDays = 365;
     currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
+    currentDate.setHours(12, 0, 0, 0);
     lastAmount = this.model.get('amount');
     minAmount = 0;
     maxAmount = 0;
@@ -922,9 +951,8 @@ module.exports = BankSubTitleView = (function(_super) {
     }
     minAmount = (parseFloat(minAmount)) - 500;
     maxAmount = (parseFloat(maxAmount)) + 500;
-    console.log(flotReadyAmounts);
     flotReadyAmounts.reverse();
-    return plot = $.plot("#social-stats", [
+    return plot = $.plot("#amount-stats", [
       {
         data: flotReadyAmounts,
         label: "Solde"
@@ -946,7 +974,7 @@ module.exports = BankSubTitleView = (function(_super) {
         tickColor: $border_color,
         borderColor: '#eeeeee'
       },
-      colors: ["#f74e4d"],
+      colors: [window.rbiColors.blue],
       shadowSize: 0,
       yaxis: {
         min: minAmount,
@@ -955,8 +983,7 @@ module.exports = BankSubTitleView = (function(_super) {
       xaxis: {
         mode: "time",
         minTickSize: [1, "month"],
-        min: (new Date("2013/02/28")).getTime(),
-        max: (new Date("2014/01/28")).getTime()
+        monthNames: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
       }
     });
   };

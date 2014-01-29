@@ -37,6 +37,18 @@ module.exports =
         window.collections.banks = new BanksCollection()
         window.collections.operations = new BankOperationsCollection()
         window.collections.amounts = new BankAmountsCollection()
+        window.rbiColors =
+            border_color : "#efefef"
+            grid_color : "#ddd"
+            default_black : "#666"
+            green : "#8ecf67"
+            yellow : "#fac567"
+            orange : "#F08C56"
+            blue : "#87ceeb"
+            red : "#f74e4d"
+            teal : "#28D8CA"
+            grey : "#999999"
+
 
         ###
                 views
