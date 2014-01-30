@@ -60,7 +60,7 @@
             </div>
             <hr style="margin:5px;" />
             <div id="account-amount-date">
-              Solde au : 23/01/2014
+              Solde au : <span id="current-amount-date"></span>
             </div>
           </div>
         </div>
@@ -83,6 +83,7 @@
             <div class="widget-header" style="height:22px">
               <div class="title">
                 <span class="fs1" aria-hidden="true" data-icon="&#xe098;"></span> Evolution du solde
+                <div style="display:inline-box;float:right">Max : <span id="max-amount"></span> / Min : <span id="min-amount"></span></div>
               </div>
             </div>
             <div class="widget-body" style="height:160px;border:1px solid #ededed;">
@@ -141,13 +142,11 @@
       <!-- Mian navigation end -->
 
       <!-- Dashboard wrapper start -->
-      <div class="dashboard-wrapper">
+      <div class="view-container" style="width:50%">
 
 
         <!-- Row start -->
         <div class="row">
-          <div style="text-align:center;">
-          <br /><br /><br /><br />
           <div id='content'>
           </div>
         </div>

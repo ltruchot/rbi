@@ -16,6 +16,8 @@ module.exports = class BankSubTitleView extends BaseView
 
     chooseAccount: (event) ->
         window.activeObjects.trigger "changeActiveAccount", @model
+        today = @formatDate(new Date())
+        $("#current-amount-date").text today
         $("#account-amount-balance").text $(event.currentTarget).parent().children('input.accountAmount').val()
         @loadLastYearAmounts(@model)
 
@@ -37,6 +39,11 @@ module.exports = class BankSubTitleView extends BaseView
                 console.log "error fetching amounts of last year"
         @
 
+    formatDate: (date) ->
+        day = ('0' + date.getDate()).slice(-2)
+        month = ('0' + (date.getMonth()+1)).slice(-2)
+        year = date.getFullYear()
+        return day + '/' + month + '/' + year
 
     setupLastYearAmountsFlot: (amounts) ->
         formattedAmounts = []
@@ -69,14 +76,14 @@ module.exports = class BankSubTitleView extends BaseView
 
         currentDate = new Date()
         currentDate.setHours 12,0,0,0
-        lastAmount = @model.get('amount')
-        minAmount = 0
-        maxAmount = 0
+        lastAmount = parseFloat @model.get('amount')
+        minAmount = parseFloat @model.get('amount')
+        maxAmount = parseFloat @model.get('amount')
         i = 0
 
         while i < numberOfDays
             if formattedAmounts[currentDate.getTime()]
-                lastAmount = formattedAmounts[currentDate.getTime()]
+                lastAmount = parseFloat formattedAmounts[currentDate.getTime()]
             flotReadyAmounts.push [currentDate.getTime(), lastAmount]
             currentDate.setDate(currentDate.getDate() - 1)
             if lastAmount < minAmount
@@ -84,15 +91,22 @@ module.exports = class BankSubTitleView extends BaseView
             if lastAmount > maxAmount
                 maxAmount = lastAmount
             i++
-        minAmount = (parseFloat minAmount) - 500
-        maxAmount = (parseFloat maxAmount) + 500
+            # console.log '--------------'
+            # console.log 'last = ' + lastAmount
+            # console.log 'max = ' + maxAmount
+            # console.log 'min = ' + minAmount
+            # console.log '--------------'
+        $("#max-amount").text maxAmount + ' €'
+        $("#min-amount").text minAmount + ' €'
+        minAmount = minAmount - 500
+        maxAmount =  maxAmount + 500
 
         flotReadyAmounts.reverse()
         plot = $.plot "#amount-stats", [{ data: flotReadyAmounts, label: "Solde"}],
             series:
                 lines:
                     show: true
-                    lineWidth: 1
+                    lineWidth: 2
                 points:
                     show: false
             grid:
@@ -111,3 +125,16 @@ module.exports = class BankSubTitleView extends BaseView
                 mode: "time"
                 minTickSize: [1, "month"]
                 monthNames: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+            tooltip: true
+            tooltipOpts:
+                content: '%y.2  &euro;<br /> %x' #       string or function      //"%s | X: %x | Y: %y"
+                xDateFormat: '%d/%m/%y'
+            #     yDateFormat:    string                  //null
+            #     monthNames:     string                  // null
+            #     dayNames:       string                  // null
+            #     shifts: {
+            #         x:          int                     //10
+            #         y:          int                     //20
+            #     },
+            #     defaultTheme:   boolean                 //true
+            #     onHover:        function(flotItem, $tooltipEl)

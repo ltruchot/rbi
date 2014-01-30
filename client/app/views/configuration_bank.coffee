@@ -4,7 +4,7 @@ BankSubTitleView = require './bank_subtitle'
 
 module.exports = class ConfigurationBankView extends BaseView
 
-    className: 'bank'
+    #className: 'bank'
 
     sum: 0
 

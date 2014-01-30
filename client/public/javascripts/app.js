@@ -865,7 +865,10 @@ module.exports = BankSubTitleView = (function(_super) {
   };
 
   BankSubTitleView.prototype.chooseAccount = function(event) {
+    var today;
     window.activeObjects.trigger("changeActiveAccount", this.model);
+    today = this.formatDate(new Date());
+    $("#current-amount-date").text(today);
     $("#account-amount-balance").text($(event.currentTarget).parent().children('input.accountAmount').val());
     return this.loadLastYearAmounts(this.model);
   };
@@ -893,6 +896,14 @@ module.exports = BankSubTitleView = (function(_super) {
       }
     });
     return this;
+  };
+
+  BankSubTitleView.prototype.formatDate = function(date) {
+    var day, month, year;
+    day = ('0' + date.getDate()).slice(-2);
+    month = ('0' + (date.getMonth() + 1)).slice(-2);
+    year = date.getFullYear();
+    return day + '/' + month + '/' + year;
   };
 
   BankSubTitleView.prototype.setupLastYearAmountsFlot = function(amounts) {
@@ -931,13 +942,13 @@ module.exports = BankSubTitleView = (function(_super) {
     });
     currentDate = new Date();
     currentDate.setHours(12, 0, 0, 0);
-    lastAmount = this.model.get('amount');
-    minAmount = 0;
-    maxAmount = 0;
+    lastAmount = parseFloat(this.model.get('amount'));
+    minAmount = parseFloat(this.model.get('amount'));
+    maxAmount = parseFloat(this.model.get('amount'));
     i = 0;
     while (i < numberOfDays) {
       if (formattedAmounts[currentDate.getTime()]) {
-        lastAmount = formattedAmounts[currentDate.getTime()];
+        lastAmount = parseFloat(formattedAmounts[currentDate.getTime()]);
       }
       flotReadyAmounts.push([currentDate.getTime(), lastAmount]);
       currentDate.setDate(currentDate.getDate() - 1);
@@ -949,8 +960,10 @@ module.exports = BankSubTitleView = (function(_super) {
       }
       i++;
     }
-    minAmount = (parseFloat(minAmount)) - 500;
-    maxAmount = (parseFloat(maxAmount)) + 500;
+    $("#max-amount").text(maxAmount + ' €');
+    $("#min-amount").text(minAmount + ' €');
+    minAmount = minAmount - 500;
+    maxAmount = maxAmount + 500;
     flotReadyAmounts.reverse();
     return plot = $.plot("#amount-stats", [
       {
@@ -961,7 +974,7 @@ module.exports = BankSubTitleView = (function(_super) {
       series: {
         lines: {
           show: true,
-          lineWidth: 1
+          lineWidth: 2
         },
         points: {
           show: false
@@ -984,6 +997,11 @@ module.exports = BankSubTitleView = (function(_super) {
         mode: "time",
         minTickSize: [1, "month"],
         monthNames: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+      },
+      tooltip: true,
+      tooltipOpts: {
+        content: '%y.2  &euro;<br /> %x',
+        xDateFormat: '%d/%m/%y'
       }
     });
   };
@@ -1159,8 +1177,6 @@ BankSubTitleView = require('./bank_subtitle');
 module.exports = ConfigurationBankView = (function(_super) {
   __extends(ConfigurationBankView, _super);
 
-  ConfigurationBankView.prototype.className = 'bank';
-
   ConfigurationBankView.prototype.sum = 0;
 
   ConfigurationBankView.prototype.subViews = [];
@@ -1325,7 +1341,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div><ul id="account-choice"></ul></div>');
+buf.push('<div class="content-box"><h1>Paramètres</h1><div><ul id="account-choice"></ul></div></div>');
 }
 return buf.join("");
 };
@@ -1348,7 +1364,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<input type="radio" name="accountTitle" class="accountTitle"/><label for="accountTitle">' + escape((interp = model.get('title')) == null ? '' : interp) + ' n°' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</label><span>Solde :</span><input');
+buf.push('<input type="radio" name="accountTitle" class="accountTitle"/><label for="accountTitle">' + escape((interp = model.get('title')) == null ? '' : interp) + ' n°' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</label><span>&nbsp;Solde :</span><input');
 buf.push(attrs({ 'type':("text"), 'value':("" + (Number(model.get('amount')).money()) + ""), 'disabled':("true"), "class": ('accountAmount') }, {"type":true,"value":true,"disabled":true}));
 buf.push('/><span>&euro;</span>');
 }
@@ -1362,7 +1378,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<li><span class="bank-title-loading"><img src="./loader.gif"/></span><span class="bank-title">' + escape((interp = model.get('name')) == null ? '' : interp) + '</span></li>');
+buf.push('<span class="bank-title-loading"><img src="./loader.gif"/></span><span class="bank-title">' + escape((interp = model.get('name')) == null ? '' : interp) + '</span>');
 }
 return buf.join("");
 };

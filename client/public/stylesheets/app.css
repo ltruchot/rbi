@@ -10491,6 +10491,34 @@ cursor not-allowed {
   right: auto;
   left: 0;
 }
+.content-box h1 {
+  background-color: #e8e8e8;
+  width: 100%;
+  min-height: 30px;
+  color: #2b2b2b;
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 1.5em;
+  padding: 3px;
+  margin-top: 0;
+}
+#mainnav * {
+  padding-right: 0;
+  margin-right: 0;
+}
+#mainnav ul li .current-arrow {
+  right: 0;
+  top: 35px;
+}
+.view-container {
+  padding-left: 100px;
+}
+.view-container .row {
+  margin: 0;
+}
+.view-container #account-choice {
+  padding: 10px;
+}
 @media (max-width: 480px) {
   body {
     padding: 0 20px;
