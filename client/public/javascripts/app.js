@@ -770,12 +770,31 @@ module.exports = Router = (function(_super) {
   }
 
   Router.prototype.routes = {
-    '': 'parametres'
+    '': 'monthly_analysis',
+    'analyse-mensuelle': 'monthly_analysis',
+    'analyse-mensuelle-comparee': 'compared_analysis',
+    'achats-en-ligne': 'online_shopping',
+    'alertes': 'alerts'
   };
 
-  Router.prototype.parametres = function() {
+  Router.prototype.monthly_analysis = function() {
     var _ref1;
-    return (_ref1 = window.views.configurationView) != null ? _ref1.render() : void 0;
+    return (_ref1 = window.views.monthlyAnalysisView) != null ? _ref1.render() : void 0;
+  };
+
+  Router.prototype.compared_analysis = function() {
+    var _ref1;
+    return (_ref1 = window.views.comparedAnalysisView) != null ? _ref1.render() : void 0;
+  };
+
+  Router.prototype.online_shopping = function() {
+    var _ref1;
+    return (_ref1 = window.views.onlineShoppingView) != null ? _ref1.render() : void 0;
+  };
+
+  Router.prototype.alerts = function() {
+    var _ref1;
+    return (_ref1 = window.views.alertsView) != null ? _ref1.render() : void 0;
   };
 
   return Router;
@@ -784,8 +803,44 @@ module.exports = Router = (function(_super) {
 
 });
 
+;require.register("views/alerts", function(exports, require, module) {
+var AlertsView, BaseView, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+module.exports = AlertsView = (function(_super) {
+  __extends(AlertsView, _super);
+
+  function AlertsView() {
+    _ref = AlertsView.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  AlertsView.prototype.template = require('./templates/alerts');
+
+  AlertsView.prototype.el = 'div#content';
+
+  AlertsView.prototype.subViews = [];
+
+  AlertsView.prototype.initialize = function() {};
+
+  AlertsView.prototype.render = function() {
+    var view;
+    AlertsView.__super__.render.call(this);
+    view = this;
+    return this;
+  };
+
+  return AlertsView;
+
+})(BaseView);
+
+});
+
 ;require.register("views/app", function(exports, require, module) {
-var AppView, BaseView, ConfigurationView, NewBankView, _ref,
+var AlertsView, AppView, BaseView, ComparedAnalysisView, ConfigurationView, MenuView, MonthlyAnalysisView, NewBankView, OnlineShoppingView, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -793,7 +848,17 @@ BaseView = require('../lib/base_view');
 
 ConfigurationView = require('views/configuration');
 
+MonthlyAnalysisView = require('views/monthly_analysis');
+
+ComparedAnalysisView = require('views/compared_analysis');
+
+OnlineShoppingView = require('views/online_shopping');
+
+AlertsView = require('views/alerts');
+
 NewBankView = require('views/new_bank');
+
+MenuView = require('views/menu');
 
 module.exports = AppView = (function(_super) {
   __extends(AppView, _super);
@@ -818,10 +883,27 @@ module.exports = AppView = (function(_super) {
             if (!this.newbankView) {
               this.newbankView = new NewBankView();
             }
+            if (!this.menuView) {
+              this.menuView = new MenuView();
+            }
             if (!window.views.configurationView) {
               window.views.configurationView = new ConfigurationView();
             }
+            if (!window.views.monthlyAnalysisView) {
+              window.views.monthlyAnalysisView = new MonthlyAnalysisView();
+            }
+            if (!window.views.comparedAnalysisView) {
+              window.views.comparedAnalysisView = new ComparedAnalysisView();
+            }
+            if (!window.views.onlineShoppingView) {
+              window.views.onlineShoppingView = new OnlineShoppingView();
+            }
+            if (!window.views.alertsView) {
+              window.views.alertsView = new AlertsView();
+            }
             this.newbankView.render();
+            this.menuView.render();
+            window.views.configurationView.render();
             return Backbone.history.start();
           },
           error: function() {
@@ -1070,6 +1152,42 @@ module.exports = BankTitleView = (function(_super) {
 
 });
 
+;require.register("views/compared_analysis", function(exports, require, module) {
+var BaseView, ComparedAnalysisView, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+module.exports = ComparedAnalysisView = (function(_super) {
+  __extends(ComparedAnalysisView, _super);
+
+  function ComparedAnalysisView() {
+    _ref = ComparedAnalysisView.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  ComparedAnalysisView.prototype.template = require('./templates/compared_analysis');
+
+  ComparedAnalysisView.prototype.el = 'div#content';
+
+  ComparedAnalysisView.prototype.subViews = [];
+
+  ComparedAnalysisView.prototype.initialize = function() {};
+
+  ComparedAnalysisView.prototype.render = function() {
+    var view;
+    ComparedAnalysisView.__super__.render.call(this);
+    view = this;
+    return this;
+  };
+
+  return ComparedAnalysisView;
+
+})(BaseView);
+
+});
+
 ;require.register("views/configuration", function(exports, require, module) {
 var BaseView, ConfigurationBankView, ConfigurationView, _ref,
   __hasProp = {}.hasOwnProperty,
@@ -1089,7 +1207,7 @@ module.exports = ConfigurationView = (function(_super) {
 
   ConfigurationView.prototype.template = require('./templates/configuration');
 
-  ConfigurationView.prototype.el = 'div#content';
+  ConfigurationView.prototype.el = '#configuration';
 
   ConfigurationView.prototype.elAccounts = 'ul#account-choice';
 
@@ -1232,6 +1350,93 @@ module.exports = ConfigurationBankView = (function(_super) {
 
 });
 
+;require.register("views/menu", function(exports, require, module) {
+var BaseView, MenuView, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+module.exports = MenuView = (function(_super) {
+  __extends(MenuView, _super);
+
+  function MenuView() {
+    _ref = MenuView.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  MenuView.prototype.template = require('./templates/menu');
+
+  MenuView.prototype.el = 'div#mainnav';
+
+  MenuView.prototype.events = {
+    'click .menu-item': 'activateMenuItem'
+  };
+
+  MenuView.prototype.subViews = [];
+
+  MenuView.prototype.initialize = function() {};
+
+  MenuView.prototype.render = function() {
+    var view;
+    MenuView.__super__.render.call(this);
+    view = this;
+    return this;
+  };
+
+  MenuView.prototype.activateMenuItem = function(event) {
+    var jqMenuItem;
+    jqMenuItem = $(event.currentTarget);
+    if (!jqMenuItem.hasClass('active')) {
+      $('.menu-item').removeClass('active');
+      $('.current-arrow').remove();
+      jqMenuItem.addClass('active');
+      return jqMenuItem.prepend($('<span class="current-arrow"></span>'));
+    }
+  };
+
+  return MenuView;
+
+})(BaseView);
+
+});
+
+;require.register("views/monthly_analysis", function(exports, require, module) {
+var BaseView, MonthlyAnalysisView, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+module.exports = MonthlyAnalysisView = (function(_super) {
+  __extends(MonthlyAnalysisView, _super);
+
+  function MonthlyAnalysisView() {
+    _ref = MonthlyAnalysisView.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  MonthlyAnalysisView.prototype.template = require('./templates/monthly_analysis');
+
+  MonthlyAnalysisView.prototype.el = 'div#content';
+
+  MonthlyAnalysisView.prototype.subViews = [];
+
+  MonthlyAnalysisView.prototype.initialize = function() {};
+
+  MonthlyAnalysisView.prototype.render = function() {
+    var view;
+    MonthlyAnalysisView.__super__.render.call(this);
+    view = this;
+    return this;
+  };
+
+  return MonthlyAnalysisView;
+
+})(BaseView);
+
+});
+
 ;require.register("views/new_bank", function(exports, require, module) {
 var BankAccessModel, BaseView, NewBankView, _ref,
   __hasProp = {}.hasOwnProperty,
@@ -1323,6 +1528,54 @@ module.exports = NewBankView = (function(_super) {
 
 });
 
+;require.register("views/online_shopping", function(exports, require, module) {
+var BaseView, OnlineShoppingView, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+module.exports = OnlineShoppingView = (function(_super) {
+  __extends(OnlineShoppingView, _super);
+
+  function OnlineShoppingView() {
+    _ref = OnlineShoppingView.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  OnlineShoppingView.prototype.template = require('./templates/online_shopping');
+
+  OnlineShoppingView.prototype.el = 'div#content';
+
+  OnlineShoppingView.prototype.subViews = [];
+
+  OnlineShoppingView.prototype.initialize = function() {};
+
+  OnlineShoppingView.prototype.render = function() {
+    var view;
+    OnlineShoppingView.__super__.render.call(this);
+    view = this;
+    return this;
+  };
+
+  return OnlineShoppingView;
+
+})(BaseView);
+
+});
+
+;require.register("views/templates/alerts", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<div class="content-box"><h1>Alertes</h1><div></div></div>');
+}
+return buf.join("");
+};
+});
+
 ;require.register("views/templates/app", function(exports, require, module) {
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
 attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
@@ -1335,13 +1588,25 @@ return buf.join("");
 };
 });
 
+;require.register("views/templates/compared_analysis", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<div class="content-box"><h1>Analyse comparée</h1><div></div></div>');
+}
+return buf.join("");
+};
+});
+
 ;require.register("views/templates/configuration", function(exports, require, module) {
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
 attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div class="content-box"><h1>Paramètres</h1><div><ul id="account-choice"></ul></div></div>');
+buf.push('<div id="modalConfiguration" tabindex="-1" role="dialog" aria-labelledby="showModalLabel" aria-hidden="true" style="display: none;" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" data-dismiss="modal" aria-hidden="true" data-original-title="" class="close">×</button><h4 class="modal-title">Paramètres</h4></div><div class="modal-body"><ul id="account-choice"></ul></div><div class="modal-footer"><button type="button" data-dismiss="modal" data-original-title="" class="btn btn-default">Close</button><button type="button" data-original-title="" class="btn btn-primary">Save changes</button></div></div></div></div>');
 }
 return buf.join("");
 };
@@ -1379,6 +1644,42 @@ var buf = [];
 with (locals || {}) {
 var interp;
 buf.push('<span class="bank-title-loading"><img src="./loader.gif"/></span><span class="bank-title">' + escape((interp = model.get('name')) == null ? '' : interp) + '</span>');
+}
+return buf.join("");
+};
+});
+
+;require.register("views/templates/menu", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<ul><li class="menu-item active"><span class="current-arrow"></span><a href="#analyse-mensuelle"><div class="icon"><span aria-hidden="true" data-icon="" class="fs1"></span></div>Analyse mensuelle</a></li><li class="menu-item"><a href="#analyse-mensuelle-comparee"><div class="icon"><span aria-hidden="true" data-icon="" class="fs1"></span><span aria-hidden="true" data-icon="" class="fs1"></span></div>Analyse mensuelle comparée</a></li><li class="menu-item"><a href="#achats-en-ligne"><div class="icon"><span aria-hidden="true" data-icon="" class="fs1"></span></div>Achats en ligne</a></li><li class="menu-item"><a href="#alertes"><div class="icon"><span aria-hidden="true" data-icon="" class="fs1"></span></div>Alertes</a></li></ul>');
+}
+return buf.join("");
+};
+});
+
+;require.register("views/templates/monthly_analysis", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<div class="content-box"><h1>Analyse mensuelle</h1><div></div></div>');
+}
+return buf.join("");
+};
+});
+
+;require.register("views/templates/online_shopping", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<div class="content-box"><h1>Achats en ligne</h1><div></div></div>');
 }
 return buf.join("");
 };

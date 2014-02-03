@@ -40,10 +40,10 @@ module.exports = class BankSubTitleView extends BaseView
         @
 
     formatDate: (date) ->
-        day = ('0' + date.getDate()).slice(-2)
-        month = ('0' + (date.getMonth()+1)).slice(-2)
+        day = ('0' + date.getDate()).slice -2
+        month = ('0' + (date.getMonth() + 1)).slice -2
         year = date.getFullYear()
-        return day + '/' + month + '/' + year
+        return (day + '/' + month + '/' + year)
 
     setupLastYearAmountsFlot: (amounts) ->
         formattedAmounts = []
@@ -96,8 +96,8 @@ module.exports = class BankSubTitleView extends BaseView
             # console.log 'max = ' + maxAmount
             # console.log 'min = ' + minAmount
             # console.log '--------------'
-        $("#max-amount").text maxAmount + ' €'
-        $("#min-amount").text minAmount + ' €'
+        $("#max-amount").text (maxAmount + ' €')
+        $("#min-amount").text (minAmount + ' €')
         minAmount = minAmount - 500
         maxAmount =  maxAmount + 500
 
@@ -115,7 +115,6 @@ module.exports = class BankSubTitleView extends BaseView
                 borderWidth: 1
                 tickColor: $border_color
                 borderColor: '#eeeeee'
-
             colors: [window.rbiColors.blue]
             shadowSize: 0
             yaxis:
@@ -127,14 +126,5 @@ module.exports = class BankSubTitleView extends BaseView
                 monthNames: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
             tooltip: true
             tooltipOpts:
-                content: '%y.2  &euro;<br /> %x' #       string or function      //"%s | X: %x | Y: %y"
+                content: '%y.2  &euro;<br /> %x'
                 xDateFormat: '%d/%m/%y'
-            #     yDateFormat:    string                  //null
-            #     monthNames:     string                  // null
-            #     dayNames:       string                  // null
-            #     shifts: {
-            #         x:          int                     //10
-            #         y:          int                     //20
-            #     },
-            #     defaultTheme:   boolean                 //true
-            #     onHover:        function(flotItem, $tooltipEl)

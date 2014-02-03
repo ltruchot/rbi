@@ -103,41 +103,7 @@
 
       <!-- Mian navigation start -->
       <div id="mainnav">
-        <ul>
-          <li class="active">
-            <span class="current-arrow">&nbsp;</span>
-            <a href="index.html">
-              <div class="icon">
-                <span class="fs1" aria-hidden="true" data-icon=""></span>
-              </div>
-              Analyse mensuelle
-            </a>
-          </li>
-          <li>
-            <a href="ui-elements.html">
-              <div class="icon">
-                <span class="fs1" aria-hidden="true" data-icon=""></span><span class="fs1" aria-hidden="true" data-icon=""></span>
-              </div>
-              Analyse mensuelle comparée
-            </a>
-          </li>
-          <li>
-            <a href="forms.html">
-              <div class="icon">
-                <span class="fs1" aria-hidden="true" data-icon=""></span>
-              </div>
-              Achats en ligne
-            </a>
-          </li>
-          <li>
-            <a href="charts.html">
-              <div class="icon">
-                <span class="fs1" aria-hidden="true" data-icon=""></span>
-              </div>
-              Alertes
-            </a>
-          </li>
-        </ul>
+
       </div>
       <!-- Mian navigation end -->
 
@@ -189,8 +155,13 @@
     <script src="js/custom-index.js"></script>
     <script src="js/custom.js"></script>
     -->
-
-
+    <div data-toggle="modal" href="#modalConfiguration" class="configuration-btn-container" id="configuration-btn-container">
+      <div class="btn btn-app btn-xs configuration-btn" id="configuration-btn">
+        <i class="icon-cog bigger-150"></i>
+      </div>
+    </div>
+    <div id="configuration">
+    </div>
 
     <script src="javascripts/vendor.js"></script>
     <script src="javascripts/app.js" onload="require('initialize');"></script>

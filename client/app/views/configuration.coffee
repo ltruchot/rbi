@@ -6,7 +6,7 @@ module.exports = class ConfigurationView extends BaseView
 
     template: require('./templates/configuration')
 
-    el: 'div#content'
+    el: '#configuration'
     elAccounts: 'ul#account-choice'
 
     accounts: 0

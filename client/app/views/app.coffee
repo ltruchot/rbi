@@ -2,8 +2,12 @@ BaseView = require '../lib/base_view'
 
 #AccountsView = require 'views/accounts'
 ConfigurationView = require 'views/configuration'
+MonthlyAnalysisView = require 'views/monthly_analysis'
+ComparedAnalysisView = require 'views/compared_analysis'
+OnlineShoppingView = require 'views/online_shopping'
+AlertsView = require 'views/alerts'
 NewBankView = require 'views/new_bank'
-
+MenuView = require 'views/menu'
 
 
 module.exports = class AppView extends BaseView
@@ -24,12 +28,26 @@ module.exports = class AppView extends BaseView
                     success: ->
                         if not @newbankView
                             @newbankView = new NewBankView()
+                        if not @menuView
+                            @menuView =  new MenuView()
                         if not window.views.configurationView
                             window.views.configurationView = new ConfigurationView()
+                        if not window.views.monthlyAnalysisView
+                            window.views.monthlyAnalysisView = new MonthlyAnalysisView()
+                        if not window.views.comparedAnalysisView
+                            window.views.comparedAnalysisView = new ComparedAnalysisView()
+                        if not window.views.onlineShoppingView
+                            window.views.onlineShoppingView = new OnlineShoppingView()
+                        if not window.views.alertsView
+                            window.views.alertsView =  new AlertsView()
+
                         # if not window.views.accountsView
                         #     window.views.accountsView = new AccountsView()
 
                         @newbankView.render()
+                        @menuView.render()
+                        window.views.configurationView.render()
+
 
                         # start routing
                         Backbone.history.start()

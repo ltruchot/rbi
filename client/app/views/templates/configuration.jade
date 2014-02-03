@@ -1,4 +1,12 @@
-.content-box
-  h1 Paramètres
-  div
-    ul#account-choice
+.modal.fade#modalConfiguration(tabindex="-1", role="dialog", aria-labelledby="showModalLabel", aria-hidden="true", style="display: none;")
+  .modal-dialog
+    .modal-content
+      .modal-header
+        button.close(type="button", data-dismiss="modal", aria-hidden="true", data-original-title="")×
+        h4.modal-title Paramètres
+
+      .modal-body
+        ul#account-choice
+      .modal-footer
+        button.btn.btn-default(type="button", data-dismiss="modal", data-original-title="") Close
+        button.btn.btn-primary(type="button", data-original-title="") Save changes
