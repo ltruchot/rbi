@@ -920,6 +920,240 @@ module.exports = AppView = (function(_super) {
 
 });
 
+;require.register("views/bank_statement", function(exports, require, module) {
+var BalanceOperationView, BankOperationsCollection, BankStatementView, BaseView,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+BankOperationsCollection = require("../collections/bank_operations");
+
+BalanceOperationView = require("./bank_statement_entry");
+
+module.exports = BankStatementView = (function(_super) {
+  var subViewLastDate;
+
+  __extends(BankStatementView, _super);
+
+  BankStatementView.prototype.templateHeader = require('./templates/bank_statement_header');
+
+  BankStatementView.prototype.events = {
+    'click a.recheck-button': "checkAccount",
+    'click th.sort-date': "sortByDate",
+    'click th.sort-title': "sortByTitle",
+    'click th.sort-amount': "sortByAmount"
+  };
+
+  BankStatementView.prototype.inUse = false;
+
+  BankStatementView.prototype.subViews = [];
+
+  subViewLastDate = '';
+
+  function BankStatementView(el) {
+    this.el = el;
+    BankStatementView.__super__.constructor.call(this);
+  }
+
+  BankStatementView.prototype.setIntervalWithContext = function(code, delay, context) {
+    return setInterval(function() {
+      return code.call(context);
+    }, delay);
+  };
+
+  BankStatementView.prototype.initialize = function() {
+    this.listenTo(window.activeObjects, 'changeActiveAccount', this.reload);
+    this.listenTo(window.collections.operations, 'sort', this.addAll);
+    this.setIntervalWithContext(this.updateTimer, 1000, this);
+    return window.collections.operations.setComparator("date");
+  };
+
+  BankStatementView.prototype.sortByDate = function(event) {
+    return this.sortBy("date");
+  };
+
+  BankStatementView.prototype.sortByTitle = function(event) {
+    return this.sortBy("title");
+  };
+
+  BankStatementView.prototype.sortByAmount = function(event) {
+    return this.sortBy("amount");
+  };
+
+  BankStatementView.prototype.sortBy = function(order) {
+    var operations;
+    operations = window.collections.operations;
+    operations.toggleSort(order);
+    this.$("th.sorting_asc").removeClass("sorting_asc");
+    this.$("th.sorting_desc").removeClass("sorting_desc");
+    this.$("th.sort-" + order).addClass("sorting_" + operations.order);
+    operations.setComparator(order);
+    return operations.sort();
+  };
+
+  BankStatementView.prototype.checkAccount = function(event) {
+    var button, url, view;
+    event.preventDefault();
+    button = $(event.target);
+    view = this;
+    if (!this.inUse) {
+      console.log("Checking account ...");
+      view.inUse = true;
+      button.html("checking...");
+      return $.ajax({
+        url: url = "bankaccounts/retrieveOperations/" + this.model.get("id"),
+        type: "GET",
+        success: function() {
+          var _ref, _ref1, _ref2;
+          if ((_ref = view.model) != null) {
+            _ref.url = "bankaccounts/" + ((_ref1 = view.model) != null ? _ref1.get("id") : void 0);
+          }
+          return (_ref2 = view.model) != null ? _ref2.fetch({
+            success: function() {
+              console.log("... checked");
+              button.html("checked");
+              view.inUse = false;
+              return view.reload(view.model);
+            },
+            error: function() {
+              console.log("... there was an error fetching");
+              button.html("error...");
+              return view.inUse = false;
+            }
+          }) : void 0;
+        },
+        error: function(err) {
+          console.log("... there was an error checking");
+          console.log(err);
+          button.html("error...");
+          return view.inUse = false;
+        }
+      });
+    }
+  };
+
+  BankStatementView.prototype.updateTimer = function() {
+    var model;
+    if (this.model != null) {
+      return model = this.model;
+    }
+  };
+
+  BankStatementView.prototype.render = function() {
+    this.$el.html(require("./templates/bank_statement_empty"));
+    return this;
+  };
+
+  BankStatementView.prototype.reload = function(account) {
+    var view;
+    view = this;
+    this.model = account;
+    this.$el.html(this.templateHeader({
+      model: account
+    }));
+    window.collections.operations.reset();
+    window.collections.operations.setAccount(account);
+    window.collections.operations.fetch({
+      success: function(operations) {
+        return view.addAll();
+      },
+      error: function() {
+        return console.log("error fetching operations");
+      }
+    });
+    return this;
+  };
+
+  BankStatementView.prototype.addAll = function() {
+    var operation, subView, subViewDate, view, _i, _j, _len, _len1, _ref, _ref1, _results;
+    this.$("#table-operations").html("");
+    this.$(".loading").remove();
+    _ref = this.subViews;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      view = _ref[_i];
+      view.destroy();
+    }
+    this.subViews = [];
+    _ref1 = window.collections.operations.models;
+    _results = [];
+    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+      operation = _ref1[_j];
+      subView = new BalanceOperationView(operation, this.model);
+      subViewDate = subView.render().model.get('date');
+      if (this.subViewLastDate !== subViewDate) {
+        this.subViewLastDate = subViewDate;
+        this.$("#table-operations").append($('<tr class="special"><td colspan="4">' + this.subViewLastDate + '</td></tr>'));
+      }
+      this.$("#table-operations").append(subView.render().el);
+      _results.push(this.subViews.push(subView));
+    }
+    return _results;
+  };
+
+  BankStatementView.prototype.destroy = function() {
+    var view, _i, _len, _ref, _ref1;
+    if ((_ref = this.viewTitle) != null) {
+      _ref.destroy();
+    }
+    _ref1 = this.subViews;
+    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+      view = _ref1[_i];
+      view.destroy();
+    }
+    return BankStatementView.__super__.destroy.call(this);
+  };
+
+  return BankStatementView;
+
+})(BaseView);
+
+});
+
+;require.register("views/bank_statement_entry", function(exports, require, module) {
+var BaseView, EntryView,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+module.exports = EntryView = (function(_super) {
+  __extends(EntryView, _super);
+
+  EntryView.prototype.template = require('./templates/entry_element');
+
+  EntryView.prototype.tagName = 'tr';
+
+  function EntryView(model, account, showAccountNum) {
+    this.model = model;
+    this.account = account;
+    this.showAccountNum = showAccountNum != null ? showAccountNum : false;
+    EntryView.__super__.constructor.call(this);
+  }
+
+  EntryView.prototype.render = function() {
+    var hint;
+    if (this.model.get("amount") > 0) {
+      this.$el.addClass("success");
+    }
+    this.model.account = this.account;
+    this.model.formattedDate = this.model.get('date');
+    if (this.showAccountNum) {
+      hint = ("" + (this.model.account.get('title')) + ", ") + ("n°" + (this.model.account.get('accountNumber')));
+      this.model.hint = ("" + (this.model.account.get('title')) + ", ") + ("n°" + (this.model.account.get('accountNumber')));
+    } else {
+      this.model.hint = "" + (this.model.get('raw'));
+    }
+    EntryView.__super__.render.call(this);
+    return this;
+  };
+
+  return EntryView;
+
+})(BaseView);
+
+});
+
 ;require.register("views/bank_subtitle", function(exports, require, module) {
 var BankSubTitleView, BaseView,
   __hasProp = {}.hasOwnProperty,
@@ -1402,11 +1636,13 @@ module.exports = MenuView = (function(_super) {
 });
 
 ;require.register("views/monthly_analysis", function(exports, require, module) {
-var BaseView, MonthlyAnalysisView, _ref,
+var BankStatementView, BaseView, MonthlyAnalysisView, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
+
+BankStatementView = require("./bank_statement");
 
 module.exports = MonthlyAnalysisView = (function(_super) {
   __extends(MonthlyAnalysisView, _super);
@@ -1418,7 +1654,7 @@ module.exports = MonthlyAnalysisView = (function(_super) {
 
   MonthlyAnalysisView.prototype.template = require('./templates/monthly_analysis');
 
-  MonthlyAnalysisView.prototype.el = 'div#content';
+  MonthlyAnalysisView.prototype.el = 'div#interface-box';
 
   MonthlyAnalysisView.prototype.subViews = [];
 
@@ -1426,8 +1662,12 @@ module.exports = MonthlyAnalysisView = (function(_super) {
 
   MonthlyAnalysisView.prototype.render = function() {
     var view;
+    console.log('render statement');
     MonthlyAnalysisView.__super__.render.call(this);
     view = this;
+    this.bankStatementView = new BankStatementView($('#context-box'));
+    this.bankStatementView.render();
+    console.log(this.bankStatementView);
     return this;
   };
 
@@ -1582,7 +1822,30 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<p>Contenu</p>');
+}
+return buf.join("");
+};
+});
+
+;require.register("views/templates/bank_statement_empty", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<br/><br/><p class="loading"></p>');
+}
+return buf.join("");
+};
+});
+
+;require.register("views/templates/bank_statement_header", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<h2>Relevé de compte</h2><h3>' + escape((interp = model.get('title')) == null ? '' : interp) + ' n°' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</h3><div class="text-center loading loader-operations"><img src="./loader_big_blue.gif"/></div><table class="table table-bordered table-condensed table-striped"><tbody id="table-operations"></tbody></table>');
 }
 return buf.join("");
 };
@@ -1594,7 +1857,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div class="content-box"><h1>Analyse comparée</h1><div></div></div>');
+buf.push('<h1>Analyse comparée</h1><div></div>');
 }
 return buf.join("");
 };
@@ -1649,13 +1912,25 @@ return buf.join("");
 };
 });
 
+;require.register("views/templates/entry_element", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<td class="operation-title">' + escape((interp = model.get('title')) == null ? '' : interp) + '</td><td class="operation-amount text-right">' + escape((interp = Number(model.get('amount')).money()) == null ? '' : interp) + '</td><td><span aria-hidden="true" data-icon="&#57602;" class="fs1 orange-text"></span></td><td><span aria-hidden="true" data-icon="&#57481;" class="fs1"></span></td>');
+}
+return buf.join("");
+};
+});
+
 ;require.register("views/templates/menu", function(exports, require, module) {
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
 attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<ul><li class="menu-item active"><span class="current-arrow"></span><a href="#analyse-mensuelle"><div class="icon"><span aria-hidden="true" data-icon="" class="fs1"></span></div>Analyse mensuelle</a></li><li class="menu-item"><a href="#analyse-mensuelle-comparee"><div class="icon"><span aria-hidden="true" data-icon="" class="fs1"></span><span aria-hidden="true" data-icon="" class="fs1"></span></div>Analyse mensuelle comparée</a></li><li class="menu-item"><a href="#achats-en-ligne"><div class="icon"><span aria-hidden="true" data-icon="" class="fs1"></span></div>Achats en ligne</a></li><li class="menu-item"><a href="#alertes"><div class="icon"><span aria-hidden="true" data-icon="" class="fs1"></span></div>Alertes</a></li></ul>');
+buf.push('<ul><li class="menu-item active"><span class="current-arrow"></span><a href="#analyse-mensuelle"><div class="icon"><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span></div>Analyse mensuelle</a></li><li class="menu-item"><a href="#analyse-mensuelle-comparee"><div class="icon"><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span></div>Analyse mensuelle comparée</a></li><li class="menu-item"><a href="#achats-en-ligne"><div class="icon"><span aria-hidden="true" data-icon="&#57398;" class="fs1"></span></div>Achats en ligne</a></li><li class="menu-item"><a href="#alertes"><div class="icon"><span aria-hidden="true" data-icon="&#57803;" class="fs1"></span></div>Alertes</a></li></ul>');
 }
 return buf.join("");
 };
@@ -1667,7 +1942,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div class="content-box"><h1>Analyse mensuelle</h1><div></div></div>');
+buf.push('<h1>Analyse mensuelle</h1><div></div>');
 }
 return buf.join("");
 };

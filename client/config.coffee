@@ -34,9 +34,11 @@ exports.config =
                     'vendor/styles/normalize.css'
                     'vendor/styles/bootstrap-3.0.3.css'
                     'vendor/styles/bootstrap-editable.css'
+                ]
+                after: [
+                    'vendor/styles/helpers.css'
                     'vendor/styles/main.css'
                 ]
-                after: ['vendor/styles/helpers.css']
 
         templates:
             defaultExtension: 'jade'

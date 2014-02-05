@@ -1,17 +1,24 @@
 BaseView = require '../lib/base_view'
+BankStatementView = require "./bank_statement"
 module.exports = class MonthlyAnalysisView extends BaseView
 
-    template: require('./templates/monthly_analysis')
+  template: require('./templates/monthly_analysis')
 
-    el: 'div#content'
+  el: 'div#interface-box'
 
-    subViews: []
+  subViews: []
 
-    initialize: ->
+  initialize: ->
 
-    render: ->
-        # lay down the template
-        super()
-        view = @
+  render: ->
+    console.log 'render statement'
+    # lay down the template
+    super()
+    view = @
 
-        @
+    @bankStatementView = new BankStatementView $('#context-box')
+    @bankStatementView.render()
+    console.log @bankStatementView
+
+
+    @

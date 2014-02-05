@@ -1,0 +1,10 @@
+td.operation-title
+  | #{model.get('title')}
+  //- .hint--top(data-hint="#{model.hint}")
+  //-     span.infobulle.glyphicon.glyphicon-info-sign
+td.operation-amount.text-right
+  | #{Number(model.get('amount')).money()}
+td
+  span.fs1.orange-text(aria-hidden="true", data-icon="&#57602;")
+td
+  span.fs1(aria-hidden="true", data-icon="&#57481;")
