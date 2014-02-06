@@ -10,12 +10,17 @@ module.exports = class BankSubTitleView extends BaseView
     events:
         "change .accountTitle" : 'chooseAccount'
 
+    formattedAmounts: []
+
     initialize: ->
         @listenTo @model, 'change', @render
         @listenTo window.activeObjects, 'changeActiveAccount', @checkActive
 
     chooseAccount: (event) ->
         window.activeObjects.trigger "changeActiveAccount", @model
+        window.rbiActiveData.bankAccount = @model
+        window.views.monthlyAnalysisView.render()
+        console.log 'amount = ' + @model.get 'amount'
         today = @formatDate(new Date())
         $("#current-amount-date").text today
         $("#account-amount-balance").text $(event.currentTarget).parent().children('input.accountAmount').val()
@@ -46,7 +51,6 @@ module.exports = class BankSubTitleView extends BaseView
         return (day + '/' + month + '/' + year)
 
     setupLastYearAmountsFlot: (amounts) ->
-        formattedAmounts = []
         flotReadyAmounts = []
         daysPerMonth =
             twelve : 365
@@ -58,7 +62,7 @@ module.exports = class BankSubTitleView extends BaseView
         sixMonthAgo = new Date()
         sixMonthAgo = sixMonthAgo.setMonth(sixMonthAgo.getMonth() - 6)
         dayRatio = 4
-        amounts.each (amount) ->
+        amounts.each (amount) =>
             currentDate = new Date()
             currentDate.setHours 12,0,0,0
             amountDate = new Date(amount.get 'date')
@@ -68,7 +72,7 @@ module.exports = class BankSubTitleView extends BaseView
                 currentDate.setDate(currentDate.getDate() - 1)
                 i++
             if i < 364
-                formattedAmounts[currentDate.getTime()] = amount.get 'amount'
+                @formattedAmounts[currentDate.getTime()] = amount.get 'amount'
             if currentDate.getTime() < threeMonthAgo
                 numberOfDays = daysPerMonth.six
             else if currentDate.getTime() < sixMonthAgo
@@ -82,8 +86,8 @@ module.exports = class BankSubTitleView extends BaseView
         i = 0
 
         while i < numberOfDays
-            if formattedAmounts[currentDate.getTime()]
-                lastAmount = parseFloat formattedAmounts[currentDate.getTime()]
+            if @formattedAmounts[currentDate.getTime()]
+                lastAmount = parseFloat @formattedAmounts[currentDate.getTime()]
             flotReadyAmounts.push [currentDate.getTime(), lastAmount]
             currentDate.setDate(currentDate.getDate() - 1)
             if lastAmount < minAmount

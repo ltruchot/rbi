@@ -133,6 +133,7 @@ module.exports = {
     window.views.appView.render();
     window.activeObjects = {};
     _.extend(window.activeObjects, Backbone.Events);
+    window.rbiActiveData = {};
     Router = require('router');
     this.router = new Router();
     if (typeof Object.freeze === 'function') {
@@ -820,7 +821,7 @@ module.exports = AlertsView = (function(_super) {
 
   AlertsView.prototype.template = require('./templates/alerts');
 
-  AlertsView.prototype.el = 'div#content';
+  AlertsView.prototype.el = 'div#interface-box';
 
   AlertsView.prototype.subViews = [];
 
@@ -1083,7 +1084,7 @@ module.exports = BankStatementView = (function(_super) {
       subViewDate = subView.render().model.get('date');
       if (this.subViewLastDate !== subViewDate) {
         this.subViewLastDate = subViewDate;
-        this.$("#table-operations").append($('<tr class="special"><td colspan="4">' + this.subViewLastDate + '</td></tr>'));
+        this.$("#table-operations").append($('<tr class="special"><td colspan="4">' + moment(this.subViewLastDate).format("DD/MM/YYYY" + '</td></tr>')));
       }
       this.$("#table-operations").append(subView.render().el);
       _results.push(this.subViews.push(subView));
@@ -1137,7 +1138,7 @@ module.exports = EntryView = (function(_super) {
       this.$el.addClass("success");
     }
     this.model.account = this.account;
-    this.model.formattedDate = this.model.get('date');
+    this.model.formattedDate = moment(this.model.get('date')).format("DD/MM/YYYY");
     if (this.showAccountNum) {
       hint = ("" + (this.model.account.get('title')) + ", ") + ("n°" + (this.model.account.get('accountNumber')));
       this.model.hint = ("" + (this.model.account.get('title')) + ", ") + ("n°" + (this.model.account.get('accountNumber')));
@@ -1175,6 +1176,8 @@ module.exports = BankSubTitleView = (function(_super) {
     "change .accountTitle": 'chooseAccount'
   };
 
+  BankSubTitleView.prototype.formattedAmounts = [];
+
   BankSubTitleView.prototype.initialize = function() {
     this.listenTo(this.model, 'change', this.render);
     return this.listenTo(window.activeObjects, 'changeActiveAccount', this.checkActive);
@@ -1183,6 +1186,9 @@ module.exports = BankSubTitleView = (function(_super) {
   BankSubTitleView.prototype.chooseAccount = function(event) {
     var today;
     window.activeObjects.trigger("changeActiveAccount", this.model);
+    window.rbiActiveData.bankAccount = this.model;
+    window.views.monthlyAnalysisView.render();
+    console.log('amount = ' + this.model.get('amount'));
     today = this.formatDate(new Date());
     $("#current-amount-date").text(today);
     $("#account-amount-balance").text($(event.currentTarget).parent().children('input.accountAmount').val());
@@ -1223,8 +1229,8 @@ module.exports = BankSubTitleView = (function(_super) {
   };
 
   BankSubTitleView.prototype.setupLastYearAmountsFlot = function(amounts) {
-    var currentDate, dayRatio, daysPerMonth, flotReadyAmounts, formattedAmounts, i, lastAmount, maxAmount, minAmount, numberOfDays, plot, sixMonthAgo, threeMonthAgo;
-    formattedAmounts = [];
+    var currentDate, dayRatio, daysPerMonth, flotReadyAmounts, i, lastAmount, maxAmount, minAmount, numberOfDays, plot, sixMonthAgo, threeMonthAgo,
+      _this = this;
     flotReadyAmounts = [];
     daysPerMonth = {
       twelve: 365,
@@ -1248,7 +1254,7 @@ module.exports = BankSubTitleView = (function(_super) {
         i++;
       }
       if (i < 364) {
-        formattedAmounts[currentDate.getTime()] = amount.get('amount');
+        _this.formattedAmounts[currentDate.getTime()] = amount.get('amount');
       }
       if (currentDate.getTime() < threeMonthAgo) {
         return numberOfDays = daysPerMonth.six;
@@ -1263,8 +1269,8 @@ module.exports = BankSubTitleView = (function(_super) {
     maxAmount = parseFloat(this.model.get('amount'));
     i = 0;
     while (i < numberOfDays) {
-      if (formattedAmounts[currentDate.getTime()]) {
-        lastAmount = parseFloat(formattedAmounts[currentDate.getTime()]);
+      if (this.formattedAmounts[currentDate.getTime()]) {
+        lastAmount = parseFloat(this.formattedAmounts[currentDate.getTime()]);
       }
       flotReadyAmounts.push([currentDate.getTime(), lastAmount]);
       currentDate.setDate(currentDate.getDate() - 1);
@@ -1403,7 +1409,7 @@ module.exports = ComparedAnalysisView = (function(_super) {
 
   ComparedAnalysisView.prototype.template = require('./templates/compared_analysis');
 
-  ComparedAnalysisView.prototype.el = 'div#content';
+  ComparedAnalysisView.prototype.el = 'div#interface-box';
 
   ComparedAnalysisView.prototype.subViews = [];
 
@@ -1658,17 +1664,125 @@ module.exports = MonthlyAnalysisView = (function(_super) {
 
   MonthlyAnalysisView.prototype.subViews = [];
 
-  MonthlyAnalysisView.prototype.initialize = function() {};
+  MonthlyAnalysisView.prototype.currentMonthStart = '';
+
+  MonthlyAnalysisView.prototype.events = {
+    'click .month-switcher': 'switchMonth'
+  };
+
+  MonthlyAnalysisView.prototype.initialize = function() {
+    this.bankStatementView = new BankStatementView($('#context-box'));
+    return this.bankStatementView.render();
+  };
 
   MonthlyAnalysisView.prototype.render = function() {
-    var view;
-    console.log('render statement');
+    var diffAmounts, monthlyAmounts, view;
     MonthlyAnalysisView.__super__.render.call(this);
     view = this;
-    this.bankStatementView = new BankStatementView($('#context-box'));
-    this.bankStatementView.render();
-    console.log(this.bankStatementView);
+    this.currentMonthStart = moment(new Date()).startOf('month');
+    this.$("#current-month").html(this.currentMonthStart.format("MMMM YYYY"));
+    if (window.rbiActiveData.bankAccount != null) {
+      monthlyAmounts = this.getAmountsByMonth(this.currentMonthStart);
+      diffAmounts = monthlyAmounts.next - monthlyAmounts.previous;
+      $("#monthly-amounts").html('solde de début de mois : ' + monthlyAmounts.previous.money() + ' / solde de fin de mois : ' + monthlyAmounts.next.money() + ' (' + diffAmounts + ')');
+    }
+    this.displayPieChart();
     return this;
+  };
+
+  MonthlyAnalysisView.prototype.displayPieChart = function() {
+    var $blue, $border_color, $default_black, $green, $grey, $grid_color, $orange, $red, $teal, $yellow, chart, data, dataTable, options;
+    $border_color = "#efefef";
+    $grid_color = "#ddd";
+    $default_black = "#666";
+    $green = "#8ecf67";
+    $yellow = "#fac567";
+    $orange = "#F08C56";
+    $blue = "#87ceeb";
+    $red = "#f74e4d";
+    $teal = "#28D8CA";
+    $grey = "#999999";
+    dataTable = [['Task', 'Hours per Day'], ['Eat', 4], ['Work', 3], ['Commute', 5], ['Read', 3], ['Sleep', 6], ['Play', 2]];
+    data = google.visualization.arrayToDataTable(dataTable);
+    options = {
+      width: 'auto',
+      height: '160',
+      backgroundColor: 'transparent',
+      colors: [$blue, $teal, $green, $red, $yellow, $orange, $grey],
+      tooltip: {
+        textStyle: {
+          color: '#666666',
+          fontSize: 11
+        },
+        showColorCode: true
+      },
+      legend: {
+        position: 'left',
+        textStyle: {
+          color: 'black',
+          fontSize: 12
+        }
+      },
+      chartArea: {
+        left: 0,
+        top: 10,
+        width: "100%",
+        height: "100%"
+      }
+    };
+    chart = new google.visualization.PieChart(document.getElementById('pie_chart'));
+    return chart.draw(data, options);
+  };
+
+  MonthlyAnalysisView.prototype.switchMonth = function(event) {
+    var diffAmounts, jqSwitcher, monthlyAmounts;
+    jqSwitcher = $(event.currentTarget);
+    if (jqSwitcher.hasClass('previous-month')) {
+      this.currentMonthStart.subtract('months', 1).startOf('month');
+    } else if (jqSwitcher.hasClass('next-month')) {
+      this.currentMonthStart.add('months', 1).startOf('month');
+    }
+    this.$("#current-month").html(this.currentMonthStart.format("MMMM YYYY"));
+    monthlyAmounts = this.getAmountsByMonth(this.currentMonthStart);
+    diffAmounts = monthlyAmounts.next - monthlyAmounts.previous;
+    return $("#monthly-amounts").html('solde de début de mois : ' + monthlyAmounts.previous.money() + ' / solde de fin de mois : ' + monthlyAmounts.next.money() + '(' + diffAmounts + ')');
+  };
+
+  MonthlyAnalysisView.prototype.getAmountsByMonth = function(monthStart) {
+    var amount, currentAmounts, currentDate, monthEnd, monthlyAmounts, nextAmount, nextDate, previousAmount, previousDate, _i, _len;
+    nextAmount = (window.rbiActiveData.bankAccount.get('amount')) || null;
+    nextDate = null;
+    previousAmount = nextAmount;
+    previousDate = null;
+    monthEnd = monthStart.clone().endOf('month');
+    currentAmounts = window.collections.amounts.models;
+    monthlyAmounts = [];
+    if (currentAmounts.length > 0) {
+      for (_i = 0, _len = currentAmounts.length; _i < _len; _i++) {
+        amount = currentAmounts[_i];
+        currentDate = moment(amount.get('date'));
+        if (currentDate > monthEnd && currentDate <= moment()) {
+          if ((nextDate != null) && (currentDate < nextDate)) {
+            nextAmount = amount.get('amount');
+            previousAmount = nextAmount;
+            nextDate = moment(amount.get('date'));
+          } else if (nextDate == null) {
+            nextDate = moment(amount.get('date'));
+          }
+        } else if (currentDate >= monthStart && currentDate <= monthEnd) {
+          if ((previousDate != null) && (currentDate < previousDate)) {
+            previousAmount = amount.get('amount');
+            previousDate = moment(amount.get('date'));
+          } else if (previousDate == null) {
+            previousDate = moment(amount.get('date'));
+          }
+        }
+      }
+    }
+    return monthlyAmounts = {
+      next: parseFloat(nextAmount),
+      previous: parseFloat(previousAmount)
+    };
   };
 
   return MonthlyAnalysisView;
@@ -1785,7 +1899,7 @@ module.exports = OnlineShoppingView = (function(_super) {
 
   OnlineShoppingView.prototype.template = require('./templates/online_shopping');
 
-  OnlineShoppingView.prototype.el = 'div#content';
+  OnlineShoppingView.prototype.el = 'div#interface-box';
 
   OnlineShoppingView.prototype.subViews = [];
 
@@ -1810,7 +1924,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div class="content-box"><h1>Alertes</h1><div></div></div>');
+buf.push('<h1>Alertes</h1><div></div>');
 }
 return buf.join("");
 };
@@ -1942,7 +2056,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1>Analyse mensuelle</h1><div></div>');
+buf.push('<h1><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><div id="monthly-amounts"></div><div id="pie_chart">&nbsp;</div>');
 }
 return buf.join("");
 };
@@ -1954,7 +2068,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div class="content-box"><h1>Achats en ligne</h1><div></div></div>');
+buf.push('<h1>Achats en ligne</h1><div></div>');
 }
 return buf.join("");
 };

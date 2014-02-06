@@ -1,17 +1,17 @@
 BaseView = require '../lib/base_view'
 module.exports = class ComparedAnalysisView extends BaseView
 
-    template: require('./templates/compared_analysis')
+  template: require('./templates/compared_analysis')
 
-    el: 'div#content'
+  el: 'div#interface-box'
 
-    subViews: []
+  subViews: []
 
-    initialize: ->
+  initialize: ->
 
-    render: ->
-        # lay down the template
-        super()
-        view = @
+  render: ->
+      # lay down the template
+      super()
+      view = @
 
-        @
+      @

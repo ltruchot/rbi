@@ -13,7 +13,7 @@ module.exports = class EntryView extends BaseView
         if @model.get("amount") > 0
             @$el.addClass "success"
         @model.account = @account
-        @model.formattedDate = @model.get('date') #moment(@model.get('date')).format "DD/MM/YYYY"
+        @model.formattedDate = moment(@model.get('date')).format "DD/MM/YYYY" #moment(@model.get('date')).format "DD/MM/YYYY"
 
         if @showAccountNum
             hint = "#{@model.account.get('title')}, " + \

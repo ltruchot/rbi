@@ -1,17 +1,17 @@
 BaseView = require '../lib/base_view'
 module.exports = class AlertsView extends BaseView
 
-    template: require('./templates/alerts')
+  template: require('./templates/alerts')
 
-    el: 'div#content'
+  el: 'div#interface-box'
 
-    subViews: []
+  subViews: []
 
-    initialize: ->
+  initialize: ->
 
-    render: ->
-        # lay down the template
-        super()
-        view = @
+  render: ->
+      # lay down the template
+      super()
+      view = @
 
-        @
+      @

@@ -144,7 +144,7 @@ module.exports = class BankStatementView extends BaseView
             subViewDate = subView.render().model.get 'date'
             if @subViewLastDate isnt subViewDate
                 @subViewLastDate = subViewDate
-                @$("#table-operations").append $('<tr class="special"><td colspan="4">' + @subViewLastDate + '</td></tr>')
+                @$("#table-operations").append $('<tr class="special"><td colspan="4">' + moment(@subViewLastDate).format "DD/MM/YYYY" + '</td></tr>')
             @$("#table-operations").append subView.render().el
             @subViews.push subView
 

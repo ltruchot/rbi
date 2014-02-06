@@ -25,6 +25,8 @@ exports.config =
                     'vendor/scripts/async-0.2.10.js'
                     'vendor/scripts/jquery.flot.time-0.8.2.js'
                     'vendor/scripts/jquery.flot.tooltip-0.6.5.js'
+                    'vendor/scripts/moment-with-langs-fr-2.5.1.js'
+                    'vendor/scripts/jsapi.js'
                 ]
 
         stylesheets:
@@ -34,10 +36,10 @@ exports.config =
                     'vendor/styles/normalize.css'
                     'vendor/styles/bootstrap-3.0.3.css'
                     'vendor/styles/bootstrap-editable.css'
+                    'vendor/styles/main.css'
                 ]
                 after: [
                     'vendor/styles/helpers.css'
-                    'vendor/styles/main.css'
                 ]
 
         templates:

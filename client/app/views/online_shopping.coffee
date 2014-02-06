@@ -1,17 +1,17 @@
 BaseView = require '../lib/base_view'
 module.exports = class OnlineShoppingView extends BaseView
 
-    template: require('./templates/online_shopping')
+  template: require('./templates/online_shopping')
 
-    el: 'div#content'
+  el: 'div#interface-box'
 
-    subViews: []
+  subViews: []
 
-    initialize: ->
+  initialize: ->
 
-    render: ->
-        # lay down the template
-        super()
-        view = @
+  render: ->
+      # lay down the template
+      super()
+      view = @
 
-        @
+      @

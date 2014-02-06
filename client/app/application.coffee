@@ -60,6 +60,7 @@ module.exports =
 
         window.activeObjects = {}
         _.extend(window.activeObjects, Backbone.Events);
+        window.rbiActiveData = {}
 
         # Routing management
         Router = require 'router'

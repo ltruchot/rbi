@@ -179,32 +179,9 @@
       var $teal = "#28D8CA";
       var $grey = "#999999";
 
-$(document).ready(function () {
-  pie_chart();
-});
-
-//Animated Pie Charts
-function pie_chart() {
-  $(function () {
-    //create instance
-    $('.chart1').easyPieChart({
-      animate: 2000,
-      barColor: $blue,
-      trackColor: $border_color,
-      scaleColor: $blue,
-      lineWidth: 2,
-    });
-  });
-
-}
-
-//Resize animated charts on window resize
-$(document).ready(function () {
-  $(window).resize(function(){
-    pie_chart();
-  });
-});
-
+    </script>
+    <script type="text/javascript">
+      google.load('visualization', '1.0', { 'packages': ['corechart']});
     </script>
   </body>
 </html>
