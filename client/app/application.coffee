@@ -61,6 +61,9 @@ module.exports =
         window.activeObjects = {}
         _.extend(window.activeObjects, Backbone.Events);
         window.rbiActiveData = {}
+        window.rbiActiveData.currency =
+            name : 'euro'
+            entity : '&euro;'
 
         # Routing management
         Router = require 'router'

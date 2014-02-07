@@ -134,6 +134,10 @@ module.exports = {
     window.activeObjects = {};
     _.extend(window.activeObjects, Backbone.Events);
     window.rbiActiveData = {};
+    window.rbiActiveData.currency = {
+      name: 'euro',
+      entity: '&euro;'
+    };
     Router = require('router');
     this.router = new Router();
     if (typeof Object.freeze === 'function') {
@@ -1671,23 +1675,33 @@ module.exports = MonthlyAnalysisView = (function(_super) {
   };
 
   MonthlyAnalysisView.prototype.initialize = function() {
-    this.bankStatementView = new BankStatementView($('#context-box'));
-    return this.bankStatementView.render();
+    return this.bankStatementView = new BankStatementView($('#context-box'));
   };
 
   MonthlyAnalysisView.prototype.render = function() {
-    var diffAmounts, monthlyAmounts, view;
+    var view;
     MonthlyAnalysisView.__super__.render.call(this);
+    this.switchMonth();
     view = this;
-    this.currentMonthStart = moment(new Date()).startOf('month');
-    this.$("#current-month").html(this.currentMonthStart.format("MMMM YYYY"));
-    if (window.rbiActiveData.bankAccount != null) {
-      monthlyAmounts = this.getAmountsByMonth(this.currentMonthStart);
-      diffAmounts = monthlyAmounts.next - monthlyAmounts.previous;
-      $("#monthly-amounts").html('solde de début de mois : ' + monthlyAmounts.previous.money() + ' / solde de fin de mois : ' + monthlyAmounts.next.money() + ' (' + diffAmounts + ')');
-    }
-    this.displayPieChart();
     return this;
+  };
+
+  MonthlyAnalysisView.prototype.displayMonthlyAmounts = function(previous, next) {
+    var currency, differential, iconEvolution, sign;
+    currency = window.rbiActiveData.currency.entity;
+    differential = next - previous;
+    sign = '';
+    $("#amount-month-start").html(previous.money() + currency);
+    $("#amount-month-end").html(next.money() + currency);
+    $("#amount-month-differential").empty();
+    if ((!isNaN(differential)) && differential !== 0) {
+      if (differential > 0) {
+        sign = '+';
+      }
+      iconEvolution = $('<span class="fs1 plain-icon-blue" aria-hidden="true" data-icon="&#57641;"></span>');
+      $("#amount-month-differential").append(iconEvolution);
+      return $("#amount-month-differential").append(sign + differential.money() + currency);
+    }
   };
 
   MonthlyAnalysisView.prototype.displayPieChart = function() {
@@ -1735,17 +1749,24 @@ module.exports = MonthlyAnalysisView = (function(_super) {
   };
 
   MonthlyAnalysisView.prototype.switchMonth = function(event) {
-    var diffAmounts, jqSwitcher, monthlyAmounts;
-    jqSwitcher = $(event.currentTarget);
-    if (jqSwitcher.hasClass('previous-month')) {
-      this.currentMonthStart.subtract('months', 1).startOf('month');
-    } else if (jqSwitcher.hasClass('next-month')) {
-      this.currentMonthStart.add('months', 1).startOf('month');
+    var jqSwitcher, monthlyAmounts;
+    if ((event != null) && (event.currentTarget != null)) {
+      jqSwitcher = $(event.currentTarget);
+      if (jqSwitcher.hasClass('previous-month')) {
+        this.currentMonthStart.subtract('months', 1).startOf('month');
+      } else if (jqSwitcher.hasClass('next-month')) {
+        this.currentMonthStart.add('months', 1).startOf('month');
+      }
+    } else {
+      this.currentMonthStart = moment(new Date()).startOf('month');
     }
     this.$("#current-month").html(this.currentMonthStart.format("MMMM YYYY"));
-    monthlyAmounts = this.getAmountsByMonth(this.currentMonthStart);
-    diffAmounts = monthlyAmounts.next - monthlyAmounts.previous;
-    return $("#monthly-amounts").html('solde de début de mois : ' + monthlyAmounts.previous.money() + ' / solde de fin de mois : ' + monthlyAmounts.next.money() + '(' + diffAmounts + ')');
+    if (window.rbiActiveData.bankAccount != null) {
+      monthlyAmounts = this.getAmountsByMonth(this.currentMonthStart);
+      this.displayMonthlyAmounts(monthlyAmounts.previous, monthlyAmounts.next);
+      this.bankStatementView.reload(window.rbiActiveData.bankAccount);
+      return this.displayPieChart();
+    }
   };
 
   MonthlyAnalysisView.prototype.getAmountsByMonth = function(monthStart) {
@@ -1754,10 +1775,10 @@ module.exports = MonthlyAnalysisView = (function(_super) {
     nextDate = null;
     previousAmount = nextAmount;
     previousDate = null;
-    monthEnd = monthStart.clone().endOf('month');
+    monthEnd = moment(monthStart).endOf('month');
     currentAmounts = window.collections.amounts.models;
     monthlyAmounts = [];
-    if (currentAmounts.length > 0) {
+    if ((currentAmounts != null) && currentAmounts.length > 0) {
       for (_i = 0, _len = currentAmounts.length; _i < _len; _i++) {
         amount = currentAmounts[_i];
         currentDate = moment(amount.get('date'));
@@ -2056,7 +2077,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><div id="monthly-amounts"></div><div id="pie_chart">&nbsp;</div>');
+buf.push('<h1 class="col-md-12"><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><table id="monthly-report" class="col-md-12"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2">4 buttons</td></tr><tr><td colspan="2"><div id="pie_chart">&nbsp;</div></td></tr></table>');
 }
 return buf.join("");
 };

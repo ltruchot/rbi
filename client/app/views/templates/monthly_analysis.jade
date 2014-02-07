@@ -1,7 +1,23 @@
-h1
+h1.col-md-12
   span.month-switcher.previous-month.pull-left.fs1(aria-hidden="true", data-icon="&#57613;")
   span#current-month Analyse mensuelle
   span.month-switcher.next-month.pull-right.fs1(aria-hidden="true", data-icon="&#57614;")
-div#monthly-amounts
-
-div#pie_chart &nbsp;
+table#monthly-report.col-md-12
+  tr
+    td.amount-month
+      div
+        |solde de début de mois
+        hr
+        span#amount-month-start.amount-number
+    td.amount-month
+      div
+        |solde de fin de mois
+        hr
+        span#amount-month-end.amount-number
+        br
+        span#amount-month-differential.blue-text.amount-number-diff
+  tr
+    td(colspan="2") 4 buttons
+  tr
+    td(colspan="2")
+      div#pie_chart &nbsp;
