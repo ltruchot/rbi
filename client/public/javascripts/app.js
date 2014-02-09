@@ -937,7 +937,7 @@ BankOperationsCollection = require("../collections/bank_operations");
 BalanceOperationView = require("./bank_statement_entry");
 
 module.exports = BankStatementView = (function(_super) {
-  var subViewLastDate;
+  var params, subViewLastDate;
 
   __extends(BankStatementView, _super);
 
@@ -947,7 +947,8 @@ module.exports = BankStatementView = (function(_super) {
     'click a.recheck-button': "checkAccount",
     'click th.sort-date': "sortByDate",
     'click th.sort-title': "sortByTitle",
-    'click th.sort-amount': "sortByAmount"
+    'click th.sort-amount': "sortByAmount",
+    'keyup input#search-text': "reload"
   };
 
   BankStatementView.prototype.inUse = false;
@@ -955,6 +956,8 @@ module.exports = BankStatementView = (function(_super) {
   BankStatementView.prototype.subViews = [];
 
   subViewLastDate = '';
+
+  params = null;
 
   function BankStatementView(el) {
     this.el = el;
@@ -1019,7 +1022,7 @@ module.exports = BankStatementView = (function(_super) {
               console.log("... checked");
               button.html("checked");
               view.inUse = false;
-              return view.reload(view.model);
+              return view.reload();
             },
             error: function() {
               console.log("... there was an error fetching");
@@ -1050,24 +1053,80 @@ module.exports = BankStatementView = (function(_super) {
     return this;
   };
 
-  BankStatementView.prototype.reload = function(account) {
+  BankStatementView.prototype.reload = function(params) {
     var view;
     view = this;
-    this.model = account;
-    this.$el.html(this.templateHeader({
-      model: account
-    }));
-    window.collections.operations.reset();
-    window.collections.operations.setAccount(account);
-    window.collections.operations.fetch({
-      success: function(operations) {
-        return view.addAll();
-      },
-      error: function() {
-        return console.log("error fetching operations");
+    this.model = window.rbiActiveData.bankAccount;
+    if ((params != null) && (params.dateFrom != null)) {
+      this.params = params;
+    }
+    if (this.model != null) {
+      this.updateFilters();
+      if (this.$("#table-operations").length === 0) {
+        this.$el.html(this.templateHeader({
+          model: this.model
+        }));
       }
-    });
-    return this;
+    }
+    if (this.send) {
+      console.log('send');
+      console.log(this.data);
+      return $.ajax({
+        type: "POST",
+        url: "bankoperations/byDate",
+        data: this.data,
+        success: function(objects) {
+          if (objects) {
+            window.collections.operations.reset(objects);
+            return view.addAll();
+          } else {
+            return window.collections.operations.reset();
+          }
+        },
+        error: function(err) {
+          return console.log("there was an error");
+        }
+      });
+    }
+  };
+
+  BankStatementView.prototype.updateFilters = function() {
+    var accountNumber, dateFrom, dateFromVal, dateTo, dateToVal, searchTextVal;
+    console.log('----------------------');
+    console.log('update filter params :');
+    console.log(this.params);
+    if (this.params != null) {
+      dateFrom = this.params.dateFrom ? moment(this.params.dateFrom).format('YYYY-MM-DD') : null;
+      dateTo = this.params.dateTo ? moment(this.params.dateTo).format('YYYY-MM-DD') : null;
+    }
+    if (!(dateFrom || dateTo)) {
+      console.log("Empty query");
+      this.send = false;
+      window.collections.operations.reset();
+      return;
+    } else {
+      this.send = true;
+    }
+    if (window.rbiActiveData.bankAccount != null) {
+      accountNumber = window.rbiActiveData.bankAccount.get('accountNumber');
+    } else {
+      this.send = false;
+    }
+    dateFromVal = new Date(dateFrom || null);
+    dateToVal = new Date(dateTo || new Date());
+    this.data = {
+      dateFrom: dateFromVal,
+      dateTo: dateToVal,
+      accounts: [accountNumber]
+    };
+    searchTextVal = $("input#search-text").val();
+    if ((searchTextVal != null) && (searchTextVal !== "")) {
+      if (searchTextVal === "#credits") {
+        return this.data.credits = true;
+      } else {
+        return this.data.searchText = searchTextVal;
+      }
+    }
   };
 
   BankStatementView.prototype.addAll = function() {
@@ -1749,7 +1808,7 @@ module.exports = MonthlyAnalysisView = (function(_super) {
   };
 
   MonthlyAnalysisView.prototype.switchMonth = function(event) {
-    var jqSwitcher, monthlyAmounts;
+    var bankStatementParams, jqSwitcher, monthlyAmounts;
     if ((event != null) && (event.currentTarget != null)) {
       jqSwitcher = $(event.currentTarget);
       if (jqSwitcher.hasClass('previous-month')) {
@@ -1764,7 +1823,11 @@ module.exports = MonthlyAnalysisView = (function(_super) {
     if (window.rbiActiveData.bankAccount != null) {
       monthlyAmounts = this.getAmountsByMonth(this.currentMonthStart);
       this.displayMonthlyAmounts(monthlyAmounts.previous, monthlyAmounts.next);
-      this.bankStatementView.reload(window.rbiActiveData.bankAccount);
+      bankStatementParams = {
+        dateFrom: this.currentMonthStart,
+        dateTo: moment(this.currentMonthStart).endOf('month')
+      };
+      this.bankStatementView.reload(bankStatementParams);
       return this.displayPieChart();
     }
   };
@@ -1980,7 +2043,18 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h2>Relevé de compte</h2><h3>' + escape((interp = model.get('title')) == null ? '' : interp) + ' n°' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</h3><div class="text-center loading loader-operations"><img src="./loader_big_blue.gif"/></div><table class="table table-bordered table-condensed table-striped"><tbody id="table-operations"></tbody></table>');
+buf.push('<h2>Relevé de compte</h2><h3>' + escape((interp = model.get('title')) == null ? '' : interp) + ' n°' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</h3><input id="search-text"/><div class="text-center loading loader-operations"><img src="./loader_big_blue.gif"/></div><table class="table table-bordered table-condensed table-striped"><tbody id="table-operations"></tbody></table>');
+}
+return buf.join("");
+};
+});
+
+;require.register("views/templates/bank_statement_search", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
 }
 return buf.join("");
 };

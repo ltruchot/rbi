@@ -52,6 +52,8 @@ module.exports =
         get: bankoperations.show
     'bankoperations/query':
         post: bankoperations.query
+    'bankoperations/byDate':
+        post: bankoperations.byDate
 
     'bankalerts':
         get: bankalerts.index

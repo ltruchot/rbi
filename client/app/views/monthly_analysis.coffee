@@ -90,7 +90,7 @@ module.exports = class MonthlyAnalysisView extends BaseView
     if event? and event.currentTarget?
       jqSwitcher = $(event.currentTarget)
       if jqSwitcher.hasClass 'previous-month'
-        @currentMonthStart.subtract('months', 1).startOf('month')
+        @currentMonthStart.subtract('months', 1).startOf 'month'
       else if jqSwitcher.hasClass 'next-month'
         @currentMonthStart.add('months', 1).startOf('month')
     else
@@ -99,7 +99,10 @@ module.exports = class MonthlyAnalysisView extends BaseView
     if window.rbiActiveData.bankAccount?
       monthlyAmounts = @getAmountsByMonth @currentMonthStart
       @displayMonthlyAmounts monthlyAmounts.previous, monthlyAmounts.next
-      @bankStatementView.reload window.rbiActiveData.bankAccount
+      bankStatementParams =
+        dateFrom: @currentMonthStart
+        dateTo: moment(@currentMonthStart).endOf 'month'
+      @bankStatementView.reload bankStatementParams
       @displayPieChart()
 
   getAmountsByMonth: (monthStart)->

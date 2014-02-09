@@ -11,12 +11,15 @@ module.exports = class BankStatementView extends BaseView
         'click th.sort-date' : "sortByDate"
         'click th.sort-title' : "sortByTitle"
         'click th.sort-amount' : "sortByAmount"
+        'keyup input#search-text' : "reload"
 
     inUse: false
 
     subViews: []
 
     subViewLastDate = ''
+
+    params = null
 
     # INIT
     constructor: (@el) ->
@@ -85,7 +88,7 @@ module.exports = class BankStatementView extends BaseView
                             console.log "... checked"
                             button.html "checked"
                             view.inUse = false
-                            view.reload view.model
+                            view.reload()
                         error: () ->
                             console.log "... there was an error fetching"
                             button.html "error..."
@@ -108,25 +111,92 @@ module.exports = class BankStatementView extends BaseView
         # $("#layout-2col-column-right").getNiceScroll().onResize()
         @
 
-    reload: (account) ->
-
+    reload: (params) ->
         view = @
-        @model = account
+        @model = window.rbiActiveData.bankAccount
+        if params? and params.dateFrom?
+            @params = params
+        if @model?
+            @updateFilters()
+            if @$("#table-operations").length is 0
+                @$el.html @templateHeader
+                    model: @model
 
-        # render the header - title etc
-        @$el.html @templateHeader
-            model: account
+        if @send
+            console.log 'send'
+            console.log @data
+            $.ajax
+                type: "POST"
+                url: "bankoperations/byDate"
+                data: @data
+                success: (objects) ->
+                    # console.log "sent successfully!"
+                    # console.log objects
+                    if objects
+                        window.collections.operations.reset objects
+                        view.addAll()
+                    else
+                        window.collections.operations.reset()
+                error: (err) ->
+                    console.log "there was an error"
 
-        # get the operations for this account
-        window.collections.operations.reset()
-        window.collections.operations.setAccount account
-        window.collections.operations.fetch
-            success: (operations) ->
-                view.addAll()
 
-            error: ->
-                console.log "error fetching operations"
-        @
+
+
+        # # render the header - title etc
+        # @$el.html @templateHeader
+        #     model: account
+
+        # # get the operations for this account
+        # window.collections.operations.reset()
+        # window.collections.operations.setAccount account
+        # window.collections.operations.fetch
+        #     success: (operations) ->
+        #         view.addAll()
+
+        #     error: ->
+        #         console.log "error fetching operations"
+        # @
+
+    updateFilters: ->
+        console.log '----------------------'
+        console.log 'update filter params :'
+        console.log @params
+        # get elements
+        if @params?
+            dateFrom = if @params.dateFrom then moment(@params.dateFrom).format 'YYYY-MM-DD' else null
+            dateTo = if @params.dateTo then moment(@params.dateTo).format 'YYYY-MM-DD' else null
+
+         # check that there are things to send
+        unless dateFrom or dateTo
+           console.log "Empty query"
+           @send = false
+           window.collections.operations.reset()
+           return
+        else
+           @send = true
+
+        if window.rbiActiveData.bankAccount?
+            accountNumber = window.rbiActiveData.bankAccount.get 'accountNumber'
+        else
+            @send = false
+
+        # get values
+        dateFromVal = new Date(dateFrom or null)
+        dateToVal = new Date(dateTo or new Date())
+
+        # store the results
+        @data =
+            dateFrom:   dateFromVal
+            dateTo:     dateToVal
+            accounts:   [accountNumber]
+
+        searchTextVal = $("input#search-text").val()
+        if searchTextVal? and (searchTextVal isnt "")
+            if searchTextVal is "#credits"
+                @data.credits = true
+            else
+                @data.searchText = searchTextVal
 
     addAll: ->
         # remove the previous ones

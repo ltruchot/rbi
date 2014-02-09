@@ -66,6 +66,48 @@ module.exports.query = (req, res) ->
                 else
                     res.send 200, results
 
+module.exports.byDate = (req, res) ->
+    paramAccounts = req.body.accounts or [-1]
+
+    BankOperation.allFromBankAccounts paramAccounts, (err, operations) ->
+        if err?
+            res.send 500, error: 'Server error occurred while retrieving data'
+        else
+            paramDateFrom =  new Date req.body.dateFrom
+            paramDateTo = new Date req.body.dateTo
+            paramSearchText = req.body.searchText
+            credits = Boolean req.body.credits
+            console.log credits
+            async = require "async"
+
+            treatment = (operation, callback) ->
+                # apply filters to dermine if the operation should be returned
+                amount = Number operation.amount
+                date = new Date operation.date
+                title = operation.title.toLocaleUpperCase()
+                paramQueryText = if paramSearchText? then paramSearchText.toLocaleUpperCase() else null
+
+                # dates
+                if date < paramDateFrom or date > paramDateTo
+                    callback null
+
+                # text search
+                else if paramSearchText? and paramSearchText isnt "" and \
+                        title.search(paramQueryText) < 0
+                    callback null
+
+                # the right one
+                else
+                    callback null, operation
+
+            # check all bank operations
+            async.concat operations, treatment, (err, results) ->
+                if err?
+                    errorMsg = 'Server error occurred while retrieving data'
+                    res.send 500, error: errorMsg
+                else
+                    res.send 200, results
+
 ###
     dev only
 ###
