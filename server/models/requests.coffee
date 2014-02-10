@@ -62,3 +62,6 @@ module.exports =
         allByBankAccount: allByBankAccount
         allReportsByFrequency: allReportsByFrequency
         allByBankAccountAndType: allByBankAccountAndType
+
+    rbiconfig:
+        all: americano.defaultRequests.all

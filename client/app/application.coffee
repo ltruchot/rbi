@@ -8,35 +8,18 @@ module.exports =
 
     initialize: ->
 
-        # $.ajax('cozy-locale.json')
-        #     .done( (data) => @locale = data.locale )
-        #     .fail(     () => @locale = 'en'        )
-        #     .always(   () => @step2()    )
-        @step2()
-
-    step2: ->
-
-        # internationalisation
-        # @polyglot = new Polyglot()
-        # window.polyglot =  @polyglot
-        # try
-        #     locales = require "locales/#{@locale}"
-        # catch e
-        #     locales = require 'locales/en'
-
-        # @polyglot.extend locales
-        # window.t = @polyglot.t.bind @polyglot
-        # window.i18n = (key) -> window.polyglot.t key
-
-        # collections, views
+        # set globals app, collections, data
+        window.app = @
         window.collections = {}
         window.views = {}
+        window.rbiActiveData = {}
 
-        # banks, operations
-        window.collections.allBanks = new BanksCollection()
-        window.collections.banks = new BanksCollection()
-        window.collections.operations = new BankOperationsCollection()
-        window.collections.amounts = new BankAmountsCollection()
+        #set global active data
+        window.rbiActiveData.currency =
+            name : 'euro'
+            entity : '&euro;'
+
+        #set global rbi color for dynamic use
         window.rbiColors =
             border_color : "#efefef"
             grid_color : "#ddd"
@@ -50,6 +33,13 @@ module.exports =
             grey : "#999999"
 
 
+
+        #instantiate collections: banks, operations, amounts
+        window.collections.allBanks = new BanksCollection()
+        window.collections.banks = new BanksCollection()
+        window.collections.operations = new BankOperationsCollection()
+        window.collections.amounts = new BankAmountsCollection()
+
         ###
                 views
         ###
@@ -60,15 +50,11 @@ module.exports =
 
         window.activeObjects = {}
         _.extend(window.activeObjects, Backbone.Events);
-        window.rbiActiveData = {}
-        window.rbiActiveData.currency =
-            name : 'euro'
-            entity : '&euro;'
+
 
         # Routing management
         Router = require 'router'
         @router = new Router()
-        #Backbone.history.start()
 
         # Makes this object immuable.
         Object.freeze this if typeof Object.freeze is 'function'

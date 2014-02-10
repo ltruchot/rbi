@@ -132,7 +132,6 @@ BankAccount.prepareLastYearAmounts = (account, callback) ->
                         date : operation.date
                         amount : currentAmount
                     currentDate = operationDate
-            console.log arrayOfAmounts
             callback err, arrayOfAmounts
 
 

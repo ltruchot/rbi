@@ -123,14 +123,12 @@ module.exports = class BankStatementView extends BaseView
                     model: @model
 
         if @send
-            console.log 'send'
-            console.log @data
             $.ajax
                 type: "POST"
                 url: "bankoperations/byDate"
                 data: @data
                 success: (objects) ->
-                    # console.log "sent successfully!"
+                    console.log "sent successfully!"
                     # console.log objects
                     if objects
                         window.collections.operations.reset objects
@@ -159,9 +157,9 @@ module.exports = class BankStatementView extends BaseView
         # @
 
     updateFilters: ->
-        console.log '----------------------'
-        console.log 'update filter params :'
-        console.log @params
+        # console.log '----------------------'
+        # console.log 'update filter params :'
+        # console.log @params
         # get elements
         if @params?
             dateFrom = if @params.dateFrom then moment(@params.dateFrom).format 'YYYY-MM-DD' else null

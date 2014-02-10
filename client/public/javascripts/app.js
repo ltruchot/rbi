@@ -103,16 +103,15 @@ BankAmountsCollection = require('collections/bank_amounts');
 
 module.exports = {
   initialize: function() {
-    return this.step2();
-  },
-  step2: function() {
     var Router;
+    window.app = this;
     window.collections = {};
     window.views = {};
-    window.collections.allBanks = new BanksCollection();
-    window.collections.banks = new BanksCollection();
-    window.collections.operations = new BankOperationsCollection();
-    window.collections.amounts = new BankAmountsCollection();
+    window.rbiActiveData = {};
+    window.rbiActiveData.currency = {
+      name: 'euro',
+      entity: '&euro;'
+    };
     window.rbiColors = {
       border_color: "#efefef",
       grid_color: "#ddd",
@@ -125,6 +124,10 @@ module.exports = {
       teal: "#28D8CA",
       grey: "#999999"
     };
+    window.collections.allBanks = new BanksCollection();
+    window.collections.banks = new BanksCollection();
+    window.collections.operations = new BankOperationsCollection();
+    window.collections.amounts = new BankAmountsCollection();
     /*
             views
     */
@@ -133,11 +136,6 @@ module.exports = {
     window.views.appView.render();
     window.activeObjects = {};
     _.extend(window.activeObjects, Backbone.Events);
-    window.rbiActiveData = {};
-    window.rbiActiveData.currency = {
-      name: 'euro',
-      entity: '&euro;'
-    };
     Router = require('router');
     this.router = new Router();
     if (typeof Object.freeze === 'function') {
@@ -759,6 +757,35 @@ module.exports = BankOperation = (function(_super) {
 
 });
 
+;require.register("models/user_configuration", function(exports, require, module) {
+var Config, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+module.exports = Config = (function(_super) {
+  __extends(Config, _super);
+
+  function Config() {
+    _ref = Config.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  Config.prototype.url = 'rbiconfiguration';
+
+  Config.prototype.isNew = function() {
+    return true;
+  };
+
+  Config.prototype.defaults = {
+    'accountNumber': ''
+  };
+
+  return Config;
+
+})(Backbone.Model);
+
+});
+
 ;require.register("router", function(exports, require, module) {
 var AppView, Router, _ref,
   __hasProp = {}.hasOwnProperty,
@@ -1069,13 +1096,12 @@ module.exports = BankStatementView = (function(_super) {
       }
     }
     if (this.send) {
-      console.log('send');
-      console.log(this.data);
       return $.ajax({
         type: "POST",
         url: "bankoperations/byDate",
         data: this.data,
         success: function(objects) {
+          console.log("sent successfully!");
           if (objects) {
             window.collections.operations.reset(objects);
             return view.addAll();
@@ -1092,9 +1118,6 @@ module.exports = BankStatementView = (function(_super) {
 
   BankStatementView.prototype.updateFilters = function() {
     var accountNumber, dateFrom, dateFromVal, dateTo, dateToVal, searchTextVal;
-    console.log('----------------------');
-    console.log('update filter params :');
-    console.log(this.params);
     if (this.params != null) {
       dateFrom = this.params.dateFrom ? moment(this.params.dateFrom).format('YYYY-MM-DD') : null;
       dateTo = this.params.dateTo ? moment(this.params.dateTo).format('YYYY-MM-DD') : null;
@@ -1246,16 +1269,33 @@ module.exports = BankSubTitleView = (function(_super) {
     return this.listenTo(window.activeObjects, 'changeActiveAccount', this.checkActive);
   };
 
+  BankSubTitleView.prototype.afterRender = function() {
+    var accountNumber;
+    accountNumber = window.rbiActiveData.accountNumber;
+    if (accountNumber !== "" && accountNumber === this.model.get('accountNumber')) {
+      return this.chooseAccount();
+    }
+  };
+
   BankSubTitleView.prototype.chooseAccount = function(event) {
     var today;
+    this.$el.children('.accountTitle').attr('checked', 'true');
     window.activeObjects.trigger("changeActiveAccount", this.model);
     window.rbiActiveData.bankAccount = this.model;
-    window.views.monthlyAnalysisView.render();
-    console.log('amount = ' + this.model.get('amount'));
     today = this.formatDate(new Date());
     $("#current-amount-date").text(today);
-    $("#account-amount-balance").text($(event.currentTarget).parent().children('input.accountAmount').val());
-    return this.loadLastYearAmounts(this.model);
+    $("#account-amount-balance").text(this.model.get('amount'));
+    this.loadLastYearAmounts(this.model);
+    if (event != null) {
+      window.rbiActiveData.config.save({
+        accountNumber: this.model.get('accountNumber', {
+          error: function() {
+            return console.log('Error: configuration not saved');
+          }
+        })
+      });
+    }
+    return window.views.monthlyAnalysisView.render();
   };
 
   BankSubTitleView.prototype.checkActive = function(account) {
@@ -1294,6 +1334,7 @@ module.exports = BankSubTitleView = (function(_super) {
   BankSubTitleView.prototype.setupLastYearAmountsFlot = function(amounts) {
     var currentDate, dayRatio, daysPerMonth, flotReadyAmounts, i, lastAmount, maxAmount, minAmount, numberOfDays, plot, sixMonthAgo, threeMonthAgo,
       _this = this;
+    this.formattedAmounts = [];
     flotReadyAmounts = [];
     daysPerMonth = {
       twelve: 365,
@@ -1350,6 +1391,7 @@ module.exports = BankSubTitleView = (function(_super) {
     minAmount = minAmount - 500;
     maxAmount = maxAmount + 500;
     flotReadyAmounts.reverse();
+    $('#amount-stats').empty();
     return plot = $.plot("#amount-stats", [
       {
         data: flotReadyAmounts,
@@ -1492,11 +1534,13 @@ module.exports = ComparedAnalysisView = (function(_super) {
 });
 
 ;require.register("views/configuration", function(exports, require, module) {
-var BaseView, ConfigurationBankView, ConfigurationView, _ref,
+var BaseView, Config, ConfigurationBankView, ConfigurationView, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
+
+Config = require('models/user_configuration');
 
 ConfigurationBankView = require('./configuration_bank');
 
@@ -1519,7 +1563,8 @@ module.exports = ConfigurationView = (function(_super) {
   ConfigurationView.prototype.subViews = [];
 
   ConfigurationView.prototype.initialize = function() {
-    return this.listenTo(window.activeObjects, "new_access_added_successfully", this.noMoreEmpty);
+    this.listenTo(window.activeObjects, "new_access_added_successfully", this.noMoreEmpty);
+    return window.rbiActiveData.config = new Config({});
   };
 
   ConfigurationView.prototype.noMoreEmpty = function() {
@@ -1532,34 +1577,48 @@ module.exports = ConfigurationView = (function(_super) {
   };
 
   ConfigurationView.prototype.render = function() {
-    var treatment, view;
+    var _this = this;
     ConfigurationView.__super__.render.call(this);
-    view = this;
-    treatment = function(bank, callback) {
-      var viewBank;
-      viewBank = new ConfigurationBankView(bank);
-      view.subViews.push(viewBank);
-      $(view.elAccounts).append(viewBank.el);
-      return bank.accounts.fetch({
-        success: function(col) {
-          callback(null, col.length);
-          if (col.length > 0) {
-            return viewBank.render();
-          }
-        },
-        error: function(col, err, opts) {
-          callback(null, col.length);
-          return viewBank.$el.html("");
+    window.rbiActiveData.config.fetch({
+      success: function(currentConfig) {
+        var accountNumber, treatment, view;
+        accountNumber = currentConfig.get('accountNumber' || "");
+        if (accountNumber !== "") {
+          window.rbiActiveData.accountNumber = accountNumber;
         }
-      });
-    };
-    async.concat(window.collections.banks.models, treatment, function(err, results) {
-      if (err) {
-        console.log(err);
-        alert(window.i18n("error_loading_accounts"));
+        view = _this;
+        treatment = function(bank, callback) {
+          var viewBank;
+          viewBank = new ConfigurationBankView(bank);
+          view.subViews.push(viewBank);
+          $(view.elAccounts).append(viewBank.el);
+          return bank.accounts.fetch({
+            success: function(col) {
+              callback(null, col.length);
+              if (col.length > 0) {
+                return viewBank.render();
+              }
+            },
+            error: function(col, err, opts) {
+              callback(null, col.length);
+              return viewBank.$el.html("");
+            }
+          });
+        };
+        return async.concat(window.collections.banks.models, treatment, function(err, results) {
+          if (err) {
+            console.log(err);
+            alert(window.i18n("error_loading_accounts"));
+          }
+          this.accounts = results.length;
+          if (this.accounts === 0) {
+            $(view.elAccounts).prepend(require("./templates/balance_banks_empty"));
+          }
+          if (accountNumber === "") {
+            return $(".accountTitle:eq(0)").click();
+          }
+        });
       }
-      this.accounts = results.length;
-      return $(".accountTitle:eq(0)").click();
     });
     return this;
   };

@@ -5,6 +5,7 @@ bankaccesses  = require './bankaccesses'
 bankaccounts = require './bankaccounts'
 bankoperations = require './bankoperations'
 bankalerts = require './bankalerts'
+rbiconfig = require './rbiconfig'
 
 module.exports =
     'foo':
@@ -65,3 +66,6 @@ module.exports =
         del: bankalerts.destroy
     'bankalerts/getForBankAccount/:accountID':
         get: bankalerts.getForBankAccount
+    'rbiconfiguration':
+        post: rbiconfig.setConfig
+        get: rbiconfig.getConfig

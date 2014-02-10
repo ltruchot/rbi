@@ -12,19 +12,43 @@ module.exports = class BankSubTitleView extends BaseView
 
     formattedAmounts: []
 
+
     initialize: ->
         @listenTo @model, 'change', @render
         @listenTo window.activeObjects, 'changeActiveAccount', @checkActive
 
+    afterRender: ->
+        accountNumber = window.rbiActiveData.accountNumber
+        if accountNumber isnt "" and accountNumber is @model.get 'accountNumber'
+            @chooseAccount()
+
     chooseAccount: (event) ->
+        #set input to checked state
+        @$el.children('.accountTitle').attr('checked', 'true')
+
+        #trigger "changeActiveAccount" to fire @listenTo linked
         window.activeObjects.trigger "changeActiveAccount", @model
+
+        #save bank account
         window.rbiActiveData.bankAccount = @model
-        window.views.monthlyAnalysisView.render()
-        console.log 'amount = ' + @model.get 'amount'
+
+        #set date & amoubt to widgets
         today = @formatDate(new Date())
         $("#current-amount-date").text today
-        $("#account-amount-balance").text $(event.currentTarget).parent().children('input.accountAmount').val()
-        @loadLastYearAmounts(@model)
+        $("#account-amount-balance").text @model.get 'amount'
+
+        #load calculated amounts to set up the flot chart
+        @loadLastYearAmounts @model
+
+        #in case of real user click, save configuration
+        if event?
+            window.rbiActiveData.config.save accountNumber: @model.get 'accountNumber',
+                error: ->
+                    console.log 'Error: configuration not saved'
+
+        #at least, render montly analysis view
+        window.views.monthlyAnalysisView.render()
+
 
     checkActive: (account) ->
         @$(".row").removeClass("active")
@@ -51,6 +75,7 @@ module.exports = class BankSubTitleView extends BaseView
         return (day + '/' + month + '/' + year)
 
     setupLastYearAmountsFlot: (amounts) ->
+        @formattedAmounts = []
         flotReadyAmounts = []
         daysPerMonth =
             twelve : 365
@@ -104,8 +129,8 @@ module.exports = class BankSubTitleView extends BaseView
         $("#min-amount").text (minAmount + ' €')
         minAmount = minAmount - 500
         maxAmount =  maxAmount + 500
-
         flotReadyAmounts.reverse()
+        $('#amount-stats').empty();
         plot = $.plot "#amount-stats", [{ data: flotReadyAmounts, label: "Solde"}],
             series:
                 lines:
