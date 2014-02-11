@@ -85,7 +85,7 @@ module.exports = class MonthlyAnalysisView extends BaseView
         else
           debits += operation.amount
     $('#credits-sum').html credits + currency
-    $('#debits-sum').html debits + currency
+    $('#debits-sum').html Math.abs(debits) + currency
 
 
   displayPieChart: ->

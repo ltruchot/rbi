@@ -137,9 +137,13 @@ module.exports = {
         encoded: "&#57641;",
         decoded: ""
       },
-      negativeEcolution: {
+      negativeEvolution: {
         encoded: "&#57643;",
         decoded: ""
+      },
+      search: {
+        encoded: "&#57471;",
+        decoded: ""
       }
     };
     window.collections.allBanks = new BanksCollection();
@@ -1241,8 +1245,20 @@ module.exports = EntryView = (function(_super) {
   EntryView.prototype.tagName = 'tr';
 
   EntryView.prototype.events = {
-    'mouseenter .fixed-cost': 'switchFixedCostIcon',
-    'mouseleave .fixed-cost': 'switchFixedCostIcon'
+    'mouseenter td > .fixed-cost': 'switchFixedCostIcon',
+    'mouseleave td > .fixed-cost': 'switchFixedCostIcon',
+    'click td > .fixed-cost': 'popupFixedCost',
+    'click #cancel-fixed-cost': 'destroyPopupFixedCost'
+  };
+
+  EntryView.prototype.destroyPopupFixedCost = function(event) {
+    var jqFixedCostIcon, jqParent, jqPopup;
+    jqPopup = $(event.currentTarget).parent();
+    jqParent = jqPopup.parent();
+    jqFixedCostIcon = jqPopup.children('.fixed-cost');
+    jqFixedCostIcon.appendTo(jqParent);
+    jqPopup.remove();
+    return jqFixedCostIcon.mouseleave();
   };
 
   EntryView.prototype.switchFixedCostIcon = function(event) {
@@ -1253,6 +1269,28 @@ module.exports = EntryView = (function(_super) {
     } else {
       return jqFixedCostIcon.attr('data-icon', '');
     }
+  };
+
+  EntryView.prototype.popupFixedCost = function(event) {
+    var currency, jqFixedCostIcon, jqIconParent, jqPopup, operationMax, operationMin, operationTitle;
+    jqFixedCostIcon = $(event.currentTarget);
+    if ((jqFixedCostIcon.attr('data-icon')) === '') {
+      jqFixedCostIcon.attr('data-icon', '');
+    }
+    jqIconParent = jqFixedCostIcon.parent();
+    jqPopup = $('<div class="popup-fixed-cost"></div>');
+    jqFixedCostIcon.appendTo(jqPopup);
+    jqPopup.append('<span class="fixed-cost-title">Ajouter aux frais fixes</span>');
+    currency = window.rbiActiveData.currency.entity;
+    operationTitle = this.model.get('title');
+    operationMax = (parseFloat((this.model.get('amount')) * 1.1)).money() + currency;
+    operationMin = (parseFloat((this.model.get('amount')) * 0.9)).money() + currency;
+    jqPopup.append('<button type="button" id="save-fixed-cost" class="btn btn-xs btn-primary">Valider</button>');
+    jqPopup.append('<button type="button" id="cancel-fixed-cost" class="btn btn-xs btn-danger" >Annuler</button>');
+    jqPopup.append('<input type="radio" name="fixed-cost-option" checked="true" /> <label>Toutes les opérations intitulées "' + operationTitle + '" d\'un montant entre  ' + operationMin + ' et ' + operationMax + '</label><br />');
+    jqPopup.append('<input type="radio" name="fixed-cost-option" /> <label>Seulement cette opération</label><br />');
+    jqPopup.append('<input type="radio" name="fixed-cost-option" /> <label>Définir une règle</label>');
+    return jqPopup.appendTo(jqIconParent);
   };
 
   function EntryView(model, account, showAccountNum) {
@@ -1920,7 +1958,7 @@ module.exports = MonthlyAnalysisView = (function(_super) {
       }
     }
     $('#credits-sum').html(credits + currency);
-    return $('#debits-sum').html(debits + currency);
+    return $('#debits-sum').html(Math.abs(debits) + currency);
   };
 
   MonthlyAnalysisView.prototype.displayPieChart = function() {
@@ -2178,7 +2216,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h2>Relevé de compte</h2><h3>' + escape((interp = model.get('title')) == null ? '' : interp) + ' n°' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</h3><input id="search-text"/><div class="text-center loading loader-operations"><img src="./loader_big_blue.gif"/></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-operations"></tbody></table>');
+buf.push('<h2>Relevé de compte</h2><h3>' + escape((interp = model.get('title')) == null ? '' : interp) + ' n°' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</h3><div class="search-field"><span aria-hidden="true" data-icon&#57471;="data-icon&#57471;" class="icon-search fs1"></span><input id="search-text"/></div><div class="text-center loading loader-operations"><img src="./loader_big_blue.gif"/></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-operations"></tbody></table>');
 }
 return buf.join("");
 };
@@ -2286,7 +2324,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1 class="col-md-12"><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><table id="monthly-report" class="col-md-12"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div id="credits-search-btn" class="search-btn grey1 pull-left"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1"></span><span id="credits-sum" class="pull-right">0 &euro;</span><br/><span class="pull-right">Crédits</span></div><div id="debits-search-btn" class="search-btn grey2 pull-right"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1"></span><span id="debits-sum" class="pull-right">0 &euro;</span><br/><span class="pull-right">Débits</span></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2"><div id="pie_chart">&nbsp;</div></td></tr></table>');
+buf.push('<h1 class="col-md-12"><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><table id="monthly-report" class="col-md-12"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div id="credits-search-btn" class="search-btn grey1 pull-left"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1"></span><span id="credits-sum" class="pull-right">0 &euro;</span><br/><span class="pull-right">Crédits</span></div><div id="debits-search-btn" class="search-btn grey2 pull-right"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1"></span><span id="debits-sum" class="pull-right">0 &euro;</span><br/><span class="pull-right">Débits</span></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div id="fixed-cost-search-btn" class="search-btn grey3 pull-left"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1"></span><span id="credits-sum" class="pull-right">0 &euro;</span><br/><span class="pull-right">Frais fixes</span></div><div id="variable-cost-search-btn" class="search-btn grey4 pull-right"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1"></span><span id="debits-sum" class="pull-right">0 &euro;</span><br/><span class="pull-right">Dépenses</span></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2"><div id="pie_chart">&nbsp;</div></td></tr></table>');
 }
 return buf.join("");
 };
