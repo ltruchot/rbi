@@ -48,6 +48,8 @@ module.exports =
             search:
                 encoded: "&#57471;"
                 decoded: ""
+            variableCost:
+                decoded: ""
 
 
         #instantiate collections: banks, operations, amounts

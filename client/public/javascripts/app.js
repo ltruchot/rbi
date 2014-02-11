@@ -144,6 +144,9 @@ module.exports = {
       search: {
         encoded: "&#57471;",
         decoded: ""
+      },
+      variableCost: {
+        decoded: ""
       }
     };
     window.collections.allBanks = new BanksCollection();
@@ -1245,20 +1248,94 @@ module.exports = EntryView = (function(_super) {
   EntryView.prototype.tagName = 'tr';
 
   EntryView.prototype.events = {
-    'mouseenter td > .fixed-cost': 'switchFixedCostIcon',
-    'mouseleave td > .fixed-cost': 'switchFixedCostIcon',
-    'click td > .fixed-cost': 'popupFixedCost',
-    'click #cancel-fixed-cost': 'destroyPopupFixedCost'
+    'mouseenter td > .variable-cost': 'switchFixedCostIcon',
+    'mouseleave td > .variable-cost': 'switchFixedCostIcon',
+    'click td > .variable-cost': 'popupFixedCost',
+    'click #cancel-fixed-cost': 'destroyPopupFixedCost',
+    'click #save-fixed-cost': 'prepareFixedCost'
   };
 
   EntryView.prototype.destroyPopupFixedCost = function(event) {
     var jqFixedCostIcon, jqParent, jqPopup;
     jqPopup = $(event.currentTarget).parent();
     jqParent = jqPopup.parent();
-    jqFixedCostIcon = jqPopup.children('.fixed-cost');
+    jqFixedCostIcon = jqPopup.children('.variable-cost');
     jqFixedCostIcon.appendTo(jqParent);
     jqPopup.remove();
-    return jqFixedCostIcon.mouseleave();
+    if ($(event.currentTarget).hasClass('cancel-fixed-cost')) {
+      return jqFixedCostIcon.mouseleave();
+    } else {
+      return jqFixedCostIcon.removeClass('variable-cost').addClass('fixed-cost');
+    }
+  };
+
+  EntryView.prototype.prepareFixedCost = function(event) {
+    var accountNumber, fixedCostToRegister, jqPopup, neededRequest, userChoice,
+      _this = this;
+    jqPopup = $(event.currentTarget).parent();
+    userChoice = jqPopup.children('input[type=radio]:checked').val();
+    accountNumber = window.rbiActiveData.bankAccount.get('accountNumber');
+    neededRequest = false;
+    fixedCostToRegister = {
+      type: userChoice
+    };
+    switch (userChoice) {
+      case 'standard':
+        this.data = {
+          accounts: [accountNumber],
+          searchText: this.operationTitle,
+          dateFrom: null,
+          dateTo: new Date()
+        };
+        if (this.operationMax < this.operationMin) {
+          this.data.amountFrom = this.operationMax;
+          this.data.amountTo = this.operationMin;
+        } else {
+          this.data.amountFrom = this.operationMin;
+          this.data.amountTo = this.operationMax;
+        }
+        fixedCostToRegister.query = this.data;
+        fixedCostToRegister.idTable = [];
+        neededRequest = true;
+        break;
+      case 'onetime':
+        fixedCostToRegister.query = {};
+        fixedCostToRegister.idTable = [this.model.get('id')];
+    }
+    if (neededRequest) {
+      return $.ajax({
+        type: "POST",
+        url: "bankoperations/query",
+        data: this.data,
+        success: function(objects) {
+          var object, _i, _len;
+          console.log("sent successfully!");
+          if ((objects != null) && objects.length > 0) {
+            for (_i = 0, _len = objects.length; _i < _len; _i++) {
+              object = objects[_i];
+              fixedCostToRegister.idTable.push(object.id);
+            }
+            return _this.saveFixedCost(fixedCostToRegister, function() {
+              return _this.destroyPopupFixedCost(event);
+            });
+          } else {
+            return console.log("Operation(s) not found");
+          }
+        },
+        error: function(err) {
+          return console.log("there was an error");
+        }
+      });
+    } else {
+      return this.saveFixedCost(fixedCostToRegister, function() {
+        return _this.destroyPopupFixedCost(event);
+      });
+    }
+  };
+
+  EntryView.prototype.saveFixedCost = function(fixedCost, callback) {
+    console.log(fixedCost);
+    return callback();
   };
 
   EntryView.prototype.switchFixedCostIcon = function(event) {
@@ -1272,7 +1349,7 @@ module.exports = EntryView = (function(_super) {
   };
 
   EntryView.prototype.popupFixedCost = function(event) {
-    var currency, jqFixedCostIcon, jqIconParent, jqPopup, operationMax, operationMin, operationTitle;
+    var currency, jqFixedCostIcon, jqIconParent, jqPopup;
     jqFixedCostIcon = $(event.currentTarget);
     if ((jqFixedCostIcon.attr('data-icon')) === '') {
       jqFixedCostIcon.attr('data-icon', '');
@@ -1282,14 +1359,14 @@ module.exports = EntryView = (function(_super) {
     jqFixedCostIcon.appendTo(jqPopup);
     jqPopup.append('<span class="fixed-cost-title">Ajouter aux frais fixes</span>');
     currency = window.rbiActiveData.currency.entity;
-    operationTitle = this.model.get('title');
-    operationMax = (parseFloat((this.model.get('amount')) * 1.1)).money() + currency;
-    operationMin = (parseFloat((this.model.get('amount')) * 0.9)).money() + currency;
+    this.operationTitle = this.model.get('title');
+    this.operationMax = parseFloat((this.model.get('amount')) * 1.1);
+    this.operationMin = parseFloat((this.model.get('amount')) * 0.9);
     jqPopup.append('<button type="button" id="save-fixed-cost" class="btn btn-xs btn-primary">Valider</button>');
     jqPopup.append('<button type="button" id="cancel-fixed-cost" class="btn btn-xs btn-danger" >Annuler</button>');
-    jqPopup.append('<input type="radio" name="fixed-cost-option" checked="true" /> <label>Toutes les opérations intitulées "' + operationTitle + '" d\'un montant entre  ' + operationMin + ' et ' + operationMax + '</label><br />');
-    jqPopup.append('<input type="radio" name="fixed-cost-option" /> <label>Seulement cette opération</label><br />');
-    jqPopup.append('<input type="radio" name="fixed-cost-option" /> <label>Définir une règle</label>');
+    jqPopup.append('<input type="radio" name="fixed-cost-option" value="standard" checked="true" /> <label>Toutes les opérations intitulées "' + this.operationTitle + '" d\'un montant entre  ' + this.operationMin.money() + currency + ' et ' + this.operationMax.money() + currency + '</label><br />');
+    jqPopup.append('<input type="radio" name="fixed-cost-option" value="onetime" /> <label>Seulement cette opération</label><br />');
+    jqPopup.append('<input type="radio" name="fixed-cost-option" valur="custom" /> <label>Définir une règle</label>');
     return jqPopup.appendTo(jqIconParent);
   };
 
@@ -2300,7 +2377,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<td class="operation-title">' + escape((interp = model.get('title')) == null ? '' : interp) + '</td><td class="operation-amount text-right">' + escape((interp = Number(model.get('amount')).money()) == null ? '' : interp) + '</td><td class="text-right"><span aria-hidden="true" data-icon="&#57482;" data-icon-hover="&#57481;" class="fixed-cost fs1"></span></td>');
+buf.push('<td class="operation-title">' + escape((interp = model.get('title')) == null ? '' : interp) + '</td><td class="operation-amount text-right">' + escape((interp = Number(model.get('amount')).money()) == null ? '' : interp) + '</td><td class="text-right"><span aria-hidden="true" data-icon="&#57482;" data-icon-hover="&#57481;" class="variable-cost fs1"></span></td>');
 }
 return buf.join("");
 };

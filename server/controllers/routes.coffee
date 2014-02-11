@@ -6,6 +6,7 @@ bankaccounts = require './bankaccounts'
 bankoperations = require './bankoperations'
 bankalerts = require './bankalerts'
 rbiconfig = require './rbiconfig'
+rbifixedcost = require './rbifixedcost'
 
 module.exports =
     'foo':
@@ -71,3 +72,6 @@ module.exports =
     'rbiconfiguration':
         post: rbiconfig.setConfig
         get: rbiconfig.getConfig
+    'rbifixedcost':
+        post: rbifixedcost.setFixedCost
+        get: rbifixedcost.getFixedCost

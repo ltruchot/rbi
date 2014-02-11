@@ -27,7 +27,7 @@ module.exports.query = (req, res) ->
         if err?
             res.send 500, error: 'Server error occurred while retrieving data'
         else
-            paramDateFrom =  new Date req.body.dateFrom
+            paramDateFrom = new Date req.body.dateFrom
             paramDateTo = new Date req.body.dateTo
             paramAmountFrom =  Number req.body.amountFrom
             paramAmountTo = Number req.body.amountTo

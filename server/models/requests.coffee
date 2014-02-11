@@ -65,3 +65,6 @@ module.exports =
 
     rbiconfig:
         all: americano.defaultRequests.all
+
+    rbifixedcost:
+        all: americano.defaultRequests.all
