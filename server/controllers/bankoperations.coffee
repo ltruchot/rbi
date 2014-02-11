@@ -77,7 +77,7 @@ module.exports.byDate = (req, res) ->
             paramDateTo = new Date req.body.dateTo
             paramSearchText = req.body.searchText
             credits = Boolean req.body.credits
-            console.log credits
+            debits = Boolean req.body.debits
             async = require "async"
 
             treatment = (operation, callback) ->
@@ -94,6 +94,14 @@ module.exports.byDate = (req, res) ->
                 # text search
                 else if paramSearchText? and paramSearchText isnt "" and \
                         title.search(paramQueryText) < 0
+                    callback null
+
+                #credit search
+                else if credits and amount < 0
+                    callback null
+
+                #debit search
+                else if debits and amount > 0
                     callback null
 
                 # the right one

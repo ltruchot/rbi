@@ -12,16 +12,51 @@ module.exports = class MonthlyAnalysisView extends BaseView
 
   events:
     'click .month-switcher' : 'switchMonth'
+    'click #credits-search-btn' : 'searchAllCredits'
+    'click #debits-search-btn' : 'searchAllDebits'
 
   initialize: ->
     @bankStatementView = new BankStatementView $('#context-box')
 
   render: ->
+
     # lay down the template
     super()
+
+    #trigger a switch month action
     @switchMonth()
-    view = @
+
     @
+
+  searchAllCredits: ->
+    $('#search-text').val "#credits"
+    $('#search-text').keyup()
+
+  searchAllDebits: ->
+    $('#search-text').val "#debits"
+    $('#search-text').keyup()
+
+
+  switchMonth: (event) ->
+    $('#search-text').val ""
+    if event? and event.currentTarget?
+      jqSwitcher = $(event.currentTarget)
+      if jqSwitcher.hasClass 'previous-month'
+        @currentMonthStart.subtract('months', 1).startOf 'month'
+      else if jqSwitcher.hasClass 'next-month'
+        @currentMonthStart.add('months', 1).startOf('month')
+    else
+      @currentMonthStart = moment(new Date()).startOf('month')
+    @$("#current-month").html @currentMonthStart.format "MMMM YYYY"
+    if window.rbiActiveData.bankAccount?
+      monthlyAmounts = @getAmountsByMonth @currentMonthStart
+      @displayMonthlyAmounts monthlyAmounts.previous, monthlyAmounts.next
+      bankStatementParams =
+        dateFrom: @currentMonthStart
+        dateTo: moment(@currentMonthStart).endOf 'month'
+      @bankStatementView.reload bankStatementParams, @displayMonthlySums
+      @displayPieChart()
+
 
   displayMonthlyAmounts: (previous, next) ->
     currency = window.rbiActiveData.currency.entity
@@ -33,10 +68,24 @@ module.exports = class MonthlyAnalysisView extends BaseView
     if (not isNaN differential) and differential isnt 0
       if differential > 0
         sign = '+'
-      iconEvolution = $('<span class="fs1 plain-icon-blue" aria-hidden="true" data-icon="&#57641;"></span>')
+        iconEvolution = $('<span class="fs1 plain-icon-blue" aria-hidden="true" data-icon="&#57641;"></span>')
+      else
+        iconEvolution = $('<span class="fs1 plain-icon-red" aria-hidden="true" data-icon="&#57643;"></span>')
       $("#amount-month-differential").append iconEvolution
       $("#amount-month-differential").append sign + differential.money() + currency
 
+  displayMonthlySums: (operations) ->
+    credits = 0
+    debits = 0
+    if operations?
+      currency = window.rbiActiveData.currency.entity
+      for operation in operations
+        if operation.amount > 0
+          credits += operation.amount
+        else
+          debits += operation.amount
+    $('#credits-sum').html credits + currency
+    $('#debits-sum').html debits + currency
 
 
   displayPieChart: ->
@@ -85,25 +134,6 @@ module.exports = class MonthlyAnalysisView extends BaseView
         height: "100%"
     chart = new google.visualization.PieChart(document.getElementById 'pie_chart')
     chart.draw data, options
-
-  switchMonth: (event) ->
-    if event? and event.currentTarget?
-      jqSwitcher = $(event.currentTarget)
-      if jqSwitcher.hasClass 'previous-month'
-        @currentMonthStart.subtract('months', 1).startOf 'month'
-      else if jqSwitcher.hasClass 'next-month'
-        @currentMonthStart.add('months', 1).startOf('month')
-    else
-      @currentMonthStart = moment(new Date()).startOf('month')
-    @$("#current-month").html @currentMonthStart.format "MMMM YYYY"
-    if window.rbiActiveData.bankAccount?
-      monthlyAmounts = @getAmountsByMonth @currentMonthStart
-      @displayMonthlyAmounts monthlyAmounts.previous, monthlyAmounts.next
-      bankStatementParams =
-        dateFrom: @currentMonthStart
-        dateTo: moment(@currentMonthStart).endOf 'month'
-      @bankStatementView.reload bankStatementParams
-      @displayPieChart()
 
   getAmountsByMonth: (monthStart)->
     nextAmount = (window.rbiActiveData.bankAccount.get 'amount') || null

@@ -32,6 +32,19 @@ module.exports =
             teal : "#28D8CA"
             grey : "#999999"
 
+        window.rbiIcons =
+            plus :
+                encoded: "&#57602;"
+                decoded: ""
+            minus :
+                encoded: "&#57601;"
+                decoded: ""
+            positiveEvolution:
+                encoded: "&#57641;"
+                decoded: ""
+            negativeEcolution:
+                encoded: "&#57643;"
+                decoded: ""
 
 
         #instantiate collections: banks, operations, amounts

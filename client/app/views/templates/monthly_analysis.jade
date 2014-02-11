@@ -17,7 +17,20 @@ table#monthly-report.col-md-12
         br
         span#amount-month-differential.blue-text.amount-number-diff
   tr
-    td(colspan="2") 4 buttons
+    td(colspan="2")
+      .col-md-1
+      .search-panel.col-md-10
+        #credits-search-btn.search-btn.grey1.pull-left
+          span.pull-left.fs1(aria-hidden="true", data-icon="&#57602;")
+          span.pull-right#credits-sum 0 &euro;
+          br
+          span.pull-right Crédits
+        #debits-search-btn.search-btn.grey2.pull-right
+          span.pull-left.fs1(aria-hidden="true", data-icon="&#57601;")
+          span.pull-right#debits-sum 0 &euro;
+          br
+          span.pull-right Débits
+      .col-md-1
   tr
     td(colspan="2")
       div#pie_chart &nbsp;

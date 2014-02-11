@@ -111,7 +111,7 @@ module.exports = class BankStatementView extends BaseView
         # $("#layout-2col-column-right").getNiceScroll().onResize()
         @
 
-    reload: (params) ->
+    reload: (params, callback) ->
         view = @
         @model = window.rbiActiveData.bankAccount
         if params? and params.dateFrom?
@@ -135,8 +135,13 @@ module.exports = class BankStatementView extends BaseView
                         view.addAll()
                     else
                         window.collections.operations.reset()
+                    if callback?
+                        callback objects
+
                 error: (err) ->
                     console.log "there was an error"
+                    if callback?
+                        callback null
 
 
 
@@ -193,6 +198,8 @@ module.exports = class BankStatementView extends BaseView
         if searchTextVal? and (searchTextVal isnt "")
             if searchTextVal is "#credits"
                 @data.credits = true
+            else if searchTextVal is "#debits"
+                @data.debits = true
             else
                 @data.searchText = searchTextVal
 
@@ -204,6 +211,11 @@ module.exports = class BankStatementView extends BaseView
             view.destroy()
         @subViews = []
 
+        #if none return
+        if window.collections.operations.models.length is 0
+            $("#table-operations").append $('<tr><td>Aucune opération ne correspond à ces critères.</td></tr>')
+            return
+
         # and render all of them
         for operation in window.collections.operations.models
 
@@ -214,11 +226,6 @@ module.exports = class BankStatementView extends BaseView
                 @subViewLastDate = subViewDate
                 @$("#table-operations").append $('<tr class="special"><td colspan="4">' + moment(@subViewLastDate).format "DD/MM/YYYY" + '</td></tr>')
             @$("#table-operations").append subView.render().el
-            @subViews.push subView
-
-        # nicescroll
-        # $("#layout-2col-column-right").niceScroll()
-        # $("#layout-2col-column-right").getNiceScroll().onResize()
 
     destroy: ->
         @viewTitle?.destroy()

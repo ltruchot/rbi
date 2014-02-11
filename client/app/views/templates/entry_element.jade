@@ -4,7 +4,7 @@ td.operation-title
   //-     span.infobulle.glyphicon.glyphicon-info-sign
 td.operation-amount.text-right
   | #{Number(model.get('amount')).money()}
-td
-  span.fs1.orange-text(aria-hidden="true", data-icon="&#57602;")
-td
-  span.fs1(aria-hidden="true", data-icon="&#57481;")
+td.text-right
+  //- span.fs1.orange-text(aria-hidden="true", data-icon="&#57602;")
+  //- |&nbsp;
+  span.fixed-cost.fs1(aria-hidden="true", data-icon="&#57482;", data-icon-hover="&#57481;")
