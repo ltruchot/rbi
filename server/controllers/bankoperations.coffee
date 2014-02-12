@@ -123,6 +123,8 @@ module.exports.byDate = (req, res) ->
                     errorMsg = 'Server error occurred while retrieving data'
                     res.send 500, error: errorMsg
                 else
+                    # if fixedCosts or variableCosts
+                    #     console.log 'costs !'
                     res.send 200, results
 
 ###

@@ -113,7 +113,16 @@ module.exports = class BankStatementView extends BaseView
 
     reload: (params, callback) ->
         view = @
+
+        #client or server search ?
+        # isClientSearch = false
+        # if params.clientSearch
+        #     isClientSearch = true
+
+
         @model = window.rbiActiveData.bankAccount
+
+        #server search
         if params? and params.dateFrom?
             @params = params
         if @model?
@@ -121,6 +130,10 @@ module.exports = class BankStatementView extends BaseView
             if @$("#table-operations").length is 0
                 @$el.html @templateHeader
                     model: @model
+
+        displayFixedCosts = if @data? then (@data.fixedCosts or false) else false
+        displayVariableCosts = if @data? then (@data.variableCosts or false) else false
+
 
         if @send
             $.ajax
@@ -134,10 +147,11 @@ module.exports = class BankStatementView extends BaseView
                         $.ajax
                             type: "GET"
                             url: "rbifixedcost"
-                            success: (fixedCosts) ->
+                            success: (fixedCosts) =>
                                 console.log "getting fixed cost success."
                                 window.rbiCurrentOperations = {}
-                                for operation in operations
+                                finalOperations = []
+                                for operation, index in operations
                                     operation.isFixedCost = false
                                     if operation.amount < 0
                                         for fixedCost in fixedCosts
@@ -145,10 +159,20 @@ module.exports = class BankStatementView extends BaseView
                                                 operation.isFixedCost = true
                                                 operation.fixedCostId = fixedCost.id
                                                 break
-                                    window.rbiCurrentOperations[operation.id] = operation
+
+                                    #adjustement for fixed/variable cost search
+                                    operationRemoved = false
+                                    if (displayFixedCosts and (not operation.isFixedCost))
+                                        operationRemoved = true
+                                    else if (displayVariableCosts and (operation.isFixedCost or (operation.amount > 0)))
+                                        operationRemoved = true
+                                    if not operationRemoved
+                                        finalOperations.push operation
+                                        window.rbiCurrentOperations[operation.id] = operation
+
                                 if callback?
                                     callback window.rbiCurrentOperations
-                                window.collections.operations.reset operations
+                                window.collections.operations.reset finalOperations
                                 view.addAll()
                             error: (err) ->
                                 console.log "getting fixed cost failed."
@@ -159,6 +183,7 @@ module.exports = class BankStatementView extends BaseView
                     console.log "there was an error"
                     if callback?
                         callback null
+
 
 
 
@@ -218,9 +243,9 @@ module.exports = class BankStatementView extends BaseView
             else if searchTextVal is "#debits"
                 @data.debits = true
             else if searchTextVal is "#frais-fixes"
-                @data.fixedCost = true
+                @data.fixedCosts = true
             else if searchTextVal is "#depenses"
-                @data.variableCost = true
+                @data.variableCosts = true
             else
                 @data.searchText = searchTextVal
 
@@ -238,12 +263,14 @@ module.exports = class BankStatementView extends BaseView
             return
 
         # and render all of them
-        for operation in window.collections.operations.models
+        for operation, index in window.collections.operations.models
 
             # add the operation to the table
             subView = new BalanceOperationView operation, @model
             subViewDate = subView.render().model.get 'date'
-            if @subViewLastDate isnt subViewDate
+
+            #insert day row in table
+            if (@subViewLastDate isnt subViewDate) or (index is 0)
                 @subViewLastDate = subViewDate
                 @$("#table-operations").append $('<tr class="special"><td colspan="4">' + moment(@subViewLastDate).format "DD/MM/YYYY" + '</td></tr>')
             @$("#table-operations").append subView.render().el

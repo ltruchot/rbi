@@ -1107,7 +1107,7 @@ module.exports = BankStatementView = (function(_super) {
   };
 
   BankStatementView.prototype.reload = function(params, callback) {
-    var view;
+    var displayFixedCosts, displayVariableCosts, view;
     view = this;
     this.model = window.rbiActiveData.bankAccount;
     if ((params != null) && (params.dateFrom != null)) {
@@ -1121,23 +1121,27 @@ module.exports = BankStatementView = (function(_super) {
         }));
       }
     }
+    displayFixedCosts = this.data != null ? this.data.fixedCosts || false : false;
+    displayVariableCosts = this.data != null ? this.data.variableCosts || false : false;
     if (this.send) {
       return $.ajax({
         type: "POST",
         url: "bankoperations/byDate",
         data: this.data,
         success: function(operations) {
+          var _this = this;
           console.log("sent successfully!");
           if (operations) {
             return $.ajax({
               type: "GET",
               url: "rbifixedcost",
               success: function(fixedCosts) {
-                var fixedCost, operation, _i, _j, _len, _len1;
+                var finalOperations, fixedCost, index, operation, operationRemoved, _i, _j, _len, _len1;
                 console.log("getting fixed cost success.");
                 window.rbiCurrentOperations = {};
-                for (_i = 0, _len = operations.length; _i < _len; _i++) {
-                  operation = operations[_i];
+                finalOperations = [];
+                for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
+                  operation = operations[index];
                   operation.isFixedCost = false;
                   if (operation.amount < 0) {
                     for (_j = 0, _len1 = fixedCosts.length; _j < _len1; _j++) {
@@ -1149,12 +1153,21 @@ module.exports = BankStatementView = (function(_super) {
                       }
                     }
                   }
-                  window.rbiCurrentOperations[operation.id] = operation;
+                  operationRemoved = false;
+                  if (displayFixedCosts && (!operation.isFixedCost)) {
+                    operationRemoved = true;
+                  } else if (displayVariableCosts && (operation.isFixedCost || (operation.amount > 0))) {
+                    operationRemoved = true;
+                  }
+                  if (!operationRemoved) {
+                    finalOperations.push(operation);
+                    window.rbiCurrentOperations[operation.id] = operation;
+                  }
                 }
                 if (callback != null) {
                   callback(window.rbiCurrentOperations);
                 }
-                window.collections.operations.reset(operations);
+                window.collections.operations.reset(finalOperations);
                 return view.addAll();
               },
               error: function(err) {
@@ -1208,9 +1221,9 @@ module.exports = BankStatementView = (function(_super) {
       } else if (searchTextVal === "#debits") {
         return this.data.debits = true;
       } else if (searchTextVal === "#frais-fixes") {
-        return this.data.fixedCost = true;
+        return this.data.fixedCosts = true;
       } else if (searchTextVal === "#depenses") {
-        return this.data.variableCost = true;
+        return this.data.variableCosts = true;
       } else {
         return this.data.searchText = searchTextVal;
       }
@@ -1218,7 +1231,7 @@ module.exports = BankStatementView = (function(_super) {
   };
 
   BankStatementView.prototype.addAll = function() {
-    var operation, subView, subViewDate, view, _i, _j, _len, _len1, _ref, _ref1, _results;
+    var index, operation, subView, subViewDate, view, _i, _j, _len, _len1, _ref, _ref1, _results;
     this.$("#table-operations").html("");
     this.$(".loading").remove();
     _ref = this.subViews;
@@ -1233,11 +1246,11 @@ module.exports = BankStatementView = (function(_super) {
     }
     _ref1 = window.collections.operations.models;
     _results = [];
-    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-      operation = _ref1[_j];
+    for (index = _j = 0, _len1 = _ref1.length; _j < _len1; index = ++_j) {
+      operation = _ref1[index];
       subView = new BalanceOperationView(operation, this.model);
       subViewDate = subView.render().model.get('date');
-      if (this.subViewLastDate !== subViewDate) {
+      if ((this.subViewLastDate !== subViewDate) || (index === 0)) {
         this.subViewLastDate = subViewDate;
         this.$("#table-operations").append($('<tr class="special"><td colspan="4">' + moment(this.subViewLastDate).format("DD/MM/YYYY" + '</td></tr>')));
       }
@@ -1320,7 +1333,8 @@ module.exports = EntryView = (function(_super) {
         type: 'DELETE',
         success: function(result) {
           console.log("Delete fixed cost success.");
-          return _this.destroyPopupFixedCost(event);
+          _this.destroyPopupFixedCost(event);
+          return $('#search-text').keyup();
         },
         error: function() {
           return console.log("Delete fixed cost failed.");
@@ -1381,7 +1395,8 @@ module.exports = EntryView = (function(_super) {
               fixedCostToRegister.idTable.push(object.id);
             }
             return _this.saveFixedCost(fixedCostToRegister, function() {
-              return _this.destroyPopupFixedCost(event);
+              _this.destroyPopupFixedCost(event);
+              return $('#search-text').keyup();
             });
           } else {
             return console.log("Operation(s) not found");
@@ -1393,7 +1408,8 @@ module.exports = EntryView = (function(_super) {
       });
     } else {
       return this.saveFixedCost(fixedCostToRegister, function() {
-        return _this.destroyPopupFixedCost(event);
+        _this.destroyPopupFixedCost(event);
+        return $('#search-text').keyup();
       });
     }
   };

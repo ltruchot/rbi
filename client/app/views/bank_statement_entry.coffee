@@ -51,6 +51,7 @@ module.exports = class EntryView extends BaseView
           success: (result) =>
             console.log "Delete fixed cost success."
             @destroyPopupFixedCost event
+            $('#search-text').keyup()
           error: ->
             console.log "Delete fixed cost failed."
 
@@ -115,6 +116,7 @@ module.exports = class EntryView extends BaseView
             #save fixed cost and close popup on callback
             @saveFixedCost fixedCostToRegister, =>
               @destroyPopupFixedCost event
+              $('#search-text').keyup()
           else
             console.log "Operation(s) not found"
         error: (err) ->
@@ -124,6 +126,7 @@ module.exports = class EntryView extends BaseView
       #save fixed cost and close popup on callback
       @saveFixedCost fixedCostToRegister, =>
         @destroyPopupFixedCost event
+        $('#search-text').keyup()
 
 
   saveFixedCost: (fixedCost, callback) ->
