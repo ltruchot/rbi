@@ -32,6 +32,7 @@ module.exports.query = (req, res) ->
             paramAmountFrom =  Number req.body.amountFrom
             paramAmountTo = Number req.body.amountTo
             paramSearchText = req.body.searchText
+            paramExactSearchText = req.body.exactSearchText or ""
             async = require "async"
 
             treatment = (operation, callback) ->
@@ -40,6 +41,7 @@ module.exports.query = (req, res) ->
                 date = new Date operation.date
                 title = operation.title.toLocaleUpperCase()
                 paramQueryText = paramSearchText.toLocaleUpperCase()
+                paramQueryExactText = paramExactSearchText.toLocaleUpperCase()
 
                 # dates
                 if date < paramDateFrom or date > paramDateTo
@@ -52,6 +54,11 @@ module.exports.query = (req, res) ->
                 # text search
                 else if paramSearchText? and paramSearchText isnt "" and \
                         title.search(paramQueryText) < 0
+                    callback null
+
+                # exact text search
+                else if paramExactSearchText? and paramExactSearchText isnt "" and \
+                        title isnt paramQueryExactText
                     callback null
 
                 # the right one
@@ -79,7 +86,6 @@ module.exports.byDate = (req, res) ->
             credits = Boolean req.body.credits
             debits = Boolean req.body.debits
             async = require "async"
-            paramExactSearchText = req.body.exactSearchText or ""
 
             treatment = (operation, callback) ->
                 # apply filters to dermine if the operation should be returned
@@ -95,11 +101,6 @@ module.exports.byDate = (req, res) ->
                 # text search
                 else if paramSearchText? and paramSearchText isnt "" and \
                         title.search(paramQueryText) < 0
-                    callback null
-
-                # text search
-                else if paramExactSearchText? and paramExactSearchText isnt "" and \
-                        title isnt paramExactSearchText
                     callback null
 
                 #credit search
@@ -126,7 +127,6 @@ module.exports.byDate = (req, res) ->
     dev only
 ###
 module.exports.create = (req, res) ->
-    console.log body
     BankOperation.create body, (err, operation) ->
         if err?
             res.send 500, error: "Server error while creating bank operation"

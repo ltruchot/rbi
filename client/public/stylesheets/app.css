@@ -10778,7 +10778,7 @@ cursor not-allowed {
 #context-box .table > tbody > tr.success > td {
   background-color: #dff0d8;
 }
-.variable-cost {
+.iconCostType {
   cursor: pointer;
 }
 .popup-fixed-cost {
@@ -10795,12 +10795,13 @@ cursor not-allowed {
   -webkit-box-shadow: 0 5px 10px;
   box-shadow: 0 5px 10px;
 }
-.popup-fixed-cost .variable-cost {
+.popup-fixed-cost .iconCostType {
   position: absolute;
   top: 5px;
   right: 5px;
 }
-#save-fixed-cost {
+#save-fixed-cost,
+#remove-fixed-cost {
   position: absolute;
   bottom: 10px;
   right: 40px;

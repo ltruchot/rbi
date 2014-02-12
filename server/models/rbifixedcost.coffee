@@ -19,7 +19,6 @@ FixedCost.set = (hash, callback) ->
             if cost.uniquery? and cost.uniquery isnt "" and cost.uniquery is hash.uniquery
                 alreadyExist = true
                 cost.updateAttributes hash, callback
-                console.log "a e"
         if not alreadyExist
             FixedCost.create hash, callback
 

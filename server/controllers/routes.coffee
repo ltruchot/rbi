@@ -75,3 +75,8 @@ module.exports =
     'rbifixedcost':
         post: rbifixedcost.setFixedCost
         get: rbifixedcost.getFixedCost
+    'rbifixedcostID': param: rbifixedcost.loadFixedCost
+    'rbifixedcost/:rbifixedcostID':
+        get: rbifixedcost.show
+        put: rbifixedcost.update
+        del: rbifixedcost.destroy
