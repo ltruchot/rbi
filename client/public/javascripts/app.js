@@ -112,6 +112,7 @@ module.exports = {
       name: 'euro',
       entity: '&euro;'
     };
+    window.rbiActiveData.olderOperationDate = moment(new Date());
     window.rbiColors = {
       border_color: "#efefef",
       grid_color: "#ddd",
@@ -1293,12 +1294,12 @@ module.exports = EntryView = (function(_super) {
   EntryView.prototype.tagName = 'tr';
 
   EntryView.prototype.events = {
-    'mouseenter td > .variable-cost': 'switchFixedCostIcon',
-    'mouseleave td > .variable-cost': 'switchFixedCostIcon',
-    'mouseenter td > .fixed-cost': 'switchFixedCostIcon',
-    'mouseleave td > .fixed-cost': 'switchFixedCostIcon',
-    'click td > .variable-cost': 'popupFixedCost',
-    'click td > .fixed-cost': 'popupFixedCost',
+    'mouseenter .popup-container > .variable-cost': 'switchFixedCostIcon',
+    'mouseleave .popup-container > .variable-cost': 'switchFixedCostIcon',
+    'mouseenter .popup-container > .fixed-cost': 'switchFixedCostIcon',
+    'mouseleave .popup-container > .fixed-cost': 'switchFixedCostIcon',
+    'click .popup-container > .variable-cost': 'popupFixedCost',
+    'click .popup-container > .fixed-cost': 'popupFixedCost',
     'click #cancel-fixed-cost': 'destroyPopupFixedCost',
     'click #save-fixed-cost': 'prepareFixedCost',
     'click #remove-fixed-cost': 'removeFixedCost'
@@ -1633,6 +1634,9 @@ module.exports = BankSubTitleView = (function(_super) {
     dayRatio = 4;
     amounts.each(function(amount) {
       var amountDate, currentDate, i;
+      if (window.rbiActiveData.olderOperationDate > moment(amount.get('date'))) {
+        window.rbiActiveData.olderOperationDate = moment(amount.get('date'));
+      }
       currentDate = new Date();
       currentDate.setHours(12, 0, 0, 0);
       amountDate = new Date(amount.get('date'));
@@ -2111,7 +2115,10 @@ module.exports = MonthlyAnalysisView = (function(_super) {
   };
 
   MonthlyAnalysisView.prototype.switchMonth = function(event) {
-    var bankStatementParams, jqSwitcher, monthlyAmounts;
+    var bankStatementParams, currentMonth, firstMonth, jqSwitcher, monthlyAmounts,
+      _this = this;
+    currentMonth = moment(new Date()).startOf('month').format("YYYY-MM-DD");
+    firstMonth = moment(window.rbiActiveData.olderOperationDate).startOf('month').format("YYYY-MM-DD");
     $('#search-text').val("");
     if ((event != null) && (event.currentTarget != null)) {
       jqSwitcher = $(event.currentTarget);
@@ -2123,6 +2130,16 @@ module.exports = MonthlyAnalysisView = (function(_super) {
     } else {
       this.currentMonthStart = moment(new Date()).startOf('month');
     }
+    if ((this.currentMonthStart.format("YYYY-MM-DD")) === currentMonth) {
+      $('.next-month').hide();
+    } else {
+      $('.next-month').show();
+    }
+    if ((firstMonth !== currentMonth) && (this.currentMonthStart.format("YYYY-MM-DD") === firstMonth)) {
+      $('.previous-month').hide();
+    } else {
+      $('.previous-month').show();
+    }
     this.$("#current-month").html(this.currentMonthStart.format("MMMM YYYY"));
     if (window.rbiActiveData.bankAccount != null) {
       monthlyAmounts = this.getAmountsByMonth(this.currentMonthStart);
@@ -2131,8 +2148,13 @@ module.exports = MonthlyAnalysisView = (function(_super) {
         dateFrom: this.currentMonthStart,
         dateTo: moment(this.currentMonthStart).endOf('month')
       };
-      this.bankStatementView.reload(bankStatementParams, this.displayMonthlySums);
-      return this.displayPieChart();
+      return this.bankStatementView.reload(bankStatementParams, function(operations) {
+        _this.displayMonthlySums(operations);
+        _this.displayPieChart(operations);
+        return $(window).resize(function() {
+          return _this.displayPieChart(operations);
+        });
+      });
     }
   };
 
@@ -2190,48 +2212,95 @@ module.exports = MonthlyAnalysisView = (function(_super) {
     return $('#variable-cost-sum').html((Math.abs(variableCost)).money() + currency);
   };
 
-  MonthlyAnalysisView.prototype.displayPieChart = function() {
-    var $blue, $border_color, $default_black, $green, $grey, $grid_color, $orange, $red, $teal, $yellow, chart, data, dataTable, options;
-    $border_color = "#efefef";
-    $grid_color = "#ddd";
-    $default_black = "#666";
-    $green = "#8ecf67";
-    $yellow = "#fac567";
-    $orange = "#F08C56";
-    $blue = "#87ceeb";
-    $red = "#f74e4d";
-    $teal = "#28D8CA";
-    $grey = "#999999";
-    dataTable = [['Task', 'Hours per Day'], ['Eat', 4], ['Work', 3], ['Commute', 5], ['Read', 3], ['Sleep', 6], ['Play', 2]];
-    data = google.visualization.arrayToDataTable(dataTable);
-    options = {
-      width: 'auto',
-      height: '160',
-      backgroundColor: 'transparent',
-      colors: [$blue, $teal, $green, $red, $yellow, $orange, $grey],
-      tooltip: {
-        textStyle: {
-          color: '#666666',
-          fontSize: 11
-        },
-        showColorCode: true
+  MonthlyAnalysisView.prototype.displayPieChart = function(operations) {
+    var amount, chart, chartColors, data, dataTable, id, obj, operation, operationType, options, raw, type;
+    $('#pie_chart').empty();
+    chartColors = [];
+    operationType = {
+      cheque: {
+        name: "Chèques",
+        amount: 0,
+        color: "#87ceeb"
       },
-      legend: {
-        position: 'left',
-        textStyle: {
-          color: 'black',
-          fontSize: 12
-        }
+      commerceElectronique: {
+        name: "Achats en ligne",
+        amount: 0,
+        color: "#8ecf67"
       },
-      chartArea: {
-        left: 0,
-        top: 10,
-        width: "100%",
-        height: "100%"
+      retrait: {
+        name: "Retraits",
+        amount: 0,
+        color: "#fac567"
+      },
+      carte: {
+        name: "CB",
+        amount: 0,
+        color: "#F08C56"
+      },
+      autre: {
+        name: "Autres",
+        amount: 0,
+        color: "#b0b0b0"
       }
     };
-    chart = new google.visualization.PieChart(document.getElementById('pie_chart'));
-    return chart.draw(data, options);
+    for (id in operations) {
+      operation = operations[id];
+      if (operation.amount < 0) {
+        raw = operation.raw.toLocaleUpperCase();
+        amount = Math.abs(operation.amount);
+        if ((raw.search(/COMMERCE ELECTRONIQUE$/)) >= 0) {
+          operationType.commerceElectronique.amount += amount;
+        } else if ((raw.search(/^CHEQUE/)) >= 0) {
+          operationType.cheque.amount += amount;
+        } else if ((raw.search(/^CARTE[^R]*RETRAIT DAB (\d{2})\/(\d{2}) (\d{2})H(\d{2})/)) >= 0) {
+          operationType.retrait.amount += amount;
+        } else if ((raw.search(/^CARTE X\d{4} (\d{2})\/(\d{2})/)) >= 0) {
+          operationType.carte.amount += amount;
+        } else {
+          operationType.autre.amount += amount;
+        }
+      }
+    }
+    dataTable = [['Type', 'Montant']];
+    for (type in operationType) {
+      obj = operationType[type];
+      if (obj.amount > 0) {
+        dataTable.push([obj.name, obj.amount]);
+        chartColors.push(obj.color);
+      }
+    }
+    if (dataTable.length > 2) {
+      data = google.visualization.arrayToDataTable(dataTable);
+      options = {
+        width: 'auto',
+        height: '160',
+        backgroundColor: 'transparent',
+        colors: chartColors,
+        tooltip: {
+          textStyle: {
+            color: '#666666',
+            fontSize: 11
+          },
+          showColorCode: true
+        },
+        legend: {
+          position: 'right',
+          textStyle: {
+            color: 'black',
+            fontSize: 12
+          }
+        },
+        pieSliceText: 'value',
+        chartArea: {
+          left: 0,
+          top: 10,
+          width: "100%",
+          height: "100%"
+        }
+      };
+      chart = new google.visualization.PieChart(document.getElementById('pie_chart'));
+      return chart.draw(data, options);
+    }
   };
 
   MonthlyAnalysisView.prototype.getAmountsByMonth = function(monthStart) {
@@ -2427,6 +2496,17 @@ return buf.join("");
 };
 });
 
+;require.register("views/templates/balance_banks_empty", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+}
+return buf.join("");
+};
+});
+
 ;require.register("views/templates/bank_statement_empty", function(exports, require, module) {
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
 attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
@@ -2529,9 +2609,9 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<td class="operation-title">' + escape((interp = model.get('title')) == null ? '' : interp) + '</td><td class="operation-amount text-right">' + escape((interp = Number(model.get('amount')).money()) == null ? '' : interp) + '</td><td class="text-right"><span');
+buf.push('<td class="operation-title">' + escape((interp = model.get('title')) == null ? '' : interp) + '</td><td class="operation-amount text-right">' + escape((interp = Number(model.get('amount')).money()) == null ? '' : interp) + '</td><td class="text-right"><div class="popup-container"><span');
 buf.push(attrs({ 'aria-hidden':("true"), 'data-icon':("" + (model.costIcon) + ""), "class": ('fs1') + ' ' + ('iconCostType') + ' ' + ("" + (model.costClass) + "") }, {"class":true,"aria-hidden":true,"data-icon":true}));
-buf.push('></span></td>');
+buf.push('></span></div></td>');
 }
 return buf.join("");
 };

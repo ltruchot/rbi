@@ -14,10 +14,12 @@ module.exports =
         window.views = {}
         window.rbiActiveData = {}
 
+
         #set global active data
         window.rbiActiveData.currency =
             name : 'euro'
             entity : '&euro;'
+        window.rbiActiveData.olderOperationDate = moment(new Date())
 
         #set global rbi color for dynamic use
         window.rbiColors =

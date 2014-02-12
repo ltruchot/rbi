@@ -67,6 +67,55 @@ for bank in banks
             "raw": "CARTE X1234 19/11 LIDL 0304"
         },
         {
+            "label": "Salaire",
+            "raw": "Virement Cozycloud",
+            "amount": "750.00",
+            "rdate": "2014-01-16T00:00:00.000Z",
+            "account": "1234567890"
+        },
+        {
+            "label": "Salaire",
+            "raw": "Virement Cozycloud",
+            "amount": "700.00",
+            "rdate": "2014-01-16T00:00:00.000Z",
+            "account": "1234567890"
+        },
+        {
+            "label": "Loyer",
+            "raw": "Virement agence Paris Champs Elysées",
+            "amount": "-300.00",
+            "rdate": "2014-02-08T00:00:00.000Z",
+            "account": "1234567890"
+        },
+        {
+            "label": "Loyer",
+            "raw": "Virement agence Paris Champs Elysées",
+            "amount": "-300.00",
+            "rdate": "2014-02-11T00:00:00.000Z",
+            "account": "1234567890"
+        },
+        {
+            "account": "1234567890",
+            "label": "ARMAND THIERY",
+            "rdate": "2014-02-11T00:00:00.000Z",
+            "amount": "-179",
+            "raw": "CARTE X1234 09/11 ARMAND THIERY"
+        },
+        {
+            "label": "Intermarché courses",
+            "raw": "Intermarché CARTE X1234",
+            "amount": "-100.00",
+            "rdate": "2014-02-11T00:00:00.000Z",
+            "account": "1234567890"
+        },
+        {
+            "account": "1234567890",
+            "label": "LIDL 0304",
+            "rdate": "2014-02-12T00:00:00.000Z",
+            "amount": "-11.35",
+            "raw": "CARTE X1234 19/11 LIDL 0304"
+        },
+        {
             "label": "Pot de vin",
             "raw": "Pot de vin CARTE LES3Suisses",
             "amount": "100.00",

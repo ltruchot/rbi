@@ -29,6 +29,7 @@ module.exports = class MonthlyAnalysisView extends BaseView
 
     @
 
+
   searchAllCredits: ->
     $('#search-text').val "#credits"
     $('#search-text').keyup()
@@ -47,6 +48,12 @@ module.exports = class MonthlyAnalysisView extends BaseView
 
 
   switchMonth: (event) ->
+
+    #prepare month limit
+    currentMonth = moment(new Date()).startOf('month').format "YYYY-MM-DD"
+    firstMonth = moment(window.rbiActiveData.olderOperationDate).startOf('month').format "YYYY-MM-DD"
+
+
     $('#search-text').val ""
     if event? and event.currentTarget?
       jqSwitcher = $(event.currentTarget)
@@ -56,6 +63,17 @@ module.exports = class MonthlyAnalysisView extends BaseView
         @currentMonthStart.add('months', 1).startOf('month')
     else
       @currentMonthStart = moment(new Date()).startOf('month')
+
+    #show/hide previous/next month button
+    if (@currentMonthStart.format "YYYY-MM-DD") is currentMonth
+      $('.next-month').hide()
+    else
+      $('.next-month').show()
+    if (firstMonth isnt currentMonth) and (@currentMonthStart.format("YYYY-MM-DD") is firstMonth)
+      $('.previous-month').hide()
+    else
+      $('.previous-month').show()
+
     @$("#current-month").html @currentMonthStart.format "MMMM YYYY"
     if window.rbiActiveData.bankAccount?
       monthlyAmounts = @getAmountsByMonth @currentMonthStart
@@ -63,8 +81,11 @@ module.exports = class MonthlyAnalysisView extends BaseView
       bankStatementParams =
         dateFrom: @currentMonthStart
         dateTo: moment(@currentMonthStart).endOf 'month'
-      @bankStatementView.reload bankStatementParams, @displayMonthlySums
-      @displayPieChart()
+      @bankStatementView.reload bankStatementParams, (operations)=>
+        @displayMonthlySums operations
+        @displayPieChart operations
+        $(window).resize =>
+          @displayPieChart operations
 
 
   displayMonthlyAmounts: (previous, next) ->
@@ -109,52 +130,79 @@ module.exports = class MonthlyAnalysisView extends BaseView
     $('#variable-cost-sum').html (Math.abs(variableCost)).money() + currency
 
 
-  displayPieChart: ->
+  displayPieChart: (operations)->
+    $('#pie_chart').empty()
+    chartColors = []
+    operationType =
+      cheque:
+        name: "Chèques"
+        amount: 0
+        color: "#87ceeb"
+      commerceElectronique:
+        name: "Achats en ligne"
+        amount: 0
+        color : "#8ecf67"
+      retrait:
+        name: "Retraits"
+        amount: 0
+        color : "#fac567"
+      carte:
+        name: "CB"
+        amount: 0
+        color : "#F08C56"
+      autre:
+        name: "Autres"
+        amount: 0
+        color : "#b0b0b0"
 
-    $border_color = "#efefef"
-    $grid_color = "#ddd"
-    $default_black = "#666"
-    $green = "#8ecf67"
-    $yellow = "#fac567"
-    $orange = "#F08C56"
-    $blue = "#87ceeb"
-    $red = "#f74e4d"
-    $teal = "#28D8CA"
-    $grey = "#999999"
-    dataTable = [
-      ['Task', 'Hours per Day']
-      ['Eat', 4]
-      ['Work', 3]
-      ['Commute', 5]
-      ['Read', 3]
-      ['Sleep', 6]
-      ['Play', 2]
-    ]
-    data = google.visualization.arrayToDataTable dataTable
+    for id, operation of operations
+      if operation.amount < 0
+        raw = operation.raw.toLocaleUpperCase()
+        amount = Math.abs operation.amount
+        if (raw.search /COMMERCE ELECTRONIQUE$/) >= 0
+          operationType.commerceElectronique.amount += amount
+        else if (raw.search /^CHEQUE/) >= 0
+          operationType.cheque.amount += amount
+        else if (raw.search /^CARTE[^R]*RETRAIT DAB (\d{2})\/(\d{2}) (\d{2})H(\d{2})/) >= 0
+          operationType.retrait.amount += amount
+        else if (raw.search /^CARTE X\d{4} (\d{2})\/(\d{2})/) >= 0
+          operationType.carte.amount += amount
+        else
+          operationType.autre.amount += amount
 
-    options =
-      width: 'auto'
-      height: '160'
-      backgroundColor: 'transparent'
-      colors: [$blue, $teal, $green, $red, $yellow, $orange, $grey],
-      tooltip:
-        textStyle:
-          color: '#666666'
-          fontSize: 11
-        showColorCode: true
-      legend:
-        position: 'left'
-        textStyle:
-          color: 'black'
-          fontSize: 12
+    dataTable = [['Type', 'Montant']]
+    for type, obj of operationType
+      if obj.amount > 0
+        dataTable.push [obj.name, obj.amount]
+        chartColors.push obj.color
+    if dataTable.length > 2
 
-      chartArea:
-        left: 0
-        top: 10
-        width: "100%"
-        height: "100%"
-    chart = new google.visualization.PieChart(document.getElementById 'pie_chart')
-    chart.draw data, options
+      data = google.visualization.arrayToDataTable dataTable
+
+      options =
+        width: 'auto'
+        height: '160'
+        backgroundColor: 'transparent'
+        colors: chartColors
+        tooltip:
+          textStyle:
+            color: '#666666'
+            fontSize: 11
+          showColorCode: true
+        legend:
+          position: 'right'
+          textStyle:
+            color: 'black'
+            fontSize: 12
+        pieSliceText: 'value'
+
+        chartArea:
+          left: 0
+          top: 10
+          width: "100%"
+          height: "100%"
+      chart = new google.visualization.PieChart document.getElementById('pie_chart')
+      chart.draw data, options
 
   getAmountsByMonth: (monthStart)->
     nextAmount = (window.rbiActiveData.bankAccount.get 'amount') || null

@@ -88,6 +88,11 @@ module.exports = class BankSubTitleView extends BaseView
         sixMonthAgo = sixMonthAgo.setMonth(sixMonthAgo.getMonth() - 6)
         dayRatio = 4
         amounts.each (amount) =>
+
+            #set older date for other use
+            if window.rbiActiveData.olderOperationDate > moment(amount.get 'date')
+                window.rbiActiveData.olderOperationDate = moment(amount.get 'date')
+
             currentDate = new Date()
             currentDate.setHours 12,0,0,0
             amountDate = new Date(amount.get 'date')

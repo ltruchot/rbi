@@ -7,12 +7,12 @@ module.exports = class EntryView extends BaseView
   tagName: 'tr'
 
   events:
-    'mouseenter td > .variable-cost' : 'switchFixedCostIcon'
-    'mouseleave td > .variable-cost' : 'switchFixedCostIcon'
-    'mouseenter td > .fixed-cost' : 'switchFixedCostIcon'
-    'mouseleave td > .fixed-cost' : 'switchFixedCostIcon'
-    'click td > .variable-cost' : 'popupFixedCost'
-    'click td > .fixed-cost' : 'popupFixedCost'
+    'mouseenter .popup-container > .variable-cost' : 'switchFixedCostIcon'
+    'mouseleave .popup-container > .variable-cost' : 'switchFixedCostIcon'
+    'mouseenter .popup-container > .fixed-cost' : 'switchFixedCostIcon'
+    'mouseleave .popup-container > .fixed-cost' : 'switchFixedCostIcon'
+    'click .popup-container > .variable-cost' : 'popupFixedCost'
+    'click .popup-container > .fixed-cost' : 'popupFixedCost'
     'click #cancel-fixed-cost' : 'destroyPopupFixedCost'
     'click #save-fixed-cost' : 'prepareFixedCost'
     'click #remove-fixed-cost' : 'removeFixedCost'
