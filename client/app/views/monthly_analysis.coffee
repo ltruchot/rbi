@@ -19,7 +19,6 @@ module.exports = class MonthlyAnalysisView extends BaseView
     @bankStatementView = new BankStatementView $('#context-box')
 
   render: ->
-
     # lay down the template
     super()
 
@@ -77,15 +76,23 @@ module.exports = class MonthlyAnalysisView extends BaseView
   displayMonthlySums: (operations) ->
     credits = 0
     debits = 0
+    fixedCost = 0
+    variableCost = 0
     if operations?
       currency = window.rbiActiveData.currency.entity
-      for operation in operations
+      for key, operation of operations
         if operation.amount > 0
           credits += operation.amount
         else
           debits += operation.amount
-    $('#credits-sum').html credits + currency
-    $('#debits-sum').html Math.abs(debits) + currency
+        if operation.isFixedCost and operation.amount < 0
+          fixedCost += operation.amount
+        else if (not operation.isFixedCost) and operation.amount < 0
+          variableCost += operation.amount
+    $('#credits-sum').html credits.money() + currency
+    $('#debits-sum').html (Math.abs(debits)).money() + currency
+    $('#fixed-cost-sum').html (Math.abs(fixedCost)).money() + currency
+    $('#variable-cost-sum').html (Math.abs(variableCost)).money() + currency
 
 
   displayPieChart: ->

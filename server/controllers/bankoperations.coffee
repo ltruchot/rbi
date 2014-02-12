@@ -79,6 +79,7 @@ module.exports.byDate = (req, res) ->
             credits = Boolean req.body.credits
             debits = Boolean req.body.debits
             async = require "async"
+            paramExactSearchText = req.body.exactSearchText or ""
 
             treatment = (operation, callback) ->
                 # apply filters to dermine if the operation should be returned
@@ -94,6 +95,11 @@ module.exports.byDate = (req, res) ->
                 # text search
                 else if paramSearchText? and paramSearchText isnt "" and \
                         title.search(paramQueryText) < 0
+                    callback null
+
+                # text search
+                else if paramExactSearchText? and paramExactSearchText isnt "" and \
+                        title isnt paramExactSearchText
                     callback null
 
                 #credit search

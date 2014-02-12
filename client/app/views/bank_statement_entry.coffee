@@ -19,7 +19,7 @@ module.exports = class EntryView extends BaseView
     jqFixedCostIcon = jqPopup.children('.variable-cost')
     jqFixedCostIcon.appendTo jqParent
     jqPopup.remove()
-    if $(event.currentTarget).hasClass 'cancel-fixed-cost'
+    if $(event.currentTarget).attr('id') is 'cancel-fixed-cost'
       jqFixedCostIcon.mouseleave()
     else
       jqFixedCostIcon.removeClass('variable-cost').addClass 'fixed-cost'
@@ -31,11 +31,13 @@ module.exports = class EntryView extends BaseView
     neededRequest = false
     fixedCostToRegister =
       type: userChoice
+      accountNumber: accountNumber
     switch userChoice
       when 'standard'
         @data =
           accounts: [accountNumber]
-          searchText: @operationTitle
+          searchText: ""
+          exactSearchText: @operationTitle
           dateFrom: null
           dateTo: new Date()
         if @operationMax < @operationMin
@@ -44,11 +46,11 @@ module.exports = class EntryView extends BaseView
         else
           @data.amountFrom = @operationMin
           @data.amountTo = @operationMax
-        fixedCostToRegister.query = @data
+        fixedCostToRegister.uniquery = accountNumber + '(#|#)' + @operationTitle + '(#|#)' + @data.amountFrom + '(#|#)' + @data.amountTo
         fixedCostToRegister.idTable = []
         neededRequest = true
       when 'onetime'
-        fixedCostToRegister.query = {}
+        fixedCostToRegister.uniquery = ""
         fixedCostToRegister.idTable = [@model.get 'id']
 
 
@@ -58,7 +60,7 @@ module.exports = class EntryView extends BaseView
         url: "bankoperations/query"
         data: @data
         success: (objects) =>
-          console.log "sent successfully!"
+          console.log " abk operation request sent successfully!"
           if objects? and objects.length > 0
             for object in objects
               fixedCostToRegister.idTable.push object.id
@@ -74,8 +76,23 @@ module.exports = class EntryView extends BaseView
 
 
   saveFixedCost: (fixedCost, callback) ->
-    console.log fixedCost
-    callback()
+    $.ajax
+        type: "POST"
+        url: "rbifixedcost"
+        data: fixedCost
+        success: (objects) =>
+          console.log "fixed cost sent successfully!"
+          #refresh monthly analysis
+          for id in fixedCost.idTable
+            if window.rbiCurrentOperations[id]?
+              window.rbiCurrentOperations[id].isFixedCost = true
+              window.rbiCurrentOperations[id].fixedCostId = fixedCost.id
+          window.views.monthlyAnalysisView.displayMonthlySums window.rbiCurrentOperations
+
+          callback()
+        error: (err) ->
+          console.log "there was an error"
+
 
 
   switchFixedCostIcon: (event) ->
@@ -103,7 +120,7 @@ module.exports = class EntryView extends BaseView
     jqPopup.append '<button type="button" id="cancel-fixed-cost" class="btn btn-xs btn-danger" >Annuler</button>'
     jqPopup.append '<input type="radio" name="fixed-cost-option" value="standard" checked="true" /> <label>Toutes les opérations intitulées "' + @operationTitle + '" d\'un montant entre  ' + @operationMin.money() + currency + ' et ' + @operationMax.money() + currency + '</label><br />'
     jqPopup.append '<input type="radio" name="fixed-cost-option" value="onetime" /> <label>Seulement cette opération</label><br />'
-    jqPopup.append '<input type="radio" name="fixed-cost-option" valur="custom" /> <label>Définir une règle</label>'
+    jqPopup.append '<input type="radio" name="fixed-cost-option" valur="custom" disabled="true" /> <label>Définir une règle</label>'
     jqPopup.appendTo jqIconParent
 
 
@@ -115,6 +132,15 @@ module.exports = class EntryView extends BaseView
       @$el.addClass "success"
     @model.account = @account
     @model.formattedDate = moment(@model.get('date')).format "DD/MM/YYYY" #moment(@model.get('date')).format "DD/MM/YYYY"
+
+    if (@model.get 'amount') > 0
+      @model.costClass = 'not-displayed-cost'
+    else
+      @model.costClass = "variable-cost"
+      @model.costIcon = "&#57482;"
+      if @model.get 'isFixedCost'
+        @model.costClass = "fixed-cost"
+        @model.costIcon = "&#57481;"
 
     if @showAccountNum
       hint = "#{@model.account.get('title')}, " + \

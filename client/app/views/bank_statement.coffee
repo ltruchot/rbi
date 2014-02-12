@@ -127,16 +127,33 @@ module.exports = class BankStatementView extends BaseView
                 type: "POST"
                 url: "bankoperations/byDate"
                 data: @data
-                success: (objects) ->
+                success: (operations) ->
                     console.log "sent successfully!"
                     # console.log objects
-                    if objects
-                        window.collections.operations.reset objects
-                        view.addAll()
+                    if operations
+                        $.ajax
+                            type: "GET"
+                            url: "rbifixedcost"
+                            success: (fixedCosts) ->
+                                console.log "getting fixed cost success."
+                                window.rbiCurrentOperations = {}
+                                for operation in operations
+                                    operation.isFixedCost = false
+                                    if operation.amount < 0
+                                        for fixedCost in fixedCosts
+                                            if $.inArray(operation.id, fixedCost.idTable) >= 0
+                                                operation.isFixedCost = true
+                                                operation.fixedCostId = fixedCost.id
+                                                break
+                                    window.rbiCurrentOperations[operation.id] = operation
+                                if callback?
+                                    callback window.rbiCurrentOperations
+                                window.collections.operations.reset operations
+                                view.addAll()
+                            error: (err) ->
+                                console.log "getting fixed cost failed."
                     else
                         window.collections.operations.reset()
-                    if callback?
-                        callback objects
 
                 error: (err) ->
                     console.log "there was an error"

@@ -1,25 +1,25 @@
 americano = require 'americano'
 
 module.exports = FixedCost = americano.getModel 'RbiFixedCost',
-    query: Object
     idTable: Object
     type: String
+    accountNumber: String
+    uniquery: String
 
 FixedCost.get = (callback) ->
-    FixedCost.request 'all', (err, configs) ->
+    FixedCost.request 'all', (err, fixedCosts) ->
         return callback err if err
-
-        config = configs?[0] or new FixedCost()
-        callback null, config.toJSON()
+        callback null, fixedCosts
 
 FixedCost.set = (hash, callback) ->
     FixedCost.request 'all', (err, fixedCosts) ->
         return callback err if err
         alreadyExist = false
         for cost in fixedCosts
-            if cost.query? and cost.query = hash.query
+            if cost.uniquery? and cost.uniquery isnt "" and cost.uniquery is hash.uniquery
                 alreadyExist = true
                 cost.updateAttributes hash, callback
+                console.log "a e"
         if not alreadyExist
             FixedCost.create hash, callback
 

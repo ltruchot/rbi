@@ -49,6 +49,7 @@ module.exports =
                 encoded: "&#57471;"
                 decoded: ""
             variableCost:
+                encoded: "&#57393;"
                 decoded: ""
 
 
