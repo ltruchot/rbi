@@ -217,6 +217,10 @@ module.exports = class BankStatementView extends BaseView
                 @data.credits = true
             else if searchTextVal is "#debits"
                 @data.debits = true
+            else if searchTextVal is "#frais-fixes"
+                @data.fixedCost = true
+            else if searchTextVal is "#depenses"
+                @data.variableCost = true
             else
                 @data.searchText = searchTextVal
 

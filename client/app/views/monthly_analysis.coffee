@@ -14,6 +14,8 @@ module.exports = class MonthlyAnalysisView extends BaseView
     'click .month-switcher' : 'switchMonth'
     'click #credits-search-btn' : 'searchAllCredits'
     'click #debits-search-btn' : 'searchAllDebits'
+    'click #fixed-cost-search-btn' : 'searchAllFixedCost'
+    'click #variable-cost-search-btn' : 'searchAllVariableCost'
 
   initialize: ->
     @bankStatementView = new BankStatementView $('#context-box')
@@ -33,6 +35,14 @@ module.exports = class MonthlyAnalysisView extends BaseView
 
   searchAllDebits: ->
     $('#search-text').val "#debits"
+    $('#search-text').keyup()
+
+  searchAllFixedCost: ->
+    $('#search-text').val "#frais-fixes"
+    $('#search-text').keyup()
+
+  searchAllVariableCost: ->
+    $('#search-text').val "#depenses"
     $('#search-text').keyup()
 
 
@@ -68,7 +78,11 @@ module.exports = class MonthlyAnalysisView extends BaseView
       if differential > 0
         sign = '+'
         iconEvolution = $('<span class="fs1 plain-icon-blue" aria-hidden="true" data-icon="&#57641;"></span>')
+        if $("#amount-month-differential").hasClass "red-text"
+          $("#amount-month-differential").removeClass("red-text").addClass "blue-text"
       else
+        if $("#amount-month-differential").hasClass "blue-text"
+          $("#amount-month-differential").removeClass("blue-text").addClass "red-text"
         iconEvolution = $('<span class="fs1 plain-icon-red" aria-hidden="true" data-icon="&#57643;"></span>')
       $("#amount-month-differential").append iconEvolution
       $("#amount-month-differential").append sign + differential.money() + currency

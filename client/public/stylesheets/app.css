@@ -10522,6 +10522,9 @@ cursor not-allowed {
 .blue-text {
   color: #40acd6;
 }
+.red-text {
+  color: #f74e4d;
+}
 .orange-text {
   color: #fac567;
 }
@@ -10691,6 +10694,7 @@ cursor not-allowed {
   border: none;
   padding: 5px;
   cursor: pointer;
+  position: relative;
 }
 .grey1 {
   background-color: #e0e0e0;
@@ -10740,6 +10744,23 @@ cursor not-allowed {
   position: absolute;
   top: 1px;
   left: 5px;
+}
+.big-size-icon {
+  font-size: 1.4em;
+  padding: 2px 0 0 5px;
+}
+.big-size-icon:before {
+  font-size: 1.4em;
+}
+.big-size-text {
+  font-size: 1.2em;
+  font-weight: bold;
+}
+.little-size-text {
+  font-size: 0.9em;
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
 }
 #context-box {
   border: 1px solid #2b2b2b;

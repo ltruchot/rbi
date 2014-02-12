@@ -1207,6 +1207,10 @@ module.exports = BankStatementView = (function(_super) {
         return this.data.credits = true;
       } else if (searchTextVal === "#debits") {
         return this.data.debits = true;
+      } else if (searchTextVal === "#frais-fixes") {
+        return this.data.fixedCost = true;
+      } else if (searchTextVal === "#depenses") {
+        return this.data.variableCost = true;
       } else {
         return this.data.searchText = searchTextVal;
       }
@@ -2055,7 +2059,9 @@ module.exports = MonthlyAnalysisView = (function(_super) {
   MonthlyAnalysisView.prototype.events = {
     'click .month-switcher': 'switchMonth',
     'click #credits-search-btn': 'searchAllCredits',
-    'click #debits-search-btn': 'searchAllDebits'
+    'click #debits-search-btn': 'searchAllDebits',
+    'click #fixed-cost-search-btn': 'searchAllFixedCost',
+    'click #variable-cost-search-btn': 'searchAllVariableCost'
   };
 
   MonthlyAnalysisView.prototype.initialize = function() {
@@ -2075,6 +2081,16 @@ module.exports = MonthlyAnalysisView = (function(_super) {
 
   MonthlyAnalysisView.prototype.searchAllDebits = function() {
     $('#search-text').val("#debits");
+    return $('#search-text').keyup();
+  };
+
+  MonthlyAnalysisView.prototype.searchAllFixedCost = function() {
+    $('#search-text').val("#frais-fixes");
+    return $('#search-text').keyup();
+  };
+
+  MonthlyAnalysisView.prototype.searchAllVariableCost = function() {
+    $('#search-text').val("#depenses");
     return $('#search-text').keyup();
   };
 
@@ -2116,7 +2132,13 @@ module.exports = MonthlyAnalysisView = (function(_super) {
       if (differential > 0) {
         sign = '+';
         iconEvolution = $('<span class="fs1 plain-icon-blue" aria-hidden="true" data-icon="&#57641;"></span>');
+        if ($("#amount-month-differential").hasClass("red-text")) {
+          $("#amount-month-differential").removeClass("red-text").addClass("blue-text");
+        }
       } else {
+        if ($("#amount-month-differential").hasClass("blue-text")) {
+          $("#amount-month-differential").removeClass("blue-text").addClass("red-text");
+        }
         iconEvolution = $('<span class="fs1 plain-icon-red" aria-hidden="true" data-icon="&#57643;"></span>');
       }
       $("#amount-month-differential").append(iconEvolution);
@@ -2517,7 +2539,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1 class="col-md-12"><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><table id="monthly-report" class="col-md-12"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div id="credits-search-btn" class="search-btn grey1 pull-left"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1"></span><span id="credits-sum" class="pull-right">0 &euro;</span><br/><span class="pull-right">Crédits</span></div><div id="debits-search-btn" class="search-btn grey2 pull-right"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1"></span><span id="debits-sum" class="pull-right">0 &euro;</span><br/><span class="pull-right">Débits</span></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div id="fixed-cost-search-btn" class="search-btn grey3 pull-left"><span aria-hidden="true" data-icon="&#57481;" class="pull-left fs1"></span><span id="fixed-cost-sum" class="pull-right">0 &euro;</span><br/><span class="pull-right">Frais fixes</span></div><div id="variable-cost-search-btn" class="search-btn grey4 pull-right"><span aria-hidden="true" data-icon="&#57393;" class="pull-left fs1"></span><span id="variable-cost-sum" class="pull-right">0 &euro;</span><br/><span class="pull-right">Dépenses</span></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2"><div id="pie_chart">&nbsp;</div></td></tr></table>');
+buf.push('<h1 class="col-md-12"><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><table id="monthly-report" class="col-md-12"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div id="credits-search-btn" class="search-btn grey1 pull-left"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1 big-size-icon"></span><span id="credits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Crédits</span></div><div id="debits-search-btn" class="search-btn grey2 pull-right"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1 big-size-icon"></span><span id="debits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Débits</span></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div id="fixed-cost-search-btn" class="search-btn grey3 pull-left"><span aria-hidden="true" data-icon="&#57481;" class="pull-left fs1 big-size-icon"></span><span id="fixed-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Frais fixes</span></div><div id="variable-cost-search-btn" class="search-btn grey4 pull-right"><span aria-hidden="true" data-icon="&#57393;" class="pull-left fs1 big-size-icon"></span><span id="variable-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Dépenses</span></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2"><div id="pie_chart">&nbsp;</div></td></tr></table>');
 }
 return buf.join("");
 };

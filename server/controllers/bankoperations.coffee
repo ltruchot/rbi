@@ -85,6 +85,8 @@ module.exports.byDate = (req, res) ->
             paramSearchText = req.body.searchText
             credits = Boolean req.body.credits
             debits = Boolean req.body.debits
+            fixedCosts = Boolean req.body.fixedCosts
+            variableCosts = Boolean req.body.variableCosts
             async = require "async"
 
             treatment = (operation, callback) ->
