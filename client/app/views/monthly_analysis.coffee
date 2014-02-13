@@ -65,16 +65,16 @@ module.exports = class MonthlyAnalysisView extends BaseView
       @currentMonthStart = moment(new Date()).startOf('month')
 
     #show/hide previous/next month button
-    if (@currentMonthStart.format "YYYY-MM-DD") is currentMonth
+    if (moment(@currentMonthStart).format "YYYY-MM-DD") is currentMonth
       $('.next-month').hide()
     else
       $('.next-month').show()
-    if (firstMonth isnt currentMonth) and (@currentMonthStart.format("YYYY-MM-DD") is firstMonth)
+    if (firstMonth isnt currentMonth) and (moment(@currentMonthStart).format("YYYY-MM-DD") is firstMonth)
       $('.previous-month').hide()
     else
       $('.previous-month').show()
 
-    @$("#current-month").html @currentMonthStart.format "MMMM YYYY"
+    @$("#current-month").html moment(@currentMonthStart).format "MMMM YYYY"
     if window.rbiActiveData.bankAccount?
       monthlyAmounts = @getAmountsByMonth @currentMonthStart
       @displayMonthlyAmounts monthlyAmounts.previous, monthlyAmounts.next
@@ -205,40 +205,40 @@ module.exports = class MonthlyAnalysisView extends BaseView
       chart.draw data, options
 
   getAmountsByMonth: (monthStart)->
-    nextAmount = (window.rbiActiveData.bankAccount.get 'amount') || null
-    nextDate = null
-    previousAmount = nextAmount
-    previousDate = null
-    monthEnd = moment(monthStart).endOf('month')
-    currentAmounts = window.collections.amounts.models
+
     monthlyAmounts = []
+
+    #set month start and end
+    monthStart = moment(monthStart)
+    monthEnd = moment(moment(monthStart).endOf 'month')
+
+    #prepare previous and next var
+    nextAmount = (window.rbiActiveData.bankAccount.get 'amount') || null
+    previousAmount = nextAmount
+    nextDate = null
+    previousDate = null
+
+    #get current amounts
+    currentAmounts = window.collections.amounts.models
+
     if currentAmounts? and currentAmounts.length > 0
       for amount in currentAmounts
         currentDate = moment(amount.get 'date')
 
         #get next amount
         if currentDate > monthEnd and currentDate <= moment()
-          if nextDate? and (currentDate < nextDate)
+          if not nextDate?
+            nextDate = moment(amount.get 'date')
+          if currentDate < nextDate
             nextAmount = amount.get 'amount'
             previousAmount = nextAmount
-            nextDate = moment(amount.get 'date')
-          else if not nextDate?
             nextDate = moment(amount.get 'date')
 
         #get previous amount
         else if currentDate >= monthStart and currentDate <= monthEnd
-          if previousDate? and (currentDate < previousDate)
+          if (not previousDate?) or (currentDate < previousDate)
             previousAmount = amount.get 'amount'
             previousDate = moment(amount.get 'date')
-          else if not previousDate?
-            previousDate = moment(amount.get 'date')
-
-    # console.log 'next date = ' + moment(nextDate).format "DD/MM/YY"
-    # console.log 'next amount =' + nextAmount
-    # console.log 'previous date = ' + moment(previousDate).format "DD/MM/YY"
-    # console.log 'previous amount = ' + previousAmount
-
-
 
     monthlyAmounts =
       next: parseFloat nextAmount

@@ -29,6 +29,12 @@ module.exports = class BankSubTitleView extends BaseView
         #trigger "changeActiveAccount" to fire @listenTo linked
         window.activeObjects.trigger "changeActiveAccount", @model
 
+        #in case of real user click, save configuration
+        if event?
+            window.rbiActiveData.config.save accountNumber: @model.get 'accountNumber',
+                error: ->
+                    console.log 'Error: configuration not saved'
+
         #save bank account
         window.rbiActiveData.bankAccount = @model
 
@@ -38,16 +44,13 @@ module.exports = class BankSubTitleView extends BaseView
         $("#account-amount-balance").text @model.get 'amount'
 
         #load calculated amounts to set up the flot chart
-        @loadLastYearAmounts @model
+        @loadLastYearAmounts @model, ->
 
-        #in case of real user click, save configuration
-        if event?
-            window.rbiActiveData.config.save accountNumber: @model.get 'accountNumber',
-                error: ->
-                    console.log 'Error: configuration not saved'
+            #at least, render montly analysis view
+            window.views.monthlyAnalysisView.render()
 
-        #at least, render montly analysis view
-        window.views.monthlyAnalysisView.render()
+
+
 
 
     checkActive: (account) ->
@@ -55,13 +58,15 @@ module.exports = class BankSubTitleView extends BaseView
         if account == @model
             @$(".row").addClass("active")
 
-    loadLastYearAmounts: (account) ->
+    loadLastYearAmounts: (account, callback) ->
 
         window.collections.amounts.reset()
         window.collections.amounts.setAccount account
         window.collections.amounts.fetch
             success: (amounts) =>
                 @setupLastYearAmountsFlot amounts
+                if callback?
+                    callback()
                 $(window).resize =>
                     @setupLastYearAmountsFlot amounts
             error: ->

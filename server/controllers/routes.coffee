@@ -1,7 +1,6 @@
 # See documentation on https://github.com/frankrousseau/americano#routes
 index = require './index'
 banks         = require './banks'
-bankaccesses  = require './bankaccesses'
 bankaccounts = require './bankaccounts'
 bankoperations = require './bankoperations'
 bankalerts = require './bankalerts'
@@ -16,33 +15,17 @@ module.exports =
     'bankID': param: banks.loadBank
     'banks/:bankID':
         get: banks.show
-        del: banks.destroy
-    'banks/getAccesses/:bankID':
-        get: banks.getAccesses
     'banks/getAccounts/:bankID':
         get: banks.getAccounts
-
-    'bankaccesses':
-        get: bankaccesses.index
-        post: bankaccesses.create
-    'bankAccessID': param: bankaccesses.loadBankAccess
-    'bankaccesses/:bankAccessID':
-        get: bankaccesses.show
-        put: bankaccesses.update
-        del: bankaccesses.destroy
-    'bankaccesses/getAccounts/:bankAccessID':
-        get: bankaccesses.getAccounts
 
     'bankaccounts':
         get: bankaccounts.index
     'bankAccountID': param: bankaccounts.loadBankAccount
     'bankaccounts/:bankAccountID':
         get: bankaccounts.show
-        del: bankaccounts.destroy
+
     'bankaccounts/getOperations/:bankAccountID':
         get: bankaccounts.getOperations
-    'bankaccounts/retrieveOperations/:bankAccountID':
-        get: bankaccounts.retrieveOperations
     'bankaccounts/getLastYearAmounts/:bankAccountID':
         get: bankaccounts.getLastYearAmounts
 
@@ -56,8 +39,7 @@ module.exports =
         post: bankoperations.query
     'bankoperations/byDate':
         post: bankoperations.byDate
-    # 'bankoperations/getOverviewByDate':
-    #     post: bankoperations.getOverviewByDate
+
 
     'bankalerts':
         get: bankalerts.index

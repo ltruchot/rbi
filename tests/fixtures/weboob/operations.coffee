@@ -74,13 +74,6 @@ for bank in banks
             "account": "1234567890"
         },
         {
-            "label": "Salaire",
-            "raw": "Virement Cozycloud",
-            "amount": "700.00",
-            "rdate": "2014-01-16T00:00:00.000Z",
-            "account": "1234567890"
-        },
-        {
             "label": "Loyer",
             "raw": "Virement agence Paris Champs Elysées",
             "amount": "-300.00",

@@ -33,14 +33,14 @@ module.exports = (callback) ->
                         msg = "Banks added to the database."
                         console.log msg
 
-    # Start bank polling
-    console.log "Start bank accounts polling..."
-    poller = require './lib/accounts-poller'
-    poller.start()
+    # # Start bank polling
+    # console.log "Start bank accounts polling..."
+    # poller = require './lib/accounts-poller'
+    # poller.start()
 
     # manage daily/weekly/monthly report
-    console.log "Start alert watcher..."
-    reportManager = require './lib/report-manager'
-    reportManager.start()
+    # console.log "Start alert watcher..."
+    # reportManager = require './lib/report-manager'
+    # reportManager.start()
 
     callback()

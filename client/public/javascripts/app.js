@@ -173,31 +173,6 @@ module.exports = {
 
 });
 
-;require.register("collections/bank_accesses", function(exports, require, module) {
-var BankAccess, BankAccesses, _ref,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-BankAccess = require('../models/bank_access');
-
-module.exports = BankAccesses = (function(_super) {
-  __extends(BankAccesses, _super);
-
-  function BankAccesses() {
-    _ref = BankAccesses.__super__.constructor.apply(this, arguments);
-    return _ref;
-  }
-
-  BankAccesses.prototype.model = BankAccess;
-
-  BankAccesses.prototype.url = "bankaccesses";
-
-  return BankAccesses;
-
-})(Backbone.Collection);
-
-});
-
 ;require.register("collections/bank_accounts", function(exports, require, module) {
 var BankAccount, BankAccounts,
   __hasProp = {}.hasOwnProperty,
@@ -681,27 +656,6 @@ module.exports = Bank = (function(_super) {
 
 });
 
-;require.register("models/bank_access", function(exports, require, module) {
-var BankAccess, _ref,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-module.exports = BankAccess = (function(_super) {
-  __extends(BankAccess, _super);
-
-  function BankAccess() {
-    _ref = BankAccess.__super__.constructor.apply(this, arguments);
-    return _ref;
-  }
-
-  BankAccess.prototype.url = "bankaccesses";
-
-  return BankAccess;
-
-})(Backbone.Model);
-
-});
-
 ;require.register("models/bank_account", function(exports, require, module) {
 var BankAccount, BankOperationsCollection, _ref,
   __hasProp = {}.hasOwnProperty,
@@ -899,7 +853,7 @@ module.exports = AlertsView = (function(_super) {
 });
 
 ;require.register("views/app", function(exports, require, module) {
-var AlertsView, AppView, BaseView, ComparedAnalysisView, ConfigurationView, MenuView, MonthlyAnalysisView, NewBankView, OnlineShoppingView, _ref,
+var AlertsView, AppView, BaseView, ComparedAnalysisView, ConfigurationView, MenuView, MonthlyAnalysisView, OnlineShoppingView, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -914,8 +868,6 @@ ComparedAnalysisView = require('views/compared_analysis');
 OnlineShoppingView = require('views/online_shopping');
 
 AlertsView = require('views/alerts');
-
-NewBankView = require('views/new_bank');
 
 MenuView = require('views/menu');
 
@@ -939,9 +891,6 @@ module.exports = AppView = (function(_super) {
       success: function() {
         return window.collections.allBanks.fetch({
           success: function() {
-            if (!this.newbankView) {
-              this.newbankView = new NewBankView();
-            }
             if (!this.menuView) {
               this.menuView = new MenuView();
             }
@@ -960,7 +909,6 @@ module.exports = AppView = (function(_super) {
             if (!window.views.alertsView) {
               window.views.alertsView = new AlertsView();
             }
-            this.newbankView.render();
             this.menuView.render();
             window.views.configurationView.render();
             return Backbone.history.start();
@@ -1566,11 +1514,6 @@ module.exports = BankSubTitleView = (function(_super) {
     var today;
     this.$el.children('.accountTitle').attr('checked', 'true');
     window.activeObjects.trigger("changeActiveAccount", this.model);
-    window.rbiActiveData.bankAccount = this.model;
-    today = this.formatDate(new Date());
-    $("#current-amount-date").text(today);
-    $("#account-amount-balance").text(this.model.get('amount'));
-    this.loadLastYearAmounts(this.model);
     if (event != null) {
       window.rbiActiveData.config.save({
         accountNumber: this.model.get('accountNumber', {
@@ -1580,7 +1523,13 @@ module.exports = BankSubTitleView = (function(_super) {
         })
       });
     }
-    return window.views.monthlyAnalysisView.render();
+    window.rbiActiveData.bankAccount = this.model;
+    today = this.formatDate(new Date());
+    $("#current-amount-date").text(today);
+    $("#account-amount-balance").text(this.model.get('amount'));
+    return this.loadLastYearAmounts(this.model, function() {
+      return window.views.monthlyAnalysisView.render();
+    });
   };
 
   BankSubTitleView.prototype.checkActive = function(account) {
@@ -1590,13 +1539,16 @@ module.exports = BankSubTitleView = (function(_super) {
     }
   };
 
-  BankSubTitleView.prototype.loadLastYearAmounts = function(account) {
+  BankSubTitleView.prototype.loadLastYearAmounts = function(account, callback) {
     var _this = this;
     window.collections.amounts.reset();
     window.collections.amounts.setAccount(account);
     window.collections.amounts.fetch({
       success: function(amounts) {
         _this.setupLastYearAmountsFlot(amounts);
+        if (callback != null) {
+          callback();
+        }
         return $(window).resize(function() {
           return _this.setupLastYearAmountsFlot(amounts);
         });
@@ -2130,17 +2082,17 @@ module.exports = MonthlyAnalysisView = (function(_super) {
     } else {
       this.currentMonthStart = moment(new Date()).startOf('month');
     }
-    if ((this.currentMonthStart.format("YYYY-MM-DD")) === currentMonth) {
+    if ((moment(this.currentMonthStart).format("YYYY-MM-DD")) === currentMonth) {
       $('.next-month').hide();
     } else {
       $('.next-month').show();
     }
-    if ((firstMonth !== currentMonth) && (this.currentMonthStart.format("YYYY-MM-DD") === firstMonth)) {
+    if ((firstMonth !== currentMonth) && (moment(this.currentMonthStart).format("YYYY-MM-DD") === firstMonth)) {
       $('.previous-month').hide();
     } else {
       $('.previous-month').show();
     }
-    this.$("#current-month").html(this.currentMonthStart.format("MMMM YYYY"));
+    this.$("#current-month").html(moment(this.currentMonthStart).format("MMMM YYYY"));
     if (window.rbiActiveData.bankAccount != null) {
       monthlyAmounts = this.getAmountsByMonth(this.currentMonthStart);
       this.displayMonthlyAmounts(monthlyAmounts.previous, monthlyAmounts.next);
@@ -2305,30 +2257,30 @@ module.exports = MonthlyAnalysisView = (function(_super) {
 
   MonthlyAnalysisView.prototype.getAmountsByMonth = function(monthStart) {
     var amount, currentAmounts, currentDate, monthEnd, monthlyAmounts, nextAmount, nextDate, previousAmount, previousDate, _i, _len;
-    nextAmount = (window.rbiActiveData.bankAccount.get('amount')) || null;
-    nextDate = null;
-    previousAmount = nextAmount;
-    previousDate = null;
-    monthEnd = moment(monthStart).endOf('month');
-    currentAmounts = window.collections.amounts.models;
     monthlyAmounts = [];
+    monthStart = moment(monthStart);
+    monthEnd = moment(moment(monthStart).endOf('month'));
+    nextAmount = (window.rbiActiveData.bankAccount.get('amount')) || null;
+    previousAmount = nextAmount;
+    nextDate = null;
+    previousDate = null;
+    currentAmounts = window.collections.amounts.models;
     if ((currentAmounts != null) && currentAmounts.length > 0) {
       for (_i = 0, _len = currentAmounts.length; _i < _len; _i++) {
         amount = currentAmounts[_i];
         currentDate = moment(amount.get('date'));
         if (currentDate > monthEnd && currentDate <= moment()) {
-          if ((nextDate != null) && (currentDate < nextDate)) {
+          if (nextDate == null) {
+            nextDate = moment(amount.get('date'));
+          }
+          if (currentDate < nextDate) {
             nextAmount = amount.get('amount');
             previousAmount = nextAmount;
             nextDate = moment(amount.get('date'));
-          } else if (nextDate == null) {
-            nextDate = moment(amount.get('date'));
           }
         } else if (currentDate >= monthStart && currentDate <= monthEnd) {
-          if ((previousDate != null) && (currentDate < previousDate)) {
+          if ((previousDate == null) || (currentDate < previousDate)) {
             previousAmount = amount.get('amount');
-            previousDate = moment(amount.get('date'));
-          } else if (previousDate == null) {
             previousDate = moment(amount.get('date'));
           }
         }
@@ -2341,97 +2293,6 @@ module.exports = MonthlyAnalysisView = (function(_super) {
   };
 
   return MonthlyAnalysisView;
-
-})(BaseView);
-
-});
-
-;require.register("views/new_bank", function(exports, require, module) {
-var BankAccessModel, BaseView, NewBankView, _ref,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-BaseView = require('../lib/base_view');
-
-BankAccessModel = require('../models/bank_access');
-
-module.exports = NewBankView = (function(_super) {
-  __extends(NewBankView, _super);
-
-  function NewBankView() {
-    _ref = NewBankView.__super__.constructor.apply(this, arguments);
-    return _ref;
-  }
-
-  NewBankView.prototype.el = 'div#add-bank-window';
-
-  NewBankView.prototype.initialize = function() {
-    return this.render();
-  };
-
-  NewBankView.prototype.saveBank = function(event) {
-    var bankAccess, button, data, oldText, view;
-    event.preventDefault();
-    view = this;
-    button = $(event.target);
-    oldText = button.html();
-    button.addClass("disabled");
-    button.html(window.i18n("verifying") + "<img src='./loader_green.gif' />");
-    button.removeClass('btn-warning');
-    button.addClass('btn-success');
-    this.$(".message-modal").html("");
-    data = {
-      login: $("#inputLogin").val(),
-      password: $("#inputPass").val(),
-      bank: $("#inputBank").val()
-    };
-    bankAccess = new BankAccessModel(data);
-    return bankAccess.save(data, {
-      success: function(model, response, options) {
-        var bank;
-        button.html(window.i18n("sent") + " <img src='./loader_green.gif' />");
-        bank = window.collections.allBanks.get(data.bank);
-        if (bank != null) {
-          console.log("Fetching for new accounts in bank" + bank.get("name"));
-          bank.accounts.trigger("loading");
-          bank.accounts.fetch();
-        }
-        $("#add-bank-window").modal("hide");
-        button.removeClass("disabled");
-        button.html(oldText);
-        window.activeObjects.trigger("new_access_added_successfully", model);
-        return setTimeout(function() {
-          var router;
-          $("#add-bank-window").modal("hide");
-          router = window.app.router;
-          return router.navigate('/', {
-            trigger: true,
-            replace: true
-          });
-        }, 500);
-      },
-      error: function(model, xhr, options) {
-        button.removeClass('btn-success');
-        button.removeClass('disabled');
-        button.addClass('btn-warning');
-        if (((xhr != null ? xhr.status : void 0) != null) && xhr.status === 409) {
-          this.$(".message-modal").html("<div class='alert alert-danger'>" + window.i18n("access already exists") + "</div>");
-          return button.html(window.i18n("access already exists button"));
-        } else {
-          this.$(".message-modal").html("<div class='alert alert-danger'>" + window.i18n("error_check_credentials") + "</div>");
-          return button.html(window.i18n("error_check_credentials_btn"));
-        }
-      }
-    });
-  };
-
-  NewBankView.prototype.getRenderData = function() {
-    return {
-      banks: window.collections.allBanks.models
-    };
-  };
-
-  return NewBankView;
 
 })(BaseView);
 

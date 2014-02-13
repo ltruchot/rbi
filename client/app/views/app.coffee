@@ -6,7 +6,6 @@ MonthlyAnalysisView = require 'views/monthly_analysis'
 ComparedAnalysisView = require 'views/compared_analysis'
 OnlineShoppingView = require 'views/online_shopping'
 AlertsView = require 'views/alerts'
-NewBankView = require 'views/new_bank'
 MenuView = require 'views/menu'
 
 
@@ -26,8 +25,6 @@ module.exports = class AppView extends BaseView
 
         window.collections.allBanks.fetch
             success: ->
-              if not @newbankView
-                @newbankView = new NewBankView()
               if not @menuView
                 @menuView =  new MenuView()
               if not window.views.configurationView
@@ -44,7 +41,6 @@ module.exports = class AppView extends BaseView
               # if not window.views.accountsView
               #     window.views.accountsView = new AccountsView()
 
-              @newbankView.render()
               @menuView.render()
               window.views.configurationView.render()
 

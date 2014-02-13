@@ -1,3 +1,0 @@
-BankOperation = require '../models/bankamount'
-
-
