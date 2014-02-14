@@ -1527,20 +1527,67 @@ module.exports = ConfigurationView = (function(_super) {
   };
 
   ConfigurationView.prototype.reloadBudget = function() {
-    var accountNumber, budgetByAccount;
+    var accountNumber, budgetByAccount, currentBudget;
     accountNumber = window.rbiActiveData.accountNumber;
-    budgetByAccount = window.rbiActiveData.budgetByAccount;
-    if (budgetByAccount[accountNumber]) {
+    budgetByAccount = window.rbiActiveData.budgetByAccount || [];
+    currentBudget = budgetByAccount[accountNumber] || 0;
+    if (currentBudget > 0) {
       $('#account-budget-amount').val(budgetByAccount[accountNumber]);
-      return $('#configuration-budget-amount').val(budgetByAccount[accountNumber]);
+      $('#configuration-budget-amount').val(budgetByAccount[accountNumber]);
     } else {
       $('#account-budget-amount').val(0);
-      return $('#configuration-budget-amount').val(budgetByAccount[accountNumber]);
+      $('#configuration-budget-amount').val(0);
     }
+    return this.getLastMonthDebitAmount(currentBudget, function(percentage) {
+      return $('#current-budget-chart').easyPieChart({
+        animate: 1500,
+        barColor: window.rbiColors.blue,
+        trackColor: window.rbiColors.border_color,
+        scaleColor: window.rbiColors.blue,
+        lineWidth: 2
+      });
+    });
+  };
+
+  ConfigurationView.prototype.getLastMonthDebitAmount = function(budgetValue, callback) {
+    var criteria, now;
+    now = moment(new Date());
+    criteria = {
+      dateFrom: new Date(moment(now.startOf('month')).format('YYYY-MM-DD')),
+      dateTo: new Date(),
+      debits: true,
+      accounts: [window.rbiActiveData.accountNumber]
+    };
+    return $.ajax({
+      type: "POST",
+      url: "bankoperations/byDate",
+      data: criteria,
+      success: function(operations) {
+        var amount, operation, percentage, rest, _i, _len;
+        amount = 0;
+        for (_i = 0, _len = operations.length; _i < _len; _i++) {
+          operation = operations[_i];
+          amount += operation.amount;
+        }
+        if (!isNaN(amount)) {
+          amount = Math.abs(amount);
+          percentage = parseInt((amount / budgetValue) * 100);
+          percentage = percentage <= 100 ? percentage : 100;
+          rest = budgetValue - amount;
+          $('#current-budget-chart-debit').html(rest.money());
+          $('#current-budget-chart').attr('data-percent', percentage);
+          return callback(percentage);
+        }
+      },
+      error: function(err) {
+        return console.log("getting fixed cost failed.");
+      }
+    });
   };
 
   ConfigurationView.prototype.setBudget = function(event) {
-    var accountNumber, budgetValue, jqBudgetInput;
+    var accountNumber, budgetValue, jqBudgetInput,
+      _this = this;
     budgetValue = 0;
     jqBudgetInput = $(event.currentTarget);
     budgetValue = jqBudgetInput.val();
@@ -1559,7 +1606,8 @@ module.exports = ConfigurationView = (function(_super) {
           budgetByAccount: window.rbiActiveData.budgetByAccount
         }, {
           success: function() {
-            return $('#account-budget-amount').val(budgetValue);
+            $('#account-budget-amount').val(budgetValue);
+            return _this.reloadBudget();
           },
           error: function() {
             return console.log('Error: budget configuration not saved');

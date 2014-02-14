@@ -155,6 +155,7 @@ module.exports = class BankStatementView extends BaseView
             else
                 @data.searchText = searchTextVal
 
+
     addAll: ->
         # remove the previous ones
         @$("#table-operations").html ""
