@@ -3,6 +3,7 @@ BaseView = require '../lib/base_view'
 module.exports = class BankTitleView extends BaseView
 
     template: require('./templates/configuration_bank_title')
+    tagName: 'span'
 
     constructor: (@model) ->
         super()

@@ -2,6 +2,7 @@ americano = require 'americano'
 
 module.exports = Config = americano.getModel 'RbiConfig',
     accountNumber: String
+    budgetByAccount: Object
 
 Config.get = (callback) ->
     Config.request 'all', (err, configs) ->

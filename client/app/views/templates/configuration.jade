@@ -6,7 +6,14 @@
         h4.modal-title Paramètres
 
       .modal-body
-        ul#account-choice
+        label.control-label Mon choix de compte
+        select#account-choice.form-control.input-lg(size="1")
+        br
+        label.control-label(for="monthly-budget") Mon budget du mois
+        div.input-group.input-middle-size
+          input#configuration-budget-amount.form-control(type="text", name="monthly-budget")
+          span.input-group-addon &euro;
+
       .modal-footer
-        button.btn.btn-default(type="button", data-dismiss="modal", data-original-title="") Close
-        button.btn.btn-primary(type="button", data-original-title="") Save changes
+        em.info-user.little-text Les modifications sont prises en compte instantanément&nbsp;
+        button.btn.btn-default(type="button", data-dismiss="modal", data-original-title="") J'ai terminé

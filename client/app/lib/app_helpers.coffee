@@ -13,7 +13,7 @@
     )()
 )()
 
-Number::formatMoney = (decPlaces, thouSeparator, decSeparator) ->
+Number::formatMoney = (decPlaces, thouSeparator, decSeparator, currency, solid) ->
     n = this
     decPlaces = (if isNaN(decPlaces = Math.abs(decPlaces)) then 2 else decPlaces)
     decSeparator = (if decSeparator is `undefined` then "." else decSeparator)
@@ -21,10 +21,14 @@ Number::formatMoney = (decPlaces, thouSeparator, decSeparator) ->
     sign = (if n < 0 then "-" else "")
     i = parseInt(n = Math.abs(+n or 0).toFixed(decPlaces)) + ""
     j = (if (j = i.length) > 3 then j % 3 else 0)
-    sign + ((if j then i.substr(0, j) + thouSeparator else "")) + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + thouSeparator) + ((if decPlaces then decSeparator + Math.abs(n - i).toFixed(decPlaces).slice(2) else ""))
-
+    finalN = sign + ((if j then i.substr(0, j) + thouSeparator else "")) + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + thouSeparator) + ((if decPlaces then decSeparator + Math.abs(n - i).toFixed(decPlaces).slice(2) else ""))
+    if currency?
+        finalN += currency
+    if solid?
+        finalN = finalN.replace ' ', '&nbsp;'
+    finalN
 Number::money = ->
-    @formatMoney(2, " ", ",")
+    @formatMoney(2, " ", ",", "&euro;", true)
 
 Date::dateString = ->
     addZeros = (num) ->

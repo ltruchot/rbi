@@ -2,19 +2,21 @@ BaseView = require '../lib/base_view'
 
 module.exports = class BankSubTitleView extends BaseView
 
-    template: require('./templates/configuration_bank_subtitle')
+    tagName: 'option'
+
+    template: require('./templates/configuration_bank_account')
 
     constructor: (@model) ->
         super()
 
     events:
-        "change .accountTitle" : 'chooseAccount'
+        'click' : 'chooseAccount'
 
     formattedAmounts: []
 
 
     initialize: ->
-        @listenTo @model, 'change', @render
+        # @listenTo @model, 'change', @render
         @listenTo window.activeObjects, 'changeActiveAccount', @checkActive
 
     afterRender: ->
@@ -23,17 +25,18 @@ module.exports = class BankSubTitleView extends BaseView
             @chooseAccount()
 
     chooseAccount: (event) ->
+
         #set input to checked state
-        @$el.children('.accountTitle').attr('checked', 'true')
+        @$el.attr('selected', 'true')
 
         #trigger "changeActiveAccount" to fire @listenTo linked
         window.activeObjects.trigger "changeActiveAccount", @model
 
-        #in case of real user click, save configuration
-        if event?
-            window.rbiActiveData.config.save accountNumber: @model.get 'accountNumber',
-                error: ->
-                    console.log 'Error: configuration not saved'
+        #save configuration
+        window.rbiActiveData.config.save accountNumber: @model.get 'accountNumber',
+            error: ->
+                console.log 'Error: configuration not saved'
+        window.rbiActiveData.accountNumber = @model.get 'accountNumber'
 
         #save bank account
         window.rbiActiveData.bankAccount = @model
@@ -41,16 +44,11 @@ module.exports = class BankSubTitleView extends BaseView
         #set date & amoubt to widgets
         today = @formatDate(new Date())
         $("#current-amount-date").text today
-        $("#account-amount-balance").text @model.get 'amount'
+        $("#account-amount-balance").html (@model.get 'amount').money()
 
-        #load calculated amounts to set up the flot chart
+        #load calculated amounts to set up the flot chart and render montly analysis view
         @loadLastYearAmounts @model, ->
-
-            #at least, render montly analysis view
             window.views.monthlyAnalysisView.render()
-
-
-
 
 
     checkActive: (account) ->
@@ -130,13 +128,9 @@ module.exports = class BankSubTitleView extends BaseView
             if lastAmount > maxAmount
                 maxAmount = lastAmount
             i++
-            # console.log '--------------'
-            # console.log 'last = ' + lastAmount
-            # console.log 'max = ' + maxAmount
-            # console.log 'min = ' + minAmount
-            # console.log '--------------'
-        $("#max-amount").text (maxAmount + ' €')
-        $("#min-amount").text (minAmount + ' €')
+
+        $("#max-amount").html maxAmount.money()
+        $("#min-amount").html minAmount.money()
         minAmount = minAmount - 500
         maxAmount =  maxAmount + 500
         flotReadyAmounts.reverse()
@@ -165,5 +159,5 @@ module.exports = class BankSubTitleView extends BaseView
                 monthNames: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
             tooltip: true
             tooltipOpts:
-                content: '%y.2  &euro;<br /> %x'
+                content: '%y.2&euro;<br /> %x'
                 xDateFormat: '%d/%m/%y'

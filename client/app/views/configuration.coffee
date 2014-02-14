@@ -7,20 +7,56 @@ module.exports = class ConfigurationView extends BaseView
     template: require('./templates/configuration')
 
     el: '#configuration'
-    elAccounts: 'ul#account-choice'
+    elAccounts: 'select#account-choice'
 
     accounts: 0
 
     subViews: []
 
-    initialize: ->
-      @listenTo window.activeObjects, "new_access_added_successfully", @noMoreEmpty
-      window.rbiActiveData.config = new Config({})
+    events:
+      'change select#account-choice' : 'reloadBudget'
+      'keyup #configuration-budget-amount' : 'setBudget'
 
-    noMoreEmpty: ->
-      window.collections.banks.fetch
-        success: =>
-          @render()
+    reloadBudget: ->
+      accountNumber = window.rbiActiveData.accountNumber
+      budgetByAccount = window.rbiActiveData.budgetByAccount
+      if budgetByAccount[accountNumber]
+        $('#account-budget-amount').val budgetByAccount[accountNumber]
+        $('#configuration-budget-amount').val budgetByAccount[accountNumber]
+      else
+        $('#account-budget-amount').val 0
+        $('#configuration-budget-amount').val budgetByAccount[accountNumber]
+
+    setBudget: (event) ->
+      budgetValue = 0
+      jqBudgetInput = $(event.currentTarget)
+      budgetValue = jqBudgetInput.val()
+      if not /^(\d+(?:[\.\,]\d{2})?)$/.test(budgetValue)
+        $('.info-user').css('color', window.rbiColors.red).html 'La valeur du budget semble incomplète ou érronée&nbsp;'
+      else
+        $('.info-user').css('color', 'inherit').html 'Les modifications sont prises en compte instantanément&nbsp;'
+        budgetValue = parseFloat(budgetValue.replace(" ", "").replace(",", "."))
+        if isNaN budgetValue
+          budgetValue = 0
+        if budgetValue > 0
+          accountNumber = window.rbiActiveData.accountNumber
+          window.rbiActiveData.budgetByAccount[accountNumber] = budgetValue
+          window.rbiActiveData.config.save budgetByAccount: window.rbiActiveData.budgetByAccount,
+            success:->
+              $('#account-budget-amount').val budgetValue
+            error: ->
+              console.log 'Error: budget configuration not saved'
+
+
+
+    afterRender: ->
+
+      #patch chrome and IE for click on select > option
+      $(@elAccounts).change ->
+        this.options[this.selectedIndex].click()
+
+    initialize: ->
+      window.rbiActiveData.config = new Config({})
 
     render: ->
       # lay down the template
@@ -30,14 +66,16 @@ module.exports = class ConfigurationView extends BaseView
       window.rbiActiveData.config.fetch
         success: (currentConfig) =>
 
-          #prepare chosen account number
-          accountNumber = currentConfig.get 'accountNumber' || ""
+          #prepare chosen account number and budget
+          accountNumber = currentConfig.get('accountNumber') or ""
           if accountNumber isnt ""
             window.rbiActiveData.accountNumber = accountNumber
+            budgetByAccount = currentConfig.get('budgetByAccount') or {}
+            window.rbiActiveData.budgetByAccount = budgetByAccount
+            @reloadBudget()
 
           # prepare the banks list
           view = @
-
           treatment = (bank, callback) ->
             viewBank = new ConfigurationBankView bank
             view.subViews.push viewBank
@@ -55,7 +93,6 @@ module.exports = class ConfigurationView extends BaseView
 
           # render all banks
           async.concat window.collections.banks.models, treatment, (err, results) ->
-
             if err
               console.log err
               alert window.i18n "error_loading_accounts"
@@ -67,12 +104,6 @@ module.exports = class ConfigurationView extends BaseView
               $(view.elAccounts).prepend require "./templates/balance_banks_empty"
 
             #no account number
-            if accountNumber is ""
-              $(".accountTitle:eq(0)").click()
+            # if accountNumber is ""
+            #   $(".accountTitle:eq(0)").click()
       @
-
-
-    empty: ->
-      @operationsView?.destroy()
-      for view in @subViews
-        view.destroy()

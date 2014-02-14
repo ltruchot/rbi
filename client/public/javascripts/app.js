@@ -108,11 +108,9 @@ module.exports = {
     window.collections = {};
     window.views = {};
     window.rbiActiveData = {};
-    window.rbiActiveData.currency = {
-      name: 'euro',
-      entity: '&euro;'
-    };
     window.rbiActiveData.olderOperationDate = moment(new Date());
+    window.rbiActiveData.budgetByAccount = {};
+    window.rbiActiveData.accountNumber = null;
     window.rbiColors = {
       border_color: "#efefef",
       grid_color: "#ddd",
@@ -151,7 +149,6 @@ module.exports = {
         decoded: ""
       }
     };
-    window.collections.allBanks = new BanksCollection();
     window.collections.banks = new BanksCollection();
     window.collections.operations = new BankOperationsCollection();
     window.collections.amounts = new BankAmountsCollection();
@@ -415,8 +412,8 @@ $(function() {
   })();
 })();
 
-Number.prototype.formatMoney = function(decPlaces, thouSeparator, decSeparator) {
-  var i, j, n, sign;
+Number.prototype.formatMoney = function(decPlaces, thouSeparator, decSeparator, currency, solid) {
+  var finalN, i, j, n, sign;
   n = this;
   decPlaces = (isNaN(decPlaces = Math.abs(decPlaces)) ? 2 : decPlaces);
   decSeparator = (decSeparator === undefined ? "." : decSeparator);
@@ -424,11 +421,18 @@ Number.prototype.formatMoney = function(decPlaces, thouSeparator, decSeparator) 
   sign = (n < 0 ? "-" : "");
   i = parseInt(n = Math.abs(+n || 0).toFixed(decPlaces)) + "";
   j = ((j = i.length) > 3 ? j % 3 : 0);
-  return sign + (j ? i.substr(0, j) + thouSeparator : "") + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + thouSeparator) + (decPlaces ? decSeparator + Math.abs(n - i).toFixed(decPlaces).slice(2) : "");
+  finalN = sign + (j ? i.substr(0, j) + thouSeparator : "") + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + thouSeparator) + (decPlaces ? decSeparator + Math.abs(n - i).toFixed(decPlaces).slice(2) : "");
+  if (currency != null) {
+    finalN += currency;
+  }
+  if (solid != null) {
+    finalN = finalN.replace(' ', '&nbsp;');
+  }
+  return finalN;
 };
 
 Number.prototype.money = function() {
-  return this.formatMoney(2, " ", ",");
+  return this.formatMoney(2, " ", ",", "&euro;", true);
 };
 
 Date.prototype.dateString = function() {
@@ -758,7 +762,8 @@ module.exports = Config = (function(_super) {
   };
 
   Config.prototype.defaults = {
-    'accountNumber': ''
+    accountNumber: '',
+    budgetByAcount: {}
   };
 
   return Config;
@@ -889,34 +894,30 @@ module.exports = AppView = (function(_super) {
         withAccountOnly: true
       },
       success: function() {
-        return window.collections.allBanks.fetch({
-          success: function() {
-            if (!this.menuView) {
-              this.menuView = new MenuView();
-            }
-            if (!window.views.configurationView) {
-              window.views.configurationView = new ConfigurationView();
-            }
-            if (!window.views.monthlyAnalysisView) {
-              window.views.monthlyAnalysisView = new MonthlyAnalysisView();
-            }
-            if (!window.views.comparedAnalysisView) {
-              window.views.comparedAnalysisView = new ComparedAnalysisView();
-            }
-            if (!window.views.onlineShoppingView) {
-              window.views.onlineShoppingView = new OnlineShoppingView();
-            }
-            if (!window.views.alertsView) {
-              window.views.alertsView = new AlertsView();
-            }
-            this.menuView.render();
-            window.views.configurationView.render();
-            return Backbone.history.start();
-          },
-          error: function() {
-            return console.log("Fatal error: could not get the banks list");
-          }
-        });
+        if (!this.menuView) {
+          this.menuView = new MenuView();
+        }
+        if (!window.views.configurationView) {
+          window.views.configurationView = new ConfigurationView();
+        }
+        if (!window.views.monthlyAnalysisView) {
+          window.views.monthlyAnalysisView = new MonthlyAnalysisView();
+        }
+        if (!window.views.comparedAnalysisView) {
+          window.views.comparedAnalysisView = new ComparedAnalysisView();
+        }
+        if (!window.views.onlineShoppingView) {
+          window.views.onlineShoppingView = new OnlineShoppingView();
+        }
+        if (!window.views.alertsView) {
+          window.views.alertsView = new AlertsView();
+        }
+        this.menuView.render();
+        window.views.configurationView.render();
+        return Backbone.history.start();
+      },
+      error: function() {
+        return console.log("Fatal error: could not get the banks list");
       }
     });
   };
@@ -966,88 +967,8 @@ module.exports = BankStatementView = (function(_super) {
     BankStatementView.__super__.constructor.call(this);
   }
 
-  BankStatementView.prototype.setIntervalWithContext = function(code, delay, context) {
-    return setInterval(function() {
-      return code.call(context);
-    }, delay);
-  };
-
   BankStatementView.prototype.initialize = function() {
-    this.listenTo(window.activeObjects, 'changeActiveAccount', this.reload);
-    this.listenTo(window.collections.operations, 'sort', this.addAll);
-    this.setIntervalWithContext(this.updateTimer, 1000, this);
-    return window.collections.operations.setComparator("date");
-  };
-
-  BankStatementView.prototype.sortByDate = function(event) {
-    return this.sortBy("date");
-  };
-
-  BankStatementView.prototype.sortByTitle = function(event) {
-    return this.sortBy("title");
-  };
-
-  BankStatementView.prototype.sortByAmount = function(event) {
-    return this.sortBy("amount");
-  };
-
-  BankStatementView.prototype.sortBy = function(order) {
-    var operations;
-    operations = window.collections.operations;
-    operations.toggleSort(order);
-    this.$("th.sorting_asc").removeClass("sorting_asc");
-    this.$("th.sorting_desc").removeClass("sorting_desc");
-    this.$("th.sort-" + order).addClass("sorting_" + operations.order);
-    operations.setComparator(order);
-    return operations.sort();
-  };
-
-  BankStatementView.prototype.checkAccount = function(event) {
-    var button, url, view;
-    event.preventDefault();
-    button = $(event.target);
-    view = this;
-    if (!this.inUse) {
-      console.log("Checking account ...");
-      view.inUse = true;
-      button.html("checking...");
-      return $.ajax({
-        url: url = "bankaccounts/retrieveOperations/" + this.model.get("id"),
-        type: "GET",
-        success: function() {
-          var _ref, _ref1, _ref2;
-          if ((_ref = view.model) != null) {
-            _ref.url = "bankaccounts/" + ((_ref1 = view.model) != null ? _ref1.get("id") : void 0);
-          }
-          return (_ref2 = view.model) != null ? _ref2.fetch({
-            success: function() {
-              console.log("... checked");
-              button.html("checked");
-              view.inUse = false;
-              return view.reload();
-            },
-            error: function() {
-              console.log("... there was an error fetching");
-              button.html("error...");
-              return view.inUse = false;
-            }
-          }) : void 0;
-        },
-        error: function(err) {
-          console.log("... there was an error checking");
-          console.log(err);
-          button.html("error...");
-          return view.inUse = false;
-        }
-      });
-    }
-  };
-
-  BankStatementView.prototype.updateTimer = function() {
-    var model;
-    if (this.model != null) {
-      return model = this.model;
-    }
+    return this.listenTo(window.activeObjects, 'changeActiveAccount', this.reload);
   };
 
   BankStatementView.prototype.render = function() {
@@ -1237,7 +1158,7 @@ BaseView = require('../lib/base_view');
 module.exports = EntryView = (function(_super) {
   __extends(EntryView, _super);
 
-  EntryView.prototype.template = require('./templates/entry_element');
+  EntryView.prototype.template = require('./templates/bank_statement_entry');
 
   EntryView.prototype.tagName = 'tr';
 
@@ -1251,6 +1172,40 @@ module.exports = EntryView = (function(_super) {
     'click #cancel-fixed-cost': 'destroyPopupFixedCost',
     'click #save-fixed-cost': 'prepareFixedCost',
     'click #remove-fixed-cost': 'removeFixedCost'
+  };
+
+  function EntryView(model, account, showAccountNum) {
+    this.model = model;
+    this.account = account;
+    this.showAccountNum = showAccountNum != null ? showAccountNum : false;
+    EntryView.__super__.constructor.call(this);
+  }
+
+  EntryView.prototype.render = function() {
+    var hint;
+    if (this.model.get("amount") > 0) {
+      this.$el.addClass("success");
+    }
+    this.model.account = this.account;
+    this.model.formattedDate = moment(this.model.get('date')).format("DD/MM/YYYY");
+    if ((this.model.get('amount')) > 0) {
+      this.model.costClass = 'not-displayed-cost';
+    } else {
+      this.model.costClass = "variable-cost";
+      this.model.costIcon = "&#57482;";
+      if (this.model.get('isFixedCost')) {
+        this.model.costClass = "fixed-cost";
+        this.model.costIcon = "&#57481;";
+      }
+    }
+    if (this.showAccountNum) {
+      hint = ("" + (this.model.account.get('title')) + ", ") + ("n°" + (this.model.account.get('accountNumber')));
+      this.model.hint = ("" + (this.model.account.get('title')) + ", ") + ("n°" + (this.model.account.get('accountNumber')));
+    } else {
+      this.model.hint = "" + (this.model.get('raw'));
+    }
+    EntryView.__super__.render.call(this);
+    return this;
   };
 
   EntryView.prototype.destroyPopupFixedCost = function(event) {
@@ -1293,7 +1248,7 @@ module.exports = EntryView = (function(_super) {
   };
 
   EntryView.prototype.prepareFixedCost = function(event) {
-    var accountNumber, fixedCostToRegister, jqPopup, neededRequest, userChoice,
+    var accountNumber, currentUniquery, fixedCostToRegister, jqPopup, neededRequest, userChoice,
       _this = this;
     jqPopup = $(event.currentTarget).parent();
     userChoice = jqPopup.children('input[type=radio]:checked').val();
@@ -1301,7 +1256,8 @@ module.exports = EntryView = (function(_super) {
     neededRequest = false;
     fixedCostToRegister = {
       type: userChoice,
-      accountNumber: accountNumber
+      accountNumber: accountNumber,
+      idTable: []
     };
     switch (userChoice) {
       case 'standard':
@@ -1319,13 +1275,14 @@ module.exports = EntryView = (function(_super) {
           this.data.amountFrom = this.operationMin;
           this.data.amountTo = this.operationMax;
         }
-        fixedCostToRegister.uniquery = accountNumber + '(#|#)' + this.operationTitle + '(#|#)' + this.data.amountFrom + '(#|#)' + this.data.amountTo;
-        fixedCostToRegister.idTable = [];
+        currentUniquery = accountNumber + '(#|#)' + this.operationTitle;
+        currentUniquery += '(#|#)' + this.data.amountFrom + '(#|#)' + this.data.amountTo;
+        fixedCostToRegister.uniquery = currentUniquery;
         neededRequest = true;
         break;
       case 'onetime':
         fixedCostToRegister.uniquery = "";
-        fixedCostToRegister.idTable = [this.model.get('id')];
+        fixedCostToRegister.idTable.push(this.model.get('id'));
         break;
       case 'custom':
         console.log('custom not ready ');
@@ -1363,6 +1320,48 @@ module.exports = EntryView = (function(_super) {
     }
   };
 
+  EntryView.prototype.switchFixedCostIcon = function(event) {
+    var jqFixedCostIcon;
+    jqFixedCostIcon = $(event.currentTarget);
+    if ((jqFixedCostIcon.attr('data-icon')) === '') {
+      return jqFixedCostIcon.attr('data-icon', '');
+    } else {
+      return jqFixedCostIcon.attr('data-icon', '');
+    }
+  };
+
+  EntryView.prototype.popupFixedCost = function(event) {
+    var idValidationBtn, jqFixedCostIcon, jqIconParent, jqPopup, newFixedCost, popupTitle;
+    jqFixedCostIcon = $(event.currentTarget);
+    jqIconParent = jqFixedCostIcon.parent();
+    newFixedCost = jqFixedCostIcon.hasClass('variable-cost');
+    popupTitle = "Ajouter aux frais fixes";
+    idValidationBtn = "save-fixed-cost";
+    if (newFixedCost) {
+      jqFixedCostIcon.attr('data-icon', '');
+    } else {
+      jqFixedCostIcon.attr('data-icon', '');
+      popupTitle = "Retirer des frais fixes";
+      idValidationBtn = "remove-fixed-cost";
+    }
+    jqPopup = $('<div class="popup-fixed-cost"></div>');
+    jqFixedCostIcon.appendTo(jqPopup);
+    jqPopup.append('<span class="fixed-cost-title">' + popupTitle + '</span>');
+    jqPopup.append('<button type="button" id="' + idValidationBtn + '" class="btn btn-xs btn-primary">Valider</button>');
+    jqPopup.append('<button type="button" id="cancel-fixed-cost" class="btn btn-xs btn-danger" >Annuler</button>');
+    this.operationTitle = this.model.get('title');
+    if (newFixedCost) {
+      this.operationMax = parseFloat((this.model.get('amount')) * 1.1);
+      this.operationMin = parseFloat((this.model.get('amount')) * 0.9);
+      jqPopup.append('<input type="radio" name="fixed-cost-option" value="standard" checked="true" /> <label>Toutes les opérations intitulées "' + this.operationTitle + '" d\'un montant entre  ' + this.operationMin.money() + ' et ' + this.operationMax.money() + '</label><br />');
+      jqPopup.append('<input type="radio" name="fixed-cost-option" value="onetime" /> <label>Seulement cette opération</label><br />');
+      jqPopup.append('<input type="radio" name="fixed-cost-option" valur="custom" disabled="true" /> <label>Définir une règle</label>');
+    } else {
+      jqPopup.append('<p>Cette action enlevera l\'opération des frais fixes, ainsi que <strong>les autres opérations précédemment associées</strong>.</p>');
+    }
+    return jqPopup.appendTo(jqIconParent);
+  };
+
   EntryView.prototype.saveFixedCost = function(fixedCost, callback) {
     var _this = this;
     return $.ajax({
@@ -1391,289 +1390,7 @@ module.exports = EntryView = (function(_super) {
     });
   };
 
-  EntryView.prototype.switchFixedCostIcon = function(event) {
-    var jqFixedCostIcon;
-    jqFixedCostIcon = $(event.currentTarget);
-    if ((jqFixedCostIcon.attr('data-icon')) === '') {
-      return jqFixedCostIcon.attr('data-icon', '');
-    } else {
-      return jqFixedCostIcon.attr('data-icon', '');
-    }
-  };
-
-  EntryView.prototype.popupFixedCost = function(event) {
-    var currency, idValidationBtn, jqFixedCostIcon, jqIconParent, jqPopup, newFixedCost, popupTitle;
-    jqFixedCostIcon = $(event.currentTarget);
-    jqIconParent = jqFixedCostIcon.parent();
-    newFixedCost = jqFixedCostIcon.hasClass('variable-cost');
-    popupTitle = "Ajouter aux frais fixes";
-    idValidationBtn = "save-fixed-cost";
-    if (newFixedCost) {
-      jqFixedCostIcon.attr('data-icon', '');
-    } else {
-      jqFixedCostIcon.attr('data-icon', '');
-      popupTitle = "Retirer des frais fixes";
-      idValidationBtn = "remove-fixed-cost";
-    }
-    jqPopup = $('<div class="popup-fixed-cost"></div>');
-    jqFixedCostIcon.appendTo(jqPopup);
-    jqPopup.append('<span class="fixed-cost-title">' + popupTitle + '</span>');
-    jqPopup.append('<button type="button" id="' + idValidationBtn + '" class="btn btn-xs btn-primary">Valider</button>');
-    jqPopup.append('<button type="button" id="cancel-fixed-cost" class="btn btn-xs btn-danger" >Annuler</button>');
-    this.operationTitle = this.model.get('title');
-    if (newFixedCost) {
-      currency = window.rbiActiveData.currency.entity;
-      this.operationMax = parseFloat((this.model.get('amount')) * 1.1);
-      this.operationMin = parseFloat((this.model.get('amount')) * 0.9);
-      jqPopup.append('<input type="radio" name="fixed-cost-option" value="standard" checked="true" /> <label>Toutes les opérations intitulées "' + this.operationTitle + '" d\'un montant entre  ' + this.operationMin.money() + currency + ' et ' + this.operationMax.money() + currency + '</label><br />');
-      jqPopup.append('<input type="radio" name="fixed-cost-option" value="onetime" /> <label>Seulement cette opération</label><br />');
-      jqPopup.append('<input type="radio" name="fixed-cost-option" valur="custom" disabled="true" /> <label>Définir une règle</label>');
-    } else {
-      jqPopup.append('<p>Cette action enlevera l\'opération des frais fixes, ainsi que <strong>les autres opérations précédemment associées</strong>.</p>');
-    }
-    return jqPopup.appendTo(jqIconParent);
-  };
-
-  function EntryView(model, account, showAccountNum) {
-    this.model = model;
-    this.account = account;
-    this.showAccountNum = showAccountNum != null ? showAccountNum : false;
-    EntryView.__super__.constructor.call(this);
-  }
-
-  EntryView.prototype.render = function() {
-    var hint;
-    if (this.model.get("amount") > 0) {
-      this.$el.addClass("success");
-    }
-    this.model.account = this.account;
-    this.model.formattedDate = moment(this.model.get('date')).format("DD/MM/YYYY");
-    if ((this.model.get('amount')) > 0) {
-      this.model.costClass = 'not-displayed-cost';
-    } else {
-      this.model.costClass = "variable-cost";
-      this.model.costIcon = "&#57482;";
-      if (this.model.get('isFixedCost')) {
-        this.model.costClass = "fixed-cost";
-        this.model.costIcon = "&#57481;";
-      }
-    }
-    if (this.showAccountNum) {
-      hint = ("" + (this.model.account.get('title')) + ", ") + ("n°" + (this.model.account.get('accountNumber')));
-      this.model.hint = ("" + (this.model.account.get('title')) + ", ") + ("n°" + (this.model.account.get('accountNumber')));
-    } else {
-      this.model.hint = "" + (this.model.get('raw'));
-    }
-    EntryView.__super__.render.call(this);
-    return this;
-  };
-
   return EntryView;
-
-})(BaseView);
-
-});
-
-;require.register("views/bank_subtitle", function(exports, require, module) {
-var BankSubTitleView, BaseView,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-BaseView = require('../lib/base_view');
-
-module.exports = BankSubTitleView = (function(_super) {
-  __extends(BankSubTitleView, _super);
-
-  BankSubTitleView.prototype.template = require('./templates/configuration_bank_subtitle');
-
-  function BankSubTitleView(model) {
-    this.model = model;
-    BankSubTitleView.__super__.constructor.call(this);
-  }
-
-  BankSubTitleView.prototype.events = {
-    "change .accountTitle": 'chooseAccount'
-  };
-
-  BankSubTitleView.prototype.formattedAmounts = [];
-
-  BankSubTitleView.prototype.initialize = function() {
-    this.listenTo(this.model, 'change', this.render);
-    return this.listenTo(window.activeObjects, 'changeActiveAccount', this.checkActive);
-  };
-
-  BankSubTitleView.prototype.afterRender = function() {
-    var accountNumber;
-    accountNumber = window.rbiActiveData.accountNumber;
-    if (accountNumber !== "" && accountNumber === this.model.get('accountNumber')) {
-      return this.chooseAccount();
-    }
-  };
-
-  BankSubTitleView.prototype.chooseAccount = function(event) {
-    var today;
-    this.$el.children('.accountTitle').attr('checked', 'true');
-    window.activeObjects.trigger("changeActiveAccount", this.model);
-    if (event != null) {
-      window.rbiActiveData.config.save({
-        accountNumber: this.model.get('accountNumber', {
-          error: function() {
-            return console.log('Error: configuration not saved');
-          }
-        })
-      });
-    }
-    window.rbiActiveData.bankAccount = this.model;
-    today = this.formatDate(new Date());
-    $("#current-amount-date").text(today);
-    $("#account-amount-balance").text(this.model.get('amount'));
-    return this.loadLastYearAmounts(this.model, function() {
-      return window.views.monthlyAnalysisView.render();
-    });
-  };
-
-  BankSubTitleView.prototype.checkActive = function(account) {
-    this.$(".row").removeClass("active");
-    if (account === this.model) {
-      return this.$(".row").addClass("active");
-    }
-  };
-
-  BankSubTitleView.prototype.loadLastYearAmounts = function(account, callback) {
-    var _this = this;
-    window.collections.amounts.reset();
-    window.collections.amounts.setAccount(account);
-    window.collections.amounts.fetch({
-      success: function(amounts) {
-        _this.setupLastYearAmountsFlot(amounts);
-        if (callback != null) {
-          callback();
-        }
-        return $(window).resize(function() {
-          return _this.setupLastYearAmountsFlot(amounts);
-        });
-      },
-      error: function() {
-        return console.log("error fetching amounts of last year");
-      }
-    });
-    return this;
-  };
-
-  BankSubTitleView.prototype.formatDate = function(date) {
-    var day, month, year;
-    day = ('0' + date.getDate()).slice(-2);
-    month = ('0' + (date.getMonth() + 1)).slice(-2);
-    year = date.getFullYear();
-    return day + '/' + month + '/' + year;
-  };
-
-  BankSubTitleView.prototype.setupLastYearAmountsFlot = function(amounts) {
-    var currentDate, dayRatio, daysPerMonth, flotReadyAmounts, i, lastAmount, maxAmount, minAmount, numberOfDays, plot, sixMonthAgo, threeMonthAgo,
-      _this = this;
-    this.formattedAmounts = [];
-    flotReadyAmounts = [];
-    daysPerMonth = {
-      twelve: 365,
-      six: 365 / 2,
-      three: 365 / 4
-    };
-    numberOfDays = daysPerMonth.three;
-    threeMonthAgo = new Date();
-    threeMonthAgo = threeMonthAgo.setMonth(threeMonthAgo.getMonth() - 3);
-    sixMonthAgo = new Date();
-    sixMonthAgo = sixMonthAgo.setMonth(sixMonthAgo.getMonth() - 6);
-    dayRatio = 4;
-    amounts.each(function(amount) {
-      var amountDate, currentDate, i;
-      if (window.rbiActiveData.olderOperationDate > moment(amount.get('date'))) {
-        window.rbiActiveData.olderOperationDate = moment(amount.get('date'));
-      }
-      currentDate = new Date();
-      currentDate.setHours(12, 0, 0, 0);
-      amountDate = new Date(amount.get('date'));
-      i = 0;
-      while (amountDate.getTime() !== currentDate.getTime() && i < 365) {
-        currentDate.setDate(currentDate.getDate() - 1);
-        i++;
-      }
-      if (i < 364) {
-        _this.formattedAmounts[currentDate.getTime()] = amount.get('amount');
-      }
-      if (currentDate.getTime() < threeMonthAgo) {
-        return numberOfDays = daysPerMonth.six;
-      } else if (currentDate.getTime() < sixMonthAgo) {
-        return numberOfDays = daysPerMonth.twelve;
-      }
-    });
-    currentDate = new Date();
-    currentDate.setHours(12, 0, 0, 0);
-    lastAmount = parseFloat(this.model.get('amount'));
-    minAmount = parseFloat(this.model.get('amount'));
-    maxAmount = parseFloat(this.model.get('amount'));
-    i = 0;
-    while (i < numberOfDays) {
-      if (this.formattedAmounts[currentDate.getTime()]) {
-        lastAmount = parseFloat(this.formattedAmounts[currentDate.getTime()]);
-      }
-      flotReadyAmounts.push([currentDate.getTime(), lastAmount]);
-      currentDate.setDate(currentDate.getDate() - 1);
-      if (lastAmount < minAmount) {
-        minAmount = lastAmount;
-      }
-      if (lastAmount > maxAmount) {
-        maxAmount = lastAmount;
-      }
-      i++;
-    }
-    $("#max-amount").text(maxAmount + ' €');
-    $("#min-amount").text(minAmount + ' €');
-    minAmount = minAmount - 500;
-    maxAmount = maxAmount + 500;
-    flotReadyAmounts.reverse();
-    $('#amount-stats').empty();
-    return plot = $.plot("#amount-stats", [
-      {
-        data: flotReadyAmounts,
-        label: "Solde"
-      }
-    ], {
-      series: {
-        lines: {
-          show: true,
-          lineWidth: 2
-        },
-        points: {
-          show: false
-        }
-      },
-      grid: {
-        hoverable: true,
-        clickable: true,
-        borderWidth: 1,
-        tickColor: $border_color,
-        borderColor: '#eeeeee'
-      },
-      colors: [window.rbiColors.blue],
-      shadowSize: 0,
-      yaxis: {
-        min: minAmount,
-        max: maxAmount
-      },
-      xaxis: {
-        mode: "time",
-        minTickSize: [1, "month"],
-        monthNames: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
-      },
-      tooltip: true,
-      tooltipOpts: {
-        content: '%y.2  &euro;<br /> %x',
-        xDateFormat: '%d/%m/%y'
-      }
-    });
-  };
-
-  return BankSubTitleView;
 
 })(BaseView);
 
@@ -1690,6 +1407,8 @@ module.exports = BankTitleView = (function(_super) {
   __extends(BankTitleView, _super);
 
   BankTitleView.prototype.template = require('./templates/configuration_bank_title');
+
+  BankTitleView.prototype.tagName = 'span';
 
   function BankTitleView(model) {
     this.model = model;
@@ -1796,24 +1515,68 @@ module.exports = ConfigurationView = (function(_super) {
 
   ConfigurationView.prototype.el = '#configuration';
 
-  ConfigurationView.prototype.elAccounts = 'ul#account-choice';
+  ConfigurationView.prototype.elAccounts = 'select#account-choice';
 
   ConfigurationView.prototype.accounts = 0;
 
   ConfigurationView.prototype.subViews = [];
 
-  ConfigurationView.prototype.initialize = function() {
-    this.listenTo(window.activeObjects, "new_access_added_successfully", this.noMoreEmpty);
-    return window.rbiActiveData.config = new Config({});
+  ConfigurationView.prototype.events = {
+    'change select#account-choice': 'reloadBudget',
+    'keyup #configuration-budget-amount': 'setBudget'
   };
 
-  ConfigurationView.prototype.noMoreEmpty = function() {
-    var _this = this;
-    return window.collections.banks.fetch({
-      success: function() {
-        return _this.render();
+  ConfigurationView.prototype.reloadBudget = function() {
+    var accountNumber, budgetByAccount;
+    accountNumber = window.rbiActiveData.accountNumber;
+    budgetByAccount = window.rbiActiveData.budgetByAccount;
+    if (budgetByAccount[accountNumber]) {
+      $('#account-budget-amount').val(budgetByAccount[accountNumber]);
+      return $('#configuration-budget-amount').val(budgetByAccount[accountNumber]);
+    } else {
+      $('#account-budget-amount').val(0);
+      return $('#configuration-budget-amount').val(budgetByAccount[accountNumber]);
+    }
+  };
+
+  ConfigurationView.prototype.setBudget = function(event) {
+    var accountNumber, budgetValue, jqBudgetInput;
+    budgetValue = 0;
+    jqBudgetInput = $(event.currentTarget);
+    budgetValue = jqBudgetInput.val();
+    if (!/^(\d+(?:[\.\,]\d{2})?)$/.test(budgetValue)) {
+      return $('.info-user').css('color', window.rbiColors.red).html('La valeur du budget semble incomplète ou érronée&nbsp;');
+    } else {
+      $('.info-user').css('color', 'inherit').html('Les modifications sont prises en compte instantanément&nbsp;');
+      budgetValue = parseFloat(budgetValue.replace(" ", "").replace(",", "."));
+      if (isNaN(budgetValue)) {
+        budgetValue = 0;
       }
+      if (budgetValue > 0) {
+        accountNumber = window.rbiActiveData.accountNumber;
+        window.rbiActiveData.budgetByAccount[accountNumber] = budgetValue;
+        return window.rbiActiveData.config.save({
+          budgetByAccount: window.rbiActiveData.budgetByAccount
+        }, {
+          success: function() {
+            return $('#account-budget-amount').val(budgetValue);
+          },
+          error: function() {
+            return console.log('Error: budget configuration not saved');
+          }
+        });
+      }
+    }
+  };
+
+  ConfigurationView.prototype.afterRender = function() {
+    return $(this.elAccounts).change(function() {
+      return this.options[this.selectedIndex].click();
     });
+  };
+
+  ConfigurationView.prototype.initialize = function() {
+    return window.rbiActiveData.config = new Config({});
   };
 
   ConfigurationView.prototype.render = function() {
@@ -1821,10 +1584,13 @@ module.exports = ConfigurationView = (function(_super) {
     ConfigurationView.__super__.render.call(this);
     window.rbiActiveData.config.fetch({
       success: function(currentConfig) {
-        var accountNumber, treatment, view;
-        accountNumber = currentConfig.get('accountNumber' || "");
+        var accountNumber, budgetByAccount, treatment, view;
+        accountNumber = currentConfig.get('accountNumber') || "";
         if (accountNumber !== "") {
           window.rbiActiveData.accountNumber = accountNumber;
+          budgetByAccount = currentConfig.get('budgetByAccount') || {};
+          window.rbiActiveData.budgetByAccount = budgetByAccount;
+          _this.reloadBudget();
         }
         view = _this;
         treatment = function(bank, callback) {
@@ -1852,29 +1618,12 @@ module.exports = ConfigurationView = (function(_super) {
           }
           this.accounts = results.length;
           if (this.accounts === 0) {
-            $(view.elAccounts).prepend(require("./templates/balance_banks_empty"));
-          }
-          if (accountNumber === "") {
-            return $(".accountTitle:eq(0)").click();
+            return $(view.elAccounts).prepend(require("./templates/balance_banks_empty"));
           }
         });
       }
     });
     return this;
-  };
-
-  ConfigurationView.prototype.empty = function() {
-    var view, _i, _len, _ref1, _ref2, _results;
-    if ((_ref1 = this.operationsView) != null) {
-      _ref1.destroy();
-    }
-    _ref2 = this.subViews;
-    _results = [];
-    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-      view = _ref2[_i];
-      _results.push(view.destroy());
-    }
-    return _results;
   };
 
   return ConfigurationView;
@@ -1892,10 +1641,18 @@ BaseView = require('../lib/base_view');
 
 BankTitleView = require('./bank_title');
 
-BankSubTitleView = require('./bank_subtitle');
+BankSubTitleView = require('./configuration_bank_account');
 
 module.exports = ConfigurationBankView = (function(_super) {
   __extends(ConfigurationBankView, _super);
+
+  ConfigurationBankView.prototype.className = "unclickable-option";
+
+  ConfigurationBankView.prototype.tagName = "option";
+
+  ConfigurationBankView.prototype.attributes = {
+    'disabled': 'true'
+  };
 
   ConfigurationBankView.prototype.sum = 0;
 
@@ -1906,21 +1663,18 @@ module.exports = ConfigurationBankView = (function(_super) {
     ConfigurationBankView.__super__.constructor.call(this);
   }
 
-  ConfigurationBankView.prototype.initialize = function() {
-    this.listenTo(this.bank.accounts, "add", this.addOne);
-    return this.listenTo(this.bank.accounts, "destroy", this.render);
-  };
-
   ConfigurationBankView.prototype.addOne = function(account) {
     var viewAccount;
+    console.log('add one bank view');
     viewAccount = new BankSubTitleView(account);
     this.subViews.push(viewAccount);
     account.view = viewAccount;
-    return this.$el.append(viewAccount.render().el);
+    return this.$el.after(viewAccount.render().el);
   };
 
   ConfigurationBankView.prototype.render = function() {
     var account, _i, _len, _ref;
+    console.log('render bank view');
     this.viewTitle = new BankTitleView(this.bank);
     this.$el.html(this.viewTitle.render().el);
     this.viewTitle = null;
@@ -1947,6 +1701,211 @@ module.exports = ConfigurationBankView = (function(_super) {
   };
 
   return ConfigurationBankView;
+
+})(BaseView);
+
+});
+
+;require.register("views/configuration_bank_account", function(exports, require, module) {
+var BankSubTitleView, BaseView,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+module.exports = BankSubTitleView = (function(_super) {
+  __extends(BankSubTitleView, _super);
+
+  BankSubTitleView.prototype.tagName = 'option';
+
+  BankSubTitleView.prototype.template = require('./templates/configuration_bank_account');
+
+  function BankSubTitleView(model) {
+    this.model = model;
+    BankSubTitleView.__super__.constructor.call(this);
+  }
+
+  BankSubTitleView.prototype.events = {
+    'click': 'chooseAccount'
+  };
+
+  BankSubTitleView.prototype.formattedAmounts = [];
+
+  BankSubTitleView.prototype.initialize = function() {
+    return this.listenTo(window.activeObjects, 'changeActiveAccount', this.checkActive);
+  };
+
+  BankSubTitleView.prototype.afterRender = function() {
+    var accountNumber;
+    accountNumber = window.rbiActiveData.accountNumber;
+    if (accountNumber !== "" && accountNumber === this.model.get('accountNumber')) {
+      return this.chooseAccount();
+    }
+  };
+
+  BankSubTitleView.prototype.chooseAccount = function(event) {
+    var today;
+    this.$el.attr('selected', 'true');
+    window.activeObjects.trigger("changeActiveAccount", this.model);
+    window.rbiActiveData.config.save({
+      accountNumber: this.model.get('accountNumber', {
+        error: function() {
+          return console.log('Error: configuration not saved');
+        }
+      })
+    });
+    window.rbiActiveData.accountNumber = this.model.get('accountNumber');
+    window.rbiActiveData.bankAccount = this.model;
+    today = this.formatDate(new Date());
+    $("#current-amount-date").text(today);
+    $("#account-amount-balance").html((this.model.get('amount')).money());
+    return this.loadLastYearAmounts(this.model, function() {
+      return window.views.monthlyAnalysisView.render();
+    });
+  };
+
+  BankSubTitleView.prototype.checkActive = function(account) {
+    this.$(".row").removeClass("active");
+    if (account === this.model) {
+      return this.$(".row").addClass("active");
+    }
+  };
+
+  BankSubTitleView.prototype.loadLastYearAmounts = function(account, callback) {
+    var _this = this;
+    window.collections.amounts.reset();
+    window.collections.amounts.setAccount(account);
+    window.collections.amounts.fetch({
+      success: function(amounts) {
+        _this.setupLastYearAmountsFlot(amounts);
+        if (callback != null) {
+          callback();
+        }
+        return $(window).resize(function() {
+          return _this.setupLastYearAmountsFlot(amounts);
+        });
+      },
+      error: function() {
+        return console.log("error fetching amounts of last year");
+      }
+    });
+    return this;
+  };
+
+  BankSubTitleView.prototype.formatDate = function(date) {
+    var day, month, year;
+    day = ('0' + date.getDate()).slice(-2);
+    month = ('0' + (date.getMonth() + 1)).slice(-2);
+    year = date.getFullYear();
+    return day + '/' + month + '/' + year;
+  };
+
+  BankSubTitleView.prototype.setupLastYearAmountsFlot = function(amounts) {
+    var currentDate, dayRatio, daysPerMonth, flotReadyAmounts, i, lastAmount, maxAmount, minAmount, numberOfDays, plot, sixMonthAgo, threeMonthAgo,
+      _this = this;
+    this.formattedAmounts = [];
+    flotReadyAmounts = [];
+    daysPerMonth = {
+      twelve: 365,
+      six: 365 / 2,
+      three: 365 / 4
+    };
+    numberOfDays = daysPerMonth.three;
+    threeMonthAgo = new Date();
+    threeMonthAgo = threeMonthAgo.setMonth(threeMonthAgo.getMonth() - 3);
+    sixMonthAgo = new Date();
+    sixMonthAgo = sixMonthAgo.setMonth(sixMonthAgo.getMonth() - 6);
+    dayRatio = 4;
+    amounts.each(function(amount) {
+      var amountDate, currentDate, i;
+      if (window.rbiActiveData.olderOperationDate > moment(amount.get('date'))) {
+        window.rbiActiveData.olderOperationDate = moment(amount.get('date'));
+      }
+      currentDate = new Date();
+      currentDate.setHours(12, 0, 0, 0);
+      amountDate = new Date(amount.get('date'));
+      i = 0;
+      while (amountDate.getTime() !== currentDate.getTime() && i < 365) {
+        currentDate.setDate(currentDate.getDate() - 1);
+        i++;
+      }
+      if (i < 364) {
+        _this.formattedAmounts[currentDate.getTime()] = amount.get('amount');
+      }
+      if (currentDate.getTime() < threeMonthAgo) {
+        return numberOfDays = daysPerMonth.six;
+      } else if (currentDate.getTime() < sixMonthAgo) {
+        return numberOfDays = daysPerMonth.twelve;
+      }
+    });
+    currentDate = new Date();
+    currentDate.setHours(12, 0, 0, 0);
+    lastAmount = parseFloat(this.model.get('amount'));
+    minAmount = parseFloat(this.model.get('amount'));
+    maxAmount = parseFloat(this.model.get('amount'));
+    i = 0;
+    while (i < numberOfDays) {
+      if (this.formattedAmounts[currentDate.getTime()]) {
+        lastAmount = parseFloat(this.formattedAmounts[currentDate.getTime()]);
+      }
+      flotReadyAmounts.push([currentDate.getTime(), lastAmount]);
+      currentDate.setDate(currentDate.getDate() - 1);
+      if (lastAmount < minAmount) {
+        minAmount = lastAmount;
+      }
+      if (lastAmount > maxAmount) {
+        maxAmount = lastAmount;
+      }
+      i++;
+    }
+    $("#max-amount").html(maxAmount.money());
+    $("#min-amount").html(minAmount.money());
+    minAmount = minAmount - 500;
+    maxAmount = maxAmount + 500;
+    flotReadyAmounts.reverse();
+    $('#amount-stats').empty();
+    return plot = $.plot("#amount-stats", [
+      {
+        data: flotReadyAmounts,
+        label: "Solde"
+      }
+    ], {
+      series: {
+        lines: {
+          show: true,
+          lineWidth: 2
+        },
+        points: {
+          show: false
+        }
+      },
+      grid: {
+        hoverable: true,
+        clickable: true,
+        borderWidth: 1,
+        tickColor: $border_color,
+        borderColor: '#eeeeee'
+      },
+      colors: [window.rbiColors.blue],
+      shadowSize: 0,
+      yaxis: {
+        min: minAmount,
+        max: maxAmount
+      },
+      xaxis: {
+        mode: "time",
+        minTickSize: [1, "month"],
+        monthNames: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+      },
+      tooltip: true,
+      tooltipOpts: {
+        content: '%y.2&euro;<br /> %x',
+        xDateFormat: '%d/%m/%y'
+      }
+    });
+  };
+
+  return BankSubTitleView;
 
 })(BaseView);
 
@@ -2111,12 +2070,11 @@ module.exports = MonthlyAnalysisView = (function(_super) {
   };
 
   MonthlyAnalysisView.prototype.displayMonthlyAmounts = function(previous, next) {
-    var currency, differential, iconEvolution, sign;
-    currency = window.rbiActiveData.currency.entity;
+    var differential, iconEvolution, sign;
     differential = next - previous;
     sign = '';
-    $("#amount-month-start").html(previous.money() + currency);
-    $("#amount-month-end").html(next.money() + currency);
+    $("#amount-month-start").html(previous.money());
+    $("#amount-month-end").html(next.money());
     $("#amount-month-differential").empty();
     if ((!isNaN(differential)) && differential !== 0) {
       if (differential > 0) {
@@ -2132,18 +2090,17 @@ module.exports = MonthlyAnalysisView = (function(_super) {
         iconEvolution = $('<span class="fs1 plain-icon-red" aria-hidden="true" data-icon="&#57643;"></span>');
       }
       $("#amount-month-differential").append(iconEvolution);
-      return $("#amount-month-differential").append(sign + differential.money() + currency);
+      return $("#amount-month-differential").append(sign + differential.money());
     }
   };
 
   MonthlyAnalysisView.prototype.displayMonthlySums = function(operations) {
-    var credits, currency, debits, fixedCost, key, operation, variableCost;
+    var credits, debits, fixedCost, key, operation, variableCost;
     credits = 0;
     debits = 0;
     fixedCost = 0;
     variableCost = 0;
     if (operations != null) {
-      currency = window.rbiActiveData.currency.entity;
       for (key in operations) {
         operation = operations[key];
         if (operation.amount > 0) {
@@ -2158,10 +2115,10 @@ module.exports = MonthlyAnalysisView = (function(_super) {
         }
       }
     }
-    $('#credits-sum').html(credits.money() + currency);
-    $('#debits-sum').html((Math.abs(debits)).money() + currency);
-    $('#fixed-cost-sum').html((Math.abs(fixedCost)).money() + currency);
-    return $('#variable-cost-sum').html((Math.abs(variableCost)).money() + currency);
+    $('#credits-sum').html(credits.money());
+    $('#debits-sum').html((Math.abs(debits)).money());
+    $('#fixed-cost-sum').html((Math.abs(fixedCost)).money());
+    return $('#variable-cost-sum').html((Math.abs(variableCost)).money());
   };
 
   MonthlyAnalysisView.prototype.displayPieChart = function(operations) {
@@ -2380,6 +2337,20 @@ return buf.join("");
 };
 });
 
+;require.register("views/templates/bank_statement_entry", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<td class="operation-title">' + escape((interp = model.get('title')) == null ? '' : interp) + '</td><td class="operation-amount text-right">' + escape((interp = Number(model.get('amount')).money()) == null ? '' : interp) + '</td><td class="text-right"><div class="popup-container"><span');
+buf.push(attrs({ 'aria-hidden':("true"), 'data-icon':("" + (model.costIcon) + ""), "class": ('fs1') + ' ' + ('iconCostType') + ' ' + ("" + (model.costClass) + "") }, {"class":true,"aria-hidden":true,"data-icon":true}));
+buf.push('></span></div></td>');
+}
+return buf.join("");
+};
+});
+
 ;require.register("views/templates/bank_statement_header", function(exports, require, module) {
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
 attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
@@ -2421,7 +2392,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div id="modalConfiguration" tabindex="-1" role="dialog" aria-labelledby="showModalLabel" aria-hidden="true" style="display: none;" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" data-dismiss="modal" aria-hidden="true" data-original-title="" class="close">×</button><h4 class="modal-title">Paramètres</h4></div><div class="modal-body"><ul id="account-choice"></ul></div><div class="modal-footer"><button type="button" data-dismiss="modal" data-original-title="" class="btn btn-default">Close</button><button type="button" data-original-title="" class="btn btn-primary">Save changes</button></div></div></div></div>');
+buf.push('<div id="modalConfiguration" tabindex="-1" role="dialog" aria-labelledby="showModalLabel" aria-hidden="true" style="display: none;" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" data-dismiss="modal" aria-hidden="true" data-original-title="" class="close">×</button><h4 class="modal-title">Paramètres</h4></div><div class="modal-body"><label class="control-label">Mon choix de compte</label><select id="account-choice" size="1" class="form-control input-lg"></select><br/><label for="monthly-budget" class="control-label">Mon budget du mois</label><div class="input-group input-middle-size"><input id="configuration-budget-amount" type="text" name="monthly-budget" class="form-control"/><span class="input-group-addon">&euro;</span></div></div><div class="modal-footer"><em class="info-user little-text">Les modifications sont prises en compte instantanément&nbsp;</em><button type="button" data-dismiss="modal" data-original-title="" class="btn btn-default">J\'ai terminé</button></div></div></div></div>');
 }
 return buf.join("");
 };
@@ -2438,15 +2409,13 @@ return buf.join("");
 };
 });
 
-;require.register("views/templates/configuration_bank_subtitle", function(exports, require, module) {
+;require.register("views/templates/configuration_bank_account", function(exports, require, module) {
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
 attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<input type="radio" name="accountTitle" class="accountTitle"/><label for="accountTitle">' + escape((interp = model.get('title')) == null ? '' : interp) + ' n°' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</label><span>&nbsp;Solde :</span><input');
-buf.push(attrs({ 'type':("text"), 'value':("" + (Number(model.get('amount')).money()) + ""), 'disabled':("true"), "class": ('accountAmount') }, {"type":true,"value":true,"disabled":true}));
-buf.push('/><span>&euro;</span>');
+buf.push('' + escape((interp = model.get('title')) == null ? '' : interp) + ' n°' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '');
 }
 return buf.join("");
 };
@@ -2458,21 +2427,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<span class="bank-title-loading"><img src="./loader.gif"/></span><span class="bank-title">' + escape((interp = model.get('name')) == null ? '' : interp) + '</span>');
-}
-return buf.join("");
-};
-});
-
-;require.register("views/templates/entry_element", function(exports, require, module) {
-module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
-attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
-var buf = [];
-with (locals || {}) {
-var interp;
-buf.push('<td class="operation-title">' + escape((interp = model.get('title')) == null ? '' : interp) + '</td><td class="operation-amount text-right">' + escape((interp = Number(model.get('amount')).money()) == null ? '' : interp) + '</td><td class="text-right"><div class="popup-container"><span');
-buf.push(attrs({ 'aria-hidden':("true"), 'data-icon':("" + (model.costIcon) + ""), "class": ('fs1') + ' ' + ('iconCostType') + ' ' + ("" + (model.costClass) + "") }, {"class":true,"aria-hidden":true,"data-icon":true}));
-buf.push('></span></div></td>');
+buf.push('' + escape((interp = model.get('name')) == null ? '' : interp) + '');
 }
 return buf.join("");
 };

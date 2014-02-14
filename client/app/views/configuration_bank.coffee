@@ -1,10 +1,14 @@
 BaseView = require '../lib/base_view'
 BankTitleView = require './bank_title'
-BankSubTitleView = require './bank_subtitle'
+BankSubTitleView = require './configuration_bank_account'
 
 module.exports = class ConfigurationBankView extends BaseView
 
-    #className: 'bank'
+    className: "unclickable-option"
+
+    tagName: "option"
+    attributes:
+        'disabled':'true'
 
     sum: 0
 
@@ -13,19 +17,16 @@ module.exports = class ConfigurationBankView extends BaseView
     constructor: (@bank) ->
         super()
 
-    initialize: ->
-        @listenTo @bank.accounts, "add", @addOne
-        @listenTo @bank.accounts, "destroy", @render
-
     addOne: (account) ->
         # add the account
+        console.log 'add one bank view'
         viewAccount = new BankSubTitleView account
         @subViews.push viewAccount
         account.view = viewAccount
-        @$el.append viewAccount.render().el
+        @$el.after viewAccount.render().el
 
     render: ->
-
+        console.log 'render bank view'
         # generate the title
         @viewTitle = new BankTitleView @bank
         @$el.html @viewTitle.render().el

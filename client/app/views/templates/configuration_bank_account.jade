@@ -1,0 +1,6 @@
+//- input.accountTitle(type="radio", name="accountTitle")
+//- label(for="accountTitle") #{model.get('title')} n°#{model.get("accountNumber")}
+//- span &nbsp;Solde :
+//- input.accountAmount(type="text", value="#{Number(model.get('amount')).money()}", disabled="true")
+//- span &euro;
+| #{model.get('title')} n°#{model.get("accountNumber")}

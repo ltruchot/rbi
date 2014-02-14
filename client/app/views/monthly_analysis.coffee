@@ -89,11 +89,10 @@ module.exports = class MonthlyAnalysisView extends BaseView
 
 
   displayMonthlyAmounts: (previous, next) ->
-    currency = window.rbiActiveData.currency.entity
     differential = next - previous
     sign = ''
-    $("#amount-month-start").html previous.money() + currency
-    $("#amount-month-end").html next.money() + currency
+    $("#amount-month-start").html previous.money()
+    $("#amount-month-end").html next.money()
     $("#amount-month-differential").empty()
     if (not isNaN differential) and differential isnt 0
       if differential > 0
@@ -106,7 +105,7 @@ module.exports = class MonthlyAnalysisView extends BaseView
           $("#amount-month-differential").removeClass("blue-text").addClass "red-text"
         iconEvolution = $('<span class="fs1 plain-icon-red" aria-hidden="true" data-icon="&#57643;"></span>')
       $("#amount-month-differential").append iconEvolution
-      $("#amount-month-differential").append sign + differential.money() + currency
+      $("#amount-month-differential").append sign + differential.money()
 
   displayMonthlySums: (operations) ->
     credits = 0
@@ -114,7 +113,6 @@ module.exports = class MonthlyAnalysisView extends BaseView
     fixedCost = 0
     variableCost = 0
     if operations?
-      currency = window.rbiActiveData.currency.entity
       for key, operation of operations
         if operation.amount > 0
           credits += operation.amount
@@ -124,10 +122,10 @@ module.exports = class MonthlyAnalysisView extends BaseView
           fixedCost += operation.amount
         else if (not operation.isFixedCost) and operation.amount < 0
           variableCost += operation.amount
-    $('#credits-sum').html credits.money() + currency
-    $('#debits-sum').html (Math.abs(debits)).money() + currency
-    $('#fixed-cost-sum').html (Math.abs(fixedCost)).money() + currency
-    $('#variable-cost-sum').html (Math.abs(variableCost)).money() + currency
+    $('#credits-sum').html credits.money()
+    $('#debits-sum').html (Math.abs(debits)).money()
+    $('#fixed-cost-sum').html (Math.abs(fixedCost)).money()
+    $('#variable-cost-sum').html (Math.abs(variableCost)).money()
 
 
   displayPieChart: (operations)->

@@ -16,10 +16,9 @@ module.exports =
 
 
         #set global active data
-        window.rbiActiveData.currency =
-            name : 'euro'
-            entity : '&euro;'
         window.rbiActiveData.olderOperationDate = moment(new Date())
+        window.rbiActiveData.budgetByAccount = {}
+        window.rbiActiveData.accountNumber = null
 
         #set global rbi color for dynamic use
         window.rbiColors =
@@ -56,7 +55,6 @@ module.exports =
 
 
         #instantiate collections: banks, operations, amounts
-        window.collections.allBanks = new BanksCollection()
         window.collections.banks = new BanksCollection()
         window.collections.operations = new BankOperationsCollection()
         window.collections.amounts = new BankAmountsCollection()
