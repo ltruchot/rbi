@@ -1539,13 +1539,17 @@ module.exports = ConfigurationView = (function(_super) {
       $('#configuration-budget-amount').val(0);
     }
     return this.getLastMonthDebitAmount(currentBudget, function(percentage) {
-      return $('#current-budget-chart').easyPieChart({
-        animate: 1500,
-        barColor: window.rbiColors.blue,
-        trackColor: window.rbiColors.border_color,
-        scaleColor: window.rbiColors.blue,
-        lineWidth: 2
-      });
+      if (this.currentChart != null) {
+        return $('#current-budget-chart').data('easyPieChart').update(percentage);
+      } else {
+        return this.currentChart = $('#current-budget-chart').easyPieChart({
+          animate: 1500,
+          barColor: window.rbiColors.blue,
+          trackColor: window.rbiColors.border_color,
+          scaleColor: window.rbiColors.blue,
+          lineWidth: 2
+        });
+      }
     });
   };
 
@@ -1585,7 +1589,7 @@ module.exports = ConfigurationView = (function(_super) {
     });
   };
 
-  ConfigurationView.prototype.setBudget = function(event) {
+  ConfigurationView.prototype.setBudget = function(event, view) {
     var accountNumber, budgetValue, jqBudgetInput,
       _this = this;
     budgetValue = 0;
@@ -1607,7 +1611,11 @@ module.exports = ConfigurationView = (function(_super) {
         }, {
           success: function() {
             $('#account-budget-amount').val(budgetValue);
-            return _this.reloadBudget();
+            if (view) {
+              return view.reloadBudget();
+            } else {
+              return _this.reloadBudget();
+            }
           },
           error: function() {
             return console.log('Error: budget configuration not saved');
@@ -1618,8 +1626,13 @@ module.exports = ConfigurationView = (function(_super) {
   };
 
   ConfigurationView.prototype.afterRender = function() {
-    return $(this.elAccounts).change(function() {
+    var view;
+    $(this.elAccounts).change(function() {
       return this.options[this.selectedIndex].click();
+    });
+    view = this;
+    return $('#account-budget-amount').keyup(function(event) {
+      return view.setBudget(event, view);
     });
   };
 
@@ -1914,8 +1927,7 @@ module.exports = BankSubTitleView = (function(_super) {
     $('#amount-stats').empty();
     return plot = $.plot("#amount-stats", [
       {
-        data: flotReadyAmounts,
-        label: "Solde"
+        data: flotReadyAmounts
       }
     ], {
       series: {

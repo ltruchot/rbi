@@ -135,7 +135,7 @@ module.exports = class BankSubTitleView extends BaseView
         maxAmount =  maxAmount + 500
         flotReadyAmounts.reverse()
         $('#amount-stats').empty();
-        plot = $.plot "#amount-stats", [{ data: flotReadyAmounts, label: "Solde"}],
+        plot = $.plot "#amount-stats", [{ data: flotReadyAmounts}],
             series:
                 lines:
                     show: true

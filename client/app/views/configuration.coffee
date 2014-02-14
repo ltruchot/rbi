@@ -33,12 +33,15 @@ module.exports = class ConfigurationView extends BaseView
 
       #chart budget
       @getLastMonthDebitAmount currentBudget, (percentage) ->
-        $('#current-budget-chart').easyPieChart
-          animate: 1500
-          barColor: window.rbiColors.blue
-          trackColor: window.rbiColors.border_color
-          scaleColor: window.rbiColors.blue
-          lineWidth: 2
+        if @currentChart?
+          $('#current-budget-chart').data('easyPieChart').update percentage
+        else
+          @currentChart = $('#current-budget-chart').easyPieChart
+            animate: 1500
+            barColor: window.rbiColors.blue
+            trackColor: window.rbiColors.border_color
+            scaleColor: window.rbiColors.blue
+            lineWidth: 2
 
     getLastMonthDebitAmount: (budgetValue, callback) ->
       now = moment(new Date())
@@ -68,26 +71,7 @@ module.exports = class ConfigurationView extends BaseView
           console.log "getting fixed cost failed."
 
 
-
-    #   //update instance after 5 sec
-    #   setTimeout(function () {
-    #     $('.chart1').data('easyPieChart').update(50);
-    #   }, 5000);
-    #   setTimeout(function () {
-    #     $('.chart1').data('easyPieChart').update(70);
-    #   }, 10000);
-    #   setTimeout(function () {
-    #     $('.chart1').data('easyPieChart').update(30);
-    #   }, 15000);
-    #   setTimeout(function () {
-    #     $('.chart1').data('easyPieChart').update(90);
-    #   }, 19000);
-    #   setTimeout(function () {
-    #     $('.chart1').data('easyPieChart').update(40);
-    #   }, 32000);
-    # });
-
-    setBudget: (event) ->
+    setBudget: (event, view) ->
       budgetValue = 0
       jqBudgetInput = $(event.currentTarget)
       budgetValue = jqBudgetInput.val()
@@ -104,7 +88,10 @@ module.exports = class ConfigurationView extends BaseView
           window.rbiActiveData.config.save budgetByAccount: window.rbiActiveData.budgetByAccount,
             success:=>
               $('#account-budget-amount').val budgetValue
-              @reloadBudget()
+              if view
+                view.reloadBudget()
+              else
+                @reloadBudget()
             error: ->
               console.log 'Error: budget configuration not saved'
 
@@ -115,6 +102,11 @@ module.exports = class ConfigurationView extends BaseView
       #patch chrome and IE for click on select > option
       $(@elAccounts).change ->
         this.options[this.selectedIndex].click()
+
+      #general widget budget keyup
+      view = @
+      $('#account-budget-amount').keyup (event) ->
+        view.setBudget event, view
 
     initialize: ->
       window.rbiActiveData.config = new Config({})
