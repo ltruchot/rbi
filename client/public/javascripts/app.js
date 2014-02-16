@@ -1679,7 +1679,12 @@ module.exports = ConfigurationView = (function(_super) {
           }
           this.accounts = results.length;
           if (this.accounts === 0) {
-            return $(view.elAccounts).prepend(require("./templates/balance_banks_empty"));
+            $(view.elAccounts).prepend(require("./templates/balance_banks_empty"));
+          }
+          if (accountNumber === "") {
+            if ($("#account-choice option").not(':disabled')[0] != null) {
+              return $("#account-choice option").not(':disabled')[0].click();
+            }
           }
         });
       }
@@ -1834,13 +1839,10 @@ module.exports = BankSubTitleView = (function(_super) {
 
   BankSubTitleView.prototype.loadLastYearAmounts = function(account, callback) {
     var _this = this;
-    console.log('loadLastYearAmounts running');
     window.collections.amounts.reset();
     window.collections.amounts.setAccount(account);
     return window.collections.amounts.fetch({
       success: function(amounts) {
-        console.log('loadLastYearAmounts: fetch amounts succes :');
-        console.log(amounts);
         _this.setupLastYearAmountsFlot(amounts);
         if (callback != null) {
           callback();
@@ -1866,7 +1868,6 @@ module.exports = BankSubTitleView = (function(_super) {
   BankSubTitleView.prototype.setupLastYearAmountsFlot = function(amounts) {
     var currentDate, dayRatio, daysPerMonth, flotReadyAmounts, i, lastAmount, maxAmount, minAmount, numberOfDays, plot, sixMonthAgo, threeMonthAgo,
       _this = this;
-    console.log('setupLastYearAmountsFlot running');
     this.formattedAmounts = [];
     flotReadyAmounts = [];
     daysPerMonth = {
@@ -1882,7 +1883,6 @@ module.exports = BankSubTitleView = (function(_super) {
     dayRatio = 4;
     amounts.each(function(amount) {
       var amountDate, currentDate, i;
-      console.log(amount);
       if (window.rbiActiveData.olderOperationDate > moment(amount.get('date'))) {
         window.rbiActiveData.olderOperationDate = moment(amount.get('date'));
       }

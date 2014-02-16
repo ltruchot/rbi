@@ -57,14 +57,11 @@ module.exports = class BankSubTitleView extends BaseView
             @$(".row").addClass("active")
 
     loadLastYearAmounts: (account, callback) ->
-        console.log 'loadLastYearAmounts running'
 
         window.collections.amounts.reset()
         window.collections.amounts.setAccount account
         window.collections.amounts.fetch
             success: (amounts) =>
-                console.log 'loadLastYearAmounts: fetch amounts succes :'
-                console.log amounts
                 @setupLastYearAmountsFlot amounts
                 if callback?
                     callback()
@@ -80,7 +77,6 @@ module.exports = class BankSubTitleView extends BaseView
         return (day + '/' + month + '/' + year)
 
     setupLastYearAmountsFlot: (amounts) ->
-        console.log 'setupLastYearAmountsFlot running'
         @formattedAmounts = []
         flotReadyAmounts = []
         daysPerMonth =
@@ -94,7 +90,6 @@ module.exports = class BankSubTitleView extends BaseView
         sixMonthAgo = sixMonthAgo.setMonth(sixMonthAgo.getMonth() - 6)
         dayRatio = 4
         amounts.each (amount) =>
-            console.log amount
             #set older date for other use
             if window.rbiActiveData.olderOperationDate > moment(amount.get 'date')
                 window.rbiActiveData.olderOperationDate = moment(amount.get 'date')

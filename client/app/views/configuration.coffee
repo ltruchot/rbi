@@ -157,6 +157,7 @@ module.exports = class ConfigurationView extends BaseView
               $(view.elAccounts).prepend require "./templates/balance_banks_empty"
 
             #no account number
-            # if accountNumber is ""
-            #   $(".accountTitle:eq(0)").click()
+            if accountNumber is ""
+              if $("#account-choice option").not(':disabled')[0]?
+                $("#account-choice option").not(':disabled')[0].click()
       @
