@@ -26,7 +26,7 @@ exports.config =
                     'vendor/scripts/jquery.flot.time-0.8.2.js'
                     'vendor/scripts/jquery.flot.tooltip-0.6.5.js'
                     'vendor/scripts/moment-with-langs-fr-2.5.1.js'
-                    'vendor/scripts/jsapi.js'
+                    # 'vendor/scripts/jsapi.js'
                 ]
 
         stylesheets:

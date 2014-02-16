@@ -2182,64 +2182,113 @@ module.exports = MonthlyAnalysisView = (function(_super) {
   };
 
   MonthlyAnalysisView.prototype.displayPieChart = function(operations) {
-    var amount, chart, chartColors, data, dataTable, id, obj, operation, operationType, options, raw, type;
+    var amount, chart, chartColors, data, dataTable, finalObj, finalType, id, isKnownType, numberformatter, obj, operation, operationTypes, options, others, pattern, raw, type, _i, _len, _ref1;
     $('#pie_chart').empty();
     chartColors = [];
-    operationType = {
-      cheque: {
-        name: "Chèques",
-        amount: 0,
-        color: "#87ceeb"
-      },
-      commerceElectronique: {
-        name: "Achats en ligne",
-        amount: 0,
-        color: "#8ecf67"
-      },
-      retrait: {
+    operationTypes = {
+      withdrawals: {
         name: "Retraits",
         amount: 0,
-        color: "#fac567"
+        color: "#8ecf67",
+        patterns: [/^CARTE \w+ RETRAIT DAB.* (0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012]).*/g, /^CARTE \w+ (0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012]).* RETRAIT DAB.*/g, /^CARTE RETRAIT .*/g, /RETRAIT DAB (0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[012]).*/g]
+      },
+      payback: {
+        name: 'Remboursements',
+        amount: 0,
+        color: "#fac567",
+        patterns: [/^CARTE \w+ REMBT (0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012]).*/g]
       },
       carte: {
         name: "CB",
         amount: 0,
-        color: "#F08C56"
+        color: "#F08C56",
+        patterns: [/^CARTE \w+ (0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012]) .*/g, /^CARTE (0[1-9]|[12][0-9]|3[01])(0[1-9]|1[012]).* \d+ .*/g]
       },
-      autre: {
-        name: "Autres",
+      orders: {
+        name: 'Prélèvements',
         amount: 0,
-        color: "#b0b0b0"
+        color: "#87ceeb",
+        patterns: [/^(COTISATION|PRELEVEMENT|TELEREGLEMENT|TIP) .*/g, /^(PRLV|PRELEVEMENT) .*$/g, /^.* QUITTANCE .*/g]
+      },
+      transfer: {
+        name: 'Virements',
+        amount: 0,
+        color: "#f74e4d",
+        patterns: [/^(\d+ )?VIR (PERM )?POUR: (.*?) (REF: \d+ )?MOTIF: (.*)/g, /^(VIR(EMEN)?T?) \w+ (.*)/g, /^VIR COOPA (0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012]) (.*)/g, /^VIR(EMENT|EMT)? (.*?)(- .*)?$/g]
+      },
+      check: {
+        name: "Chèques",
+        amount: 0,
+        color: "#28D8CA",
+        patterns: [/^(CHEQUE) (.*)/g, /^CHEQUE.*/g]
+      },
+      bank: {
+        name: "Frais bancaires",
+        amount: 0,
+        color: "#8E3CBE",
+        patterns: [/^(FRAIS) (.*)/g, /^(AGIOS \/|FRAIS) (.*)/g, /^ABONNEMENT (.*)/g]
+      },
+      loan_payment: {
+        name: "Prêts",
+        amount: 0,
+        color: '#CF68C1',
+        patterns: [/^ECHEANCEPRET(.*)/g]
+      },
+      deposit: {
+        name: 'Remise de chèques',
+        amount: 0,
+        color: '#4D3CBE',
+        patterns: [/^REMISE CHEQUES(.*)/g, /^REMISE (.*)/g]
       }
+    };
+    others = {
+      name: "Autres",
+      amount: 0,
+      color: "#b0b0b0"
     };
     for (id in operations) {
       operation = operations[id];
       if (operation.amount < 0) {
+        isKnownType = false;
         raw = operation.raw.toLocaleUpperCase();
         amount = Math.abs(operation.amount);
-        if ((raw.search(/COMMERCE ELECTRONIQUE$/)) >= 0) {
-          operationType.commerceElectronique.amount += amount;
-        } else if ((raw.search(/^CHEQUE/)) >= 0) {
-          operationType.cheque.amount += amount;
-        } else if ((raw.search(/^CARTE[^R]*RETRAIT DAB (\d{2})\/(\d{2}) (\d{2})H(\d{2})/)) >= 0) {
-          operationType.retrait.amount += amount;
-        } else if ((raw.search(/^CARTE X\d{4} (\d{2})\/(\d{2})/)) >= 0) {
-          operationType.carte.amount += amount;
-        } else {
-          operationType.autre.amount += amount;
+        for (type in operationTypes) {
+          obj = operationTypes[type];
+          _ref1 = obj.patterns;
+          for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+            pattern = _ref1[_i];
+            if (raw.search(pattern) >= 0) {
+              obj.amount += amount;
+              isKnownType = true;
+              break;
+            }
+          }
+        }
+        if (!isKnownType) {
+          others.amount += amount;
         }
       }
     }
     dataTable = [['Type', 'Montant']];
-    for (type in operationType) {
-      obj = operationType[type];
-      if (obj.amount > 0) {
-        dataTable.push([obj.name, obj.amount]);
-        chartColors.push(obj.color);
+    for (finalType in operationTypes) {
+      finalObj = operationTypes[finalType];
+      if (finalObj.amount > 0) {
+        dataTable.push([finalObj.name, finalObj.amount]);
+        chartColors.push(finalObj.color);
       }
+    }
+    if (others.amount > 0) {
+      dataTable.push([others.name, others.amount]);
+      chartColors.push(others.color);
     }
     if (dataTable.length > 2) {
       data = google.visualization.arrayToDataTable(dataTable);
+      numberformatter = new google.visualization.NumberFormat({
+        suffix: '€',
+        decimalSymbol: ',',
+        fractionDigits: ' '
+      });
+      numberformatter.format(data, 1);
       options = {
         width: 'auto',
         height: '160',
@@ -2261,10 +2310,10 @@ module.exports = MonthlyAnalysisView = (function(_super) {
         },
         pieSliceText: 'value',
         chartArea: {
-          left: 0,
-          top: 10,
-          width: "100%",
-          height: "100%"
+          left: 20,
+          top: 20,
+          height: "180",
+          width: "300"
         }
       };
       chart = new google.visualization.PieChart(document.getElementById('pie_chart'));
@@ -2511,7 +2560,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1 class="col-md-12"><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><table id="monthly-report" class="col-md-12"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div id="credits-search-btn" class="search-btn grey1 pull-left"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1 big-size-icon"></span><span id="credits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Crédits</span></div><div id="debits-search-btn" class="search-btn grey2 pull-right"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1 big-size-icon"></span><span id="debits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Débits</span></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div id="fixed-cost-search-btn" class="search-btn grey3 pull-left"><span aria-hidden="true" data-icon="&#57481;" class="pull-left fs1 big-size-icon"></span><span id="fixed-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Frais fixes</span></div><div id="variable-cost-search-btn" class="search-btn grey4 pull-right"><span aria-hidden="true" data-icon="&#57393;" class="pull-left fs1 big-size-icon"></span><span id="variable-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Dépenses</span></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2"><div id="pie_chart">&nbsp;</div></td></tr></table>');
+buf.push('<h1 class="col-md-12"><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><table id="monthly-report" class="col-md-12"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div id="credits-search-btn" class="search-btn grey1 pull-left"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1 big-size-icon"></span><span id="credits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Crédits</span></div><div id="debits-search-btn" class="search-btn grey2 pull-right"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1 big-size-icon"></span><span id="debits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Débits</span></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div id="fixed-cost-search-btn" class="search-btn grey3 pull-left"><span aria-hidden="true" data-icon="&#57481;" class="pull-left fs1 big-size-icon"></span><span id="fixed-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Frais fixes</span></div><div id="variable-cost-search-btn" class="search-btn grey4 pull-right"><span aria-hidden="true" data-icon="&#57393;" class="pull-left fs1 big-size-icon"></span><span id="variable-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Dépenses</span></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="google-pie-chart"><div id="pie_chart" style="width:300px;height:180px;margin:auto;">&nbsp;</div><br/><br/></td></tr></table>');
 }
 return buf.join("");
 };

@@ -127,56 +127,189 @@ module.exports = class MonthlyAnalysisView extends BaseView
     $('#fixed-cost-sum').html (Math.abs(fixedCost)).money()
     $('#variable-cost-sum').html (Math.abs(variableCost)).money()
 
-
   displayPieChart: (operations)->
     $('#pie_chart').empty()
     chartColors = []
-    operationType =
-      cheque:
-        name: "Chèques"
-        amount: 0
-        color: "#87ceeb"
-      commerceElectronique:
-        name: "Achats en ligne"
-        amount: 0
-        color : "#8ecf67"
-      retrait:
+    operationTypes =
+      withdrawals:
         name: "Retraits"
         amount: 0
-        color : "#fac567"
+        color: "#8ecf67"
+        patterns: [
+          /^CARTE \w+ RETRAIT DAB.* (0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012]).*/g
+          /^CARTE \w+ (0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012]).* RETRAIT DAB.*/g
+          /^CARTE RETRAIT .*/g
+          /RETRAIT DAB (0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[012]).*/g
+        ]
+        #"^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/[0-9]{4} ([01][0-9]|2[0-3]):([0-5][0-9])$"
+        #------------------------------PYTHON PATTERNS:-------------------------
+        #-------- Société générale
+        # '^CARTE \w+ RETRAIT DAB.* (?P<dd>\d{2})/(?P<mm>\d{2})( (?P<HH>\d+)H(?P<MM>\d+))? (?P<text>.*)'
+        # '^CARTE \w+ (?P<dd>\d{2})/(?P<mm>\d{2})( A (?P<HH>\d+)H(?P<MM>\d+))? RETRAIT DAB (?P<text>.*)'
+        # '^CARTE RETRAIT (?P<text>.*)'
+        #-------- Crédit coopératif / Banque postale
+        # '^(?P<text>RETRAIT DAB) (?P<dd>\d{2})-(?P<mm>\d{2})-([\d\-]+)'
+        # '^RETRAIT DAB (?P<dd>\d{2})-(?P<mm>\d{2})-([\d\-]+) (?P<text>.*)'
+
+      payback:
+        name: 'Remboursements'
+        amount: 0
+        color: "#fac567"
+        patterns: [
+          /^CARTE \w+ REMBT (0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012]).*/g
+        ]
+        #------------------------------PYTHON PATTERNS--------------------------
+        #-------- Société générale
+        # '^CARTE \w+ REMBT (?P<dd>\d{2})/(?P<mm>\d{2})( A (?P<HH>\d+)H(?P<MM>\d+))? (?P<text>.*)'
+
       carte:
         name: "CB"
         amount: 0
         color : "#F08C56"
-      autre:
-        name: "Autres"
+        patterns: [
+          /^CARTE \w+ (0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012]) .*/g
+          /^CARTE (0[1-9]|[12][0-9]|3[01])(0[1-9]|1[012]).* \d+ .*/g
+        ]
+        #------------------------------PYTHON PATTERNS:-------------------------
+        #-------- Société générale
+        # '^(?P<category>CARTE) \w+ (?P<dd>\d{2})/(?P<mm>\d{2}) (?P<text>.*)'
+        # '^(?P<dd>\d{2})(?P<mm>\d{2})/(?P<text>.*?)/?(-[\d,]+)?$'
+        #-------- Crédit coopératif / Banque postale
+        # '^CARTE (?P<dd>\d{2})(?P<mm>\d{2}) \d+ (?P<text>.*)'
+
+      orders:
+        name: 'Prélèvements'
         amount: 0
-        color : "#b0b0b0"
+        color: "#87ceeb"
+        patterns: [
+          /^(COTISATION|PRELEVEMENT|TELEREGLEMENT|TIP) .*/g
+          /^(PRLV|PRELEVEMENT) .*$/g
+          /^.* QUITTANCE .*/g
+        ]
+        #------------------------------PYTHON PATTERNS:-------------------------
+        #-------- Société générale
+        # '^(?P<category>(COTISATION|PRELEVEMENT|TELEREGLEMENT|TIP)) (?P<text>.*)'
+        #-------- Crédit coopératif / Banque postale
+        # '^(PRLV|PRELEVEMENT) (?P<text>.*?)(- .*)?$'
+        # '^(?P<text>.*)( \d+)? QUITTANCE .*'
+
+      transfer:
+        name: 'Virements'
+        amount: 0
+        color: "#f74e4d"
+        patterns: [
+          /^(\d+ )?VIR (PERM )?POUR: (.*?) (REF: \d+ )?MOTIF: (.*)/g
+          /^(VIR(EMEN)?T?) \w+ (.*)/g
+          /^VIR COOPA (0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012]) (.*)/g
+          /^VIR(EMENT|EMT)? (.*?)(- .*)?$/g
+
+        ]
+        #------------------------------PYTHON PATTERNS:-------------------------
+        #-------- Société générale
+        #'^(\d+ )?VIR (PERM )?POUR: (.*?) (REF: \d+ )?MOTIF: (?P<text>.*)'
+        #'^(?P<category>VIR(EMEN)?T? \w+) (?P<text>.*)'
+        #-------- Crédit coopératif / Banque postale
+        #'^VIR COOPA (?P<dd>\d{2})/(?P<mm>\d{2}) (?P<text>.*)'
+        #'^VIR(EMENT|EMT)? (?P<text>.*?)(- .*)?$'
+
+      check:
+        name: "Chèques"
+        amount: 0
+        color: "#28D8CA"
+        patterns: [
+          /^(CHEQUE) (.*)/g
+          /^CHEQUE.*/g
+        ]
+        #------------------------------PYTHON PATTERNS:-------------------------
+        #-------- Société générale
+        #'^(CHEQUE) (?P<text>.*)'
+        #-------- Crédit coopératif / Banque postale
+        #'^CHEQUE.*'
+
+      bank:
+        name: "Frais bancaires"
+        amount: 0
+        color: "#8E3CBE"
+        patterns: [
+          /^(FRAIS) (.*)/g
+          /^(AGIOS \/|FRAIS) (.*)/g
+          /^ABONNEMENT (.*)/g
+        ]
+        #------------------------------PYTHON PATTERNS:-------------------------
+        #-------- Société générale
+        #'^(FRAIS) (?P<text>.*)'
+        #-------- Crédit coopératif / Banque postale
+        # '^(AGIOS /|FRAIS) (?P<text>.*)'
+        # '^ABONNEMENT (?P<text>.*)'
+
+      loan_payment:
+        name: "Prêts"
+        amount: 0
+        color: '#CF68C1'
+        patterns: [
+          /^ECHEANCEPRET(.*)/g
+        ]
+        #------------------------------PYTHON PATTERNS:-------------------------
+        #-------- Société générale
+        #'^(?P<category>ECHEANCEPRET)(?P<text>.*)'
+
+
+      deposit:
+        name: 'Remise de chèques'
+        amount: 0
+        color: '#4D3CBE'
+        patterns: [
+          /^REMISE CHEQUES(.*)/g
+          /^REMISE (.*)/g
+        ]
+        #------------------------------PYTHON PATTERNS:-------------------------
+        #-------- Société générale
+        #'^(?P<category>REMISE CHEQUES)(?P<text>.*)'
+        #-------- Crédit coopératif / Banque postale
+        #'^REMISE (?P<text>.*)'
+
+    others =
+      name: "Autres"
+      amount: 0
+      color : "#b0b0b0"
 
     for id, operation of operations
       if operation.amount < 0
+        isKnownType = false
         raw = operation.raw.toLocaleUpperCase()
         amount = Math.abs operation.amount
-        if (raw.search /COMMERCE ELECTRONIQUE$/) >= 0
-          operationType.commerceElectronique.amount += amount
-        else if (raw.search /^CHEQUE/) >= 0
-          operationType.cheque.amount += amount
-        else if (raw.search /^CARTE[^R]*RETRAIT DAB (\d{2})\/(\d{2}) (\d{2})H(\d{2})/) >= 0
-          operationType.retrait.amount += amount
-        else if (raw.search /^CARTE X\d{4} (\d{2})\/(\d{2})/) >= 0
-          operationType.carte.amount += amount
-        else
-          operationType.autre.amount += amount
+
+        for type, obj of operationTypes
+          for pattern in obj.patterns
+            if raw.search(pattern) >= 0
+              # console.log '----------------'
+              # console.log raw.search pattern
+              # console.log operation
+              # console.log pattern
+              obj.amount += amount
+              isKnownType = true
+              break
+        if not isKnownType
+          others.amount += amount
+
 
     dataTable = [['Type', 'Montant']]
-    for type, obj of operationType
-      if obj.amount > 0
-        dataTable.push [obj.name, obj.amount]
-        chartColors.push obj.color
+    for finalType, finalObj of operationTypes
+      if finalObj.amount > 0
+        dataTable.push [finalObj.name, finalObj.amount]
+        chartColors.push finalObj.color
+    if others.amount > 0
+      dataTable.push [others.name, others.amount]
+      chartColors.push others.color
     if dataTable.length > 2
 
       data = google.visualization.arrayToDataTable dataTable
+      numberformatter = new google.visualization.NumberFormat
+          suffix: '€'
+          decimalSymbol: ','
+          fractionDigits: ' '
 
+      numberformatter.format data, 1
       options =
         width: 'auto'
         height: '160'
@@ -195,10 +328,10 @@ module.exports = class MonthlyAnalysisView extends BaseView
         pieSliceText: 'value'
 
         chartArea:
-          left: 0
-          top: 10
-          width: "100%"
-          height: "100%"
+          left: 20
+          top: 20
+          height: "180"
+          width: "300"
       chart = new google.visualization.PieChart document.getElementById('pie_chart')
       chart.draw data, options
 
