@@ -1845,6 +1845,7 @@ module.exports = BankSubTitleView = (function(_super) {
     window.collections.amounts.setAccount(account);
     return window.collections.amounts.fetch({
       success: function(amounts) {
+        console.log('setupLastYearAmountsFlot launched');
         _this.setupLastYearAmountsFlot(amounts);
         if (callback != null) {
           callback();
@@ -1870,6 +1871,8 @@ module.exports = BankSubTitleView = (function(_super) {
   BankSubTitleView.prototype.setupLastYearAmountsFlot = function(amounts) {
     var currentDate, dayRatio, daysPerMonth, flotReadyAmounts, i, lastAmount, maxAmount, minAmount, numberOfDays, plot, sixMonthAgo, threeMonthAgo,
       _this = this;
+    console.log('setupLastYearAmountsFlot running');
+    console.log(amounts);
     this.formattedAmounts = [];
     flotReadyAmounts = [];
     daysPerMonth = {

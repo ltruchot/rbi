@@ -63,6 +63,7 @@ module.exports = class BankSubTitleView extends BaseView
         window.collections.amounts.setAccount account
         window.collections.amounts.fetch
             success: (amounts) =>
+                console.log 'setupLastYearAmountsFlot launched'
                 @setupLastYearAmountsFlot amounts
                 if callback?
                     callback()
@@ -78,6 +79,8 @@ module.exports = class BankSubTitleView extends BaseView
         return (day + '/' + month + '/' + year)
 
     setupLastYearAmountsFlot: (amounts) ->
+        console.log 'setupLastYearAmountsFlot running'
+        console.log amounts
         @formattedAmounts = []
         flotReadyAmounts = []
         daysPerMonth =
