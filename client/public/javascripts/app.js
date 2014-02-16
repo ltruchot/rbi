@@ -1836,7 +1836,7 @@ module.exports = BankSubTitleView = (function(_super) {
     var _this = this;
     window.collections.amounts.reset();
     window.collections.amounts.setAccount(account);
-    window.collections.amounts.fetch({
+    return window.collections.amounts.fetch({
       success: function(amounts) {
         _this.setupLastYearAmountsFlot(amounts);
         if (callback != null) {
@@ -1850,7 +1850,6 @@ module.exports = BankSubTitleView = (function(_super) {
         return console.log("error fetching amounts of last year");
       }
     });
-    return this;
   };
 
   BankSubTitleView.prototype.formatDate = function(date) {
@@ -1879,6 +1878,7 @@ module.exports = BankSubTitleView = (function(_super) {
     dayRatio = 4;
     amounts.each(function(amount) {
       var amountDate, currentDate, i;
+      console.log(amount);
       if (window.rbiActiveData.olderOperationDate > moment(amount.get('date'))) {
         window.rbiActiveData.olderOperationDate = moment(amount.get('date'));
       }

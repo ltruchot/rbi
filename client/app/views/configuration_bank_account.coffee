@@ -69,7 +69,6 @@ module.exports = class BankSubTitleView extends BaseView
                     @setupLastYearAmountsFlot amounts
             error: ->
                 console.log "error fetching amounts of last year"
-        @
 
     formatDate: (date) ->
         day = ('0' + date.getDate()).slice -2
@@ -82,8 +81,8 @@ module.exports = class BankSubTitleView extends BaseView
         flotReadyAmounts = []
         daysPerMonth =
             twelve : 365
-            six : 365 / 2
-            three : 365 / 4
+            six : (365 / 2)
+            three : (365 / 4)
         numberOfDays = daysPerMonth.three
         threeMonthAgo = new Date()
         threeMonthAgo = threeMonthAgo.setMonth(threeMonthAgo.getMonth() - 3)
@@ -91,7 +90,7 @@ module.exports = class BankSubTitleView extends BaseView
         sixMonthAgo = sixMonthAgo.setMonth(sixMonthAgo.getMonth() - 6)
         dayRatio = 4
         amounts.each (amount) =>
-
+            console.log amount
             #set older date for other use
             if window.rbiActiveData.olderOperationDate > moment(amount.get 'date')
                 window.rbiActiveData.olderOperationDate = moment(amount.get 'date')
