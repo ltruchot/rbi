@@ -1825,7 +1825,6 @@ module.exports = BankSubTitleView = (function(_super) {
     today = this.formatDate(new Date());
     $("#current-amount-date").text(today);
     $("#account-amount-balance").html((this.model.get('amount')).money());
-    console.log('loadLastYearAmounts launched');
     return this.loadLastYearAmounts(this.model, function() {
       return window.views.monthlyAnalysisView.render();
     });
@@ -1840,12 +1839,10 @@ module.exports = BankSubTitleView = (function(_super) {
 
   BankSubTitleView.prototype.loadLastYearAmounts = function(account, callback) {
     var _this = this;
-    console.log('loadLastYearAmounts running');
     window.collections.amounts.reset();
     window.collections.amounts.setAccount(account);
     return window.collections.amounts.fetch({
       success: function(amounts) {
-        console.log('setupLastYearAmountsFlot launched');
         _this.setupLastYearAmountsFlot(amounts);
         if (callback != null) {
           callback();
@@ -1871,8 +1868,6 @@ module.exports = BankSubTitleView = (function(_super) {
   BankSubTitleView.prototype.setupLastYearAmountsFlot = function(amounts) {
     var currentDate, dayRatio, daysPerMonth, flotReadyAmounts, i, lastAmount, maxAmount, minAmount, numberOfDays, plot, sixMonthAgo, threeMonthAgo,
       _this = this;
-    console.log('setupLastYearAmountsFlot running');
-    console.log(amounts);
     this.formattedAmounts = [];
     flotReadyAmounts = [];
     daysPerMonth = {

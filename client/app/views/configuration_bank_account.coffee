@@ -47,7 +47,6 @@ module.exports = class BankSubTitleView extends BaseView
         $("#account-amount-balance").html (@model.get 'amount').money()
 
         #load calculated amounts to set up the flot chart and render montly analysis view
-        console.log 'loadLastYearAmounts launched'
         @loadLastYearAmounts @model, ->
             window.views.monthlyAnalysisView.render()
 
@@ -58,16 +57,14 @@ module.exports = class BankSubTitleView extends BaseView
             @$(".row").addClass("active")
 
     loadLastYearAmounts: (account, callback) ->
-        console.log 'loadLastYearAmounts running'
         window.collections.amounts.reset()
         window.collections.amounts.setAccount account
         window.collections.amounts.fetch
             success: (amounts) =>
-                console.log 'setupLastYearAmountsFlot launched'
                 @setupLastYearAmountsFlot amounts
                 if callback?
                     callback()
-                $(window).resize =>
+                $(window).resize () =>
                     @setupLastYearAmountsFlot amounts
             error: ->
                 console.log "error fetching amounts of last year"
@@ -79,8 +76,6 @@ module.exports = class BankSubTitleView extends BaseView
         return (day + '/' + month + '/' + year)
 
     setupLastYearAmountsFlot: (amounts) ->
-        console.log 'setupLastYearAmountsFlot running'
-        console.log amounts
         @formattedAmounts = []
         flotReadyAmounts = []
         daysPerMonth =
