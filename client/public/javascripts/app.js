@@ -1825,6 +1825,7 @@ module.exports = BankSubTitleView = (function(_super) {
     today = this.formatDate(new Date());
     $("#current-amount-date").text(today);
     $("#account-amount-balance").html((this.model.get('amount')).money());
+    console.log('loadLastYearAmounts launched');
     return this.loadLastYearAmounts(this.model, function() {
       return window.views.monthlyAnalysisView.render();
     });
@@ -1839,6 +1840,7 @@ module.exports = BankSubTitleView = (function(_super) {
 
   BankSubTitleView.prototype.loadLastYearAmounts = function(account, callback) {
     var _this = this;
+    console.log('loadLastYearAmounts running');
     window.collections.amounts.reset();
     window.collections.amounts.setAccount(account);
     return window.collections.amounts.fetch({

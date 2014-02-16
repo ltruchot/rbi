@@ -47,6 +47,7 @@ module.exports = class BankSubTitleView extends BaseView
         $("#account-amount-balance").html (@model.get 'amount').money()
 
         #load calculated amounts to set up the flot chart and render montly analysis view
+        console.log 'loadLastYearAmounts launched'
         @loadLastYearAmounts @model, ->
             window.views.monthlyAnalysisView.render()
 
@@ -57,7 +58,7 @@ module.exports = class BankSubTitleView extends BaseView
             @$(".row").addClass("active")
 
     loadLastYearAmounts: (account, callback) ->
-
+        console.log 'loadLastYearAmounts running'
         window.collections.amounts.reset()
         window.collections.amounts.setAccount account
         window.collections.amounts.fetch
