@@ -2254,13 +2254,15 @@ module.exports = MonthlyAnalysisView = (function(_super) {
         amount = Math.abs(operation.amount);
         for (type in operationTypes) {
           obj = operationTypes[type];
-          _ref1 = obj.patterns;
-          for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-            pattern = _ref1[_i];
-            if (raw.search(pattern) >= 0) {
-              obj.amount += amount;
-              isKnownType = true;
-              break;
+          if (!isKnownType) {
+            _ref1 = obj.patterns;
+            for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+              pattern = _ref1[_i];
+              if (raw.search(pattern) >= 0) {
+                obj.amount += amount;
+                isKnownType = true;
+                break;
+              }
             }
           }
         }

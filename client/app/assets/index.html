@@ -45,14 +45,21 @@
 
   </head>
 
-  <body style="padding:15px">
+  <body>
+    <div class="container">
+
+    <div data-toggle="modal" href="#modalConfiguration" class="configuration-btn-container" id="configuration-btn-container">
+      <div class="btn btn-app btn-xs configuration-btn" id="configuration-btn">
+        <i class="icon-cog bigger-150"></i>
+      </div>
+    </div>
 
     <!-- Header start -->
     <header>
 
       <!-- Row start -->
       <div class="row">
-        <div class="col-md-2" style="padding-top:50px; text-align:center; line-height:1;">
+        <div class="col-md-2 col-xs-6" style="padding-top:50px; text-align:center; line-height:1;">
           <div id="account-amount">
             <div id="account-amount-info">
               <span class="fs1" id="account-amount-icon" aria-hidden="true" data-icon="&#57410;"></span>
@@ -64,7 +71,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-2 col-xs-6">
           <div class="pie-chart">
             <div id="current-budget-chart" class="easyPieChart" data-percent="50" style="width: 110px; height: 110px; line-height: 110px;">
               <span id="current-budget-chart-debit">0€</span>
@@ -79,7 +86,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-8">
+        <div class="col-md-8 col-xs-12">
           <div class="widget">
             <div class="widget-header" style="height:22px">
               <div class="title">
@@ -100,16 +107,16 @@
     <!-- Header end -->
 
     <!-- Main Container start -->
-    <div class="main-container">
+    <div class="main-container col-md-12">
 
       <!-- Mian navigation start -->
-      <div id="mainnav">
+      <div id="mainnav" class="col-lg-1 col-md-2 col-sm-2 col-xs-12">
 
       </div>
       <!-- Mian navigation end -->
 
       <!-- Dashboard wrapper start -->
-      <div class="view-container">
+      <div class="view-container col-lg-11 col-md-10 col-sm-10 col-xs-12">
 
 
         <!-- Row start -->
@@ -158,12 +165,9 @@
     <script src="js/custom-index.js"></script>
     <script src="js/custom.js"></script>
     -->
-    <div data-toggle="modal" href="#modalConfiguration" class="configuration-btn-container" id="configuration-btn-container">
-      <div class="btn btn-app btn-xs configuration-btn" id="configuration-btn">
-        <i class="icon-cog bigger-150"></i>
-      </div>
-    </div>
+
     <div id="configuration">
+    </div>
     </div>
 
     <script src="javascripts/vendor.js"></script>

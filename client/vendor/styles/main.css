@@ -766,9 +766,10 @@ header {
 
 #mainnav {
   background-color:#2b2b2b;
-  float: left;
+/*  float: left;
   width: 100px;
-  position: absolute; }
+  position: absolute; */
+}
   #mainnav ul li {
     display: block;
     position: relative; }

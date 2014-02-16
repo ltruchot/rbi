@@ -273,34 +273,45 @@ module.exports = class MonthlyAnalysisView extends BaseView
       amount: 0
       color : "#b0b0b0"
 
+    #loop debit operations
     for id, operation of operations
       if operation.amount < 0
         isKnownType = false
         raw = operation.raw.toLocaleUpperCase()
         amount = Math.abs operation.amount
 
+        #loop operation types
         for type, obj of operationTypes
-          for pattern in obj.patterns
-            if raw.search(pattern) >= 0
-              # console.log '----------------'
-              # console.log raw.search pattern
-              # console.log operation
-              # console.log pattern
-              obj.amount += amount
-              isKnownType = true
-              break
+
+          #loop pattern by type while type isnt found
+          if not isKnownType
+            for pattern in obj.patterns
+              if raw.search(pattern) >= 0
+                obj.amount += amount
+
+                #when type is found, avoid loop
+                isKnownType = true
+                break
+
+        #if no type was found, tranfer amount to "others" type
         if not isKnownType
           others.amount += amount
 
-
+    #set common data
     dataTable = [['Type', 'Montant']]
+
+    #set found data by type
     for finalType, finalObj of operationTypes
       if finalObj.amount > 0
         dataTable.push [finalObj.name, finalObj.amount]
         chartColors.push finalObj.color
+
+    #set "others" type
     if others.amount > 0
       dataTable.push [others.name, others.amount]
       chartColors.push others.color
+
+    #create chart with options
     if dataTable.length > 2
 
       data = google.visualization.arrayToDataTable dataTable
