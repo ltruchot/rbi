@@ -8,6 +8,11 @@
     .layout-container
         width auto
 
+    .container header, .container .main-container
+        width 100%
+        margin 0
+        padding 0
+
 @media (max-width: 767px)
     // Landscape phone to portrait tablet
     #mainnav ul li a
@@ -23,11 +28,6 @@
         margin 0
         padding 0
 
-    .container header, .container .main-container
-        width 100%
-        margin 0
-        padding 0
-
     body
         padding 0
         text-rendering optimizeSpeed
@@ -35,14 +35,26 @@
     .layout-container
         width auto
 
+
 @media (min-width: 768px) and (max-width: 979px)
     // Portrait tablet to landscape and desktop
 
     .layout-container
         width 724px
 
+    .search-panel
+        padding 0
+        margin 0
+
+    .search-separator
+        display:none
+
+    .big-size-text
+        font-size: 0.8em
+
 @media (min-width: 1200px)
     // Large desktop
 
     .layout-container
         width 1170px
+

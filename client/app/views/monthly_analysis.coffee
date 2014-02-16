@@ -337,6 +337,9 @@ module.exports = class MonthlyAnalysisView extends BaseView
             color: 'black'
             fontSize: 12
         pieSliceText: 'value'
+        pieSliceTextStyle:
+            fontSize: '13'
+            bold: 'true'
 
         chartArea:
           left: 20

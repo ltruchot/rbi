@@ -26,3 +26,5 @@ module.exports = class MenuView extends BaseView
       $('.current-arrow').remove()
       jqMenuItem.addClass 'active'
       jqMenuItem.prepend $('<span class="current-arrow"></span>')
+    if $(window).width() < 768
+      window.scrollTo 0,535

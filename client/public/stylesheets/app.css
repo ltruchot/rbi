@@ -10555,56 +10555,6 @@ cursor not-allowed {
   font-size: 2em;
   font-weight: normal;
 }
-@media (max-width: 480px) {
-  body {
-    padding: 0 20px;
-    text-rendering: optimizeSpeed;
-  }
-  .layout-container {
-    width: auto;
-  }
-}
-@media (max-width: 767px) {
-  #mainnav ul li a {
-    min-height: 30px;
-  }
-  #mainnav ul li .current-arrow {
-    right: -15px;
-    top: 7px;
-  }
-  #mainnav .menu-item .icon {
-    display: inline-block;
-    padding-right: 5px;
-  }
-  .container {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-  }
-  .container header,
-  .container .main-container {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-  }
-  body {
-    padding: 0;
-    text-rendering: optimizeSpeed;
-  }
-  .layout-container {
-    width: auto;
-  }
-}
-@media (min-width: 768px) and (max-width: 979px) {
-  .layout-container {
-    width: 724px;
-  }
-}
-@media (min-width: 1200px) {
-  .layout-container {
-    width: 1170px;
-  }
-}
 .parameters {
   text-align: left;
 }
@@ -10682,6 +10632,7 @@ cursor not-allowed {
   font-size: 1.4em;
   padding: 3px 0;
   margin: 0;
+  width: 100%;
 }
 .plain-icon-blue {
   color: #fff;
@@ -10703,11 +10654,18 @@ cursor not-allowed {
 .plain-icon-red:before {
   font-size: 14px;
 }
+#monthly-report {
+  width: 100%;
+}
 .search-panel {
-  margin: auto;
+  margin: 0;
+  padding: 0;
+}
+.search-btn-container {
+  margin: 0;
+  padding: 0;
 }
 .search-btn {
-  width: 200px;
   height: 50px;
   color: #fff;
   display: block;
@@ -10715,6 +10673,7 @@ cursor not-allowed {
   padding: 5px;
   cursor: pointer;
   position: relative;
+  margin: 0 5px;
 }
 .grey1 {
   background-color: #e0e0e0;
@@ -10884,6 +10843,66 @@ cursor not-allowed {
 .unclickable-option,
 .unclickable-option * {
   font-weight: bold !important;
+}
+@media (max-width: 480px) {
+  body {
+    padding: 0 20px;
+    text-rendering: optimizeSpeed;
+  }
+  .layout-container {
+    width: auto;
+  }
+  .container header,
+  .container .main-container {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+}
+@media (max-width: 767px) {
+  #mainnav ul li a {
+    min-height: 30px;
+  }
+  #mainnav ul li .current-arrow {
+    right: -15px;
+    top: 7px;
+  }
+  #mainnav .menu-item .icon {
+    display: inline-block;
+    padding-right: 5px;
+  }
+  .container {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    padding: 0;
+    text-rendering: optimizeSpeed;
+  }
+  .layout-container {
+    width: auto;
+  }
+}
+@media (min-width: 768px) and (max-width: 979px) {
+  .layout-container {
+    width: 724px;
+  }
+  .search-panel {
+    padding: 0;
+    margin: 0;
+  }
+  .search-separator {
+    display: none;
+  }
+  .big-size-text {
+    font-size: 0.8em;
+  }
+}
+@media (min-width: 1200px) {
+  .layout-container {
+    width: 1170px;
+  }
 }
 
 .chromeframe { margin: 0.2em 0; background: #ccc; color: #000; padding: 0.2em 0; }

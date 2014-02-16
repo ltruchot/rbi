@@ -2012,7 +2012,10 @@ module.exports = MenuView = (function(_super) {
       $('.menu-item').removeClass('active');
       $('.current-arrow').remove();
       jqMenuItem.addClass('active');
-      return jqMenuItem.prepend($('<span class="current-arrow"></span>'));
+      jqMenuItem.prepend($('<span class="current-arrow"></span>'));
+    }
+    if ($(window).width() < 768) {
+      return window.scrollTo(0, 535);
     }
   };
 
@@ -2311,6 +2314,10 @@ module.exports = MonthlyAnalysisView = (function(_super) {
           }
         },
         pieSliceText: 'value',
+        pieSliceTextStyle: {
+          fontSize: '13',
+          bold: 'true'
+        },
         chartArea: {
           left: 20,
           top: 20,
@@ -2562,7 +2569,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1 class="col-md-12"><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><table id="monthly-report" class="col-md-12"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div id="credits-search-btn" class="search-btn grey1 pull-left"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1 big-size-icon"></span><span id="credits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Crédits</span></div><div id="debits-search-btn" class="search-btn grey2 pull-right"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1 big-size-icon"></span><span id="debits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Débits</span></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div id="fixed-cost-search-btn" class="search-btn grey3 pull-left"><span aria-hidden="true" data-icon="&#57481;" class="pull-left fs1 big-size-icon"></span><span id="fixed-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Frais fixes</span></div><div id="variable-cost-search-btn" class="search-btn grey4 pull-right"><span aria-hidden="true" data-icon="&#57393;" class="pull-left fs1 big-size-icon"></span><span id="variable-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Dépenses</span></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="google-pie-chart"><div id="pie_chart" style="width:300px;height:180px;margin:auto;">&nbsp;</div><br/><br/></td></tr></table>');
+buf.push('<h1><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><table id="monthly-report"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="credits-search-btn" class="search-btn grey1"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1 big-size-icon"></span><span id="credits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Crédits</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="debits-search-btn" class="search-btn grey2"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1 big-size-icon"></span><span id="debits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Débits</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="fixed-cost-search-btn" class="search-btn grey3"><span aria-hidden="true" data-icon="&#57481;" class="pull-left fs1 big-size-icon"></span><span id="fixed-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Frais fixes</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="variable-cost-search-btn" class="search-btn grey4"><span aria-hidden="true" data-icon="&#57393;" class="pull-left fs1 big-size-icon"></span><span id="variable-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Dépenses</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="google-pie-chart"><div id="pie_chart" style="width:268px;height:180px;margin:auto;">&nbsp;</div><br/><br/></td></tr></table>');
 }
 return buf.join("");
 };
