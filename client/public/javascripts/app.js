@@ -1868,6 +1868,10 @@ module.exports = BankSubTitleView = (function(_super) {
   BankSubTitleView.prototype.setupLastYearAmountsFlot = function(amounts) {
     var currentDate, dayRatio, daysPerMonth, flotReadyAmounts, i, lastAmount, maxAmount, minAmount, numberOfDays, plot, sixMonthAgo, threeMonthAgo,
       _this = this;
+    console.log("BEGIN setupLastYearAmountsFlot");
+    console.log("amounts at BEGIN");
+    console.log(amounts);
+    console.log("--------------");
     this.formattedAmounts = [];
     flotReadyAmounts = [];
     daysPerMonth = {
@@ -1881,19 +1885,30 @@ module.exports = BankSubTitleView = (function(_super) {
     sixMonthAgo = new Date();
     sixMonthAgo = sixMonthAgo.setMonth(sixMonthAgo.getMonth() - 6);
     dayRatio = 4;
+    console.log("BEGIN amounts.each");
     amounts.each(function(amount) {
       var amountDate, currentDate, i;
+      console.log("current amount of 'each' process");
+      console.log(amount);
+      console.log("--------------");
       if (window.rbiActiveData.olderOperationDate > moment(amount.get('date'))) {
         window.rbiActiveData.olderOperationDate = moment(amount.get('date'));
       }
+      console.log("older operation date of 'each' process");
+      console.log(window.rbiActiveData.olderOperationDate);
+      console.log("--------------");
       currentDate = new Date();
       currentDate.setHours(12, 0, 0, 0);
       amountDate = new Date(amount.get('date'));
+      console.log("while loop begin");
       i = 0;
-      while (amountDate.getTime() !== currentDate.getTime() && i < 365) {
+      while ((amountDate.getTime() !== currentDate.getTime()) && (i < 365)) {
         currentDate.setDate(currentDate.getDate() - 1);
         i++;
       }
+      console.log("i after while");
+      console.log(i);
+      console.log("--------------");
       if (i < 364) {
         _this.formattedAmounts[currentDate.getTime()] = amount.get('amount');
       }
