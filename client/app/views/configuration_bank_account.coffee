@@ -76,10 +76,7 @@ module.exports = class BankSubTitleView extends BaseView
         return (day + '/' + month + '/' + year)
 
     setupLastYearAmountsFlot: (amounts) ->
-        console.log "BEGIN setupLastYearAmountsFlot"
-        console.log "amounts at BEGIN"
-        console.log amounts
-        console.log "--------------"
+
         @formattedAmounts = []
         flotReadyAmounts = []
         daysPerMonth =
@@ -92,29 +89,29 @@ module.exports = class BankSubTitleView extends BaseView
         sixMonthAgo = new Date()
         sixMonthAgo = sixMonthAgo.setMonth(sixMonthAgo.getMonth() - 6)
         dayRatio = 4
-        console.log "BEGIN amounts.each"
+
         amounts.each (amount) =>
-            console.log "current amount of 'each' process"
-            console.log amount
-            console.log "--------------"
+
             #set older date for other use
             if window.rbiActiveData.olderOperationDate > moment(amount.get 'date')
                 window.rbiActiveData.olderOperationDate = moment(amount.get 'date')
-            console.log "older operation date of 'each' process"
-            console.log window.rbiActiveData.olderOperationDate
-            console.log "--------------"
 
             currentDate = new Date()
             currentDate.setHours 12,0,0,0
             amountDate = new Date(amount.get 'date')
 
-            console.log "while loop begin"
+            console.log "BEGIN bugged while loop"
             i = 0
-            while (amountDate.getTime() isnt currentDate.getTime()) and (i < 365)
+            console.log "i = " + i
+            console.log "amountDate.getTime() = " +  amountDate.getTime()
+            console.log "currentDate.getTime() = " + currentDate.getTime()
+            while ((amountDate.getTime() isnt currentDate.getTime()) and (i < 365))
                 currentDate.setDate(currentDate.getDate() - 1)
                 i++
             console.log "i after while"
             console.log i
+            console.log "currentDate after while"
+            console.log currentDate
             console.log "--------------"
             if i < 364
                 @formattedAmounts[currentDate.getTime()] = amount.get 'amount'
