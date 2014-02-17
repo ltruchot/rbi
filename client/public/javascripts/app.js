@@ -1236,9 +1236,21 @@ module.exports = EntryView = (function(_super) {
         url: '/rbifixedcost/' + fixedCostId,
         type: 'DELETE',
         success: function(result) {
+          var id, operation, _ref;
           console.log("Delete fixed cost success.");
           _this.destroyPopupFixedCost(event);
-          return $('#search-text').keyup();
+          $('#search-text').keyup();
+          if (window.rbiCurrentOperations != null) {
+            _ref = window.rbiCurrentOperations;
+            for (id in _ref) {
+              operation = _ref[id];
+              if ((operation.fixedCostId != null) && (operation.fixedCostId = fixedCostId)) {
+                operation.isFixedCost = false;
+                operation.fixedCostId = null;
+              }
+            }
+            return window.views.monthlyAnalysisView.displayMonthlySums(window.rbiCurrentOperations);
+          }
         },
         error: function() {
           return console.log("Delete fixed cost failed.");
@@ -1355,7 +1367,6 @@ module.exports = EntryView = (function(_super) {
       this.operationMin = parseFloat((this.model.get('amount')) * 0.9);
       jqPopup.append('<input type="radio" name="fixed-cost-option" value="standard" checked="true" /> <label>Toutes les opérations intitulées "' + this.operationTitle + '" d\'un montant entre  ' + this.operationMin.money() + ' et ' + this.operationMax.money() + '</label><br />');
       jqPopup.append('<input type="radio" name="fixed-cost-option" value="onetime" /> <label>Seulement cette opération</label><br />');
-      jqPopup.append('<input type="radio" name="fixed-cost-option" valur="custom" disabled="true" /> <label>Définir une règle</label>');
     } else {
       jqPopup.append('<p>Cette action enlevera l\'opération des frais fixes, ainsi que <strong>les autres opérations précédemment associées</strong>.</p>');
     }
@@ -1886,18 +1897,11 @@ module.exports = BankSubTitleView = (function(_super) {
       if (window.rbiActiveData.olderOperationDate > moment(amount.get('date'))) {
         window.rbiActiveData.olderOperationDate = moment(amount.get('date'));
       }
-      console.log("before set date");
       currentDate1 = new Date();
       currentDate1.setHours(12, 0, 0, 0);
       amountDate = new Date(amount.get('date'));
       amountDate.setHours(12, 0, 0, 0);
-      console.log(currentDate1);
-      console.log(amountDate);
-      console.log("after set date");
-      console.log(currentDate1);
-      console.log(amountDate);
       dayCounter1 = 0;
-      console.log("before while");
       while ((amountDate.getTime() !== currentDate1.getTime()) && (dayCounter1 < 365)) {
         currentDate1.setDate(currentDate1.getDate() - 1);
         dayCounter1++;
@@ -1906,12 +1910,10 @@ module.exports = BankSubTitleView = (function(_super) {
         view.formattedAmounts[currentDate1.getTime()] = amount.get('amount');
       }
       if (currentDate1.getTime() < threeMonthAgo) {
-        numberOfDays = daysPerMonth.six;
+        return numberOfDays = daysPerMonth.six;
       } else if (currentDate1.getTime() < sixMonthAgo) {
-        numberOfDays = daysPerMonth.twelve;
+        return numberOfDays = daysPerMonth.twelve;
       }
-      console.log("after while");
-      return console.log(currentDate1);
     });
     currentDate = new Date();
     currentDate.setHours(12, 0, 0, 0);
@@ -2489,7 +2491,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h2>Relevé de compte</h2><h3>' + escape((interp = model.get('title')) == null ? '' : interp) + ' n°' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</h3><div class="search-field"><span aria-hidden="true" data-icon&#57471;="data-icon&#57471;" class="icon-search fs1"></span><input id="search-text"/></div><div class="text-center loading loader-operations"><img src="./loader_big_blue.gif"/></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-operations"></tbody></table>');
+buf.push('<h2>Relevé du ' + escape((interp = model.get('title')) == null ? '' : interp) + ' ' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</h2><div class="search-field"><span aria-hidden="true" data-icon&#57471;="data-icon&#57471;" class="icon-search fs1"></span><input id="search-text"/></div><div class="text-center loading loader-operations"><img src="./loader_big_blue.gif"/></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-operations"></tbody></table>');
 }
 return buf.join("");
 };
@@ -2583,7 +2585,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><table id="monthly-report"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="credits-search-btn" class="search-btn grey1"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1 big-size-icon"></span><span id="credits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Crédits</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="debits-search-btn" class="search-btn grey2"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1 big-size-icon"></span><span id="debits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Débits</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="fixed-cost-search-btn" class="search-btn grey3"><span aria-hidden="true" data-icon="&#57481;" class="pull-left fs1 big-size-icon"></span><span id="fixed-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Frais fixes</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="variable-cost-search-btn" class="search-btn grey4"><span aria-hidden="true" data-icon="&#57393;" class="pull-left fs1 big-size-icon"></span><span id="variable-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Dépenses</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="google-pie-chart"><div id="pie_chart" style="width:268px;height:180px;margin:auto;">&nbsp;</div><br/><br/></td></tr></table>');
+buf.push('<h1><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><table id="monthly-report"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2" class="search-panel-td1"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="credits-search-btn" class="search-btn grey1"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1 big-size-icon"></span><span id="credits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Crédits</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="debits-search-btn" class="search-btn grey2"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1 big-size-icon"></span><span id="debits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Débits</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="search-panel-td2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="fixed-cost-search-btn" class="search-btn grey3"><span aria-hidden="true" data-icon="&#57481;" class="pull-left fs1 big-size-icon"></span><span id="fixed-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Frais fixes</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="variable-cost-search-btn" class="search-btn grey4"><span aria-hidden="true" data-icon="&#57393;" class="pull-left fs1 big-size-icon"></span><span id="variable-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Dépenses</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="google-pie-chart"><div id="pie_chart" style="width:268px;height:180px;margin:auto;">&nbsp;</div><br/><br/></td></tr></table>');
 }
 return buf.join("");
 };

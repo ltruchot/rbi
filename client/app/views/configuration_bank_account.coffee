@@ -95,19 +95,13 @@ module.exports = class BankSubTitleView extends BaseView
 
             #set older date for other use
             if window.rbiActiveData.olderOperationDate > moment(amount.get 'date') then window.rbiActiveData.olderOperationDate = moment(amount.get 'date')
-            console.log "before set date"
             currentDate1 = new Date()
             currentDate1.setHours 12,0,0,0
             amountDate = new Date(amount.get 'date')
             amountDate.setHours 12,0,0,0
-            console.log currentDate1
-            console.log amountDate
-            console.log "after set date"
-            console.log currentDate1
-            console.log amountDate
+
 
             dayCounter1 = 0
-            console.log "before while"
             while ((amountDate.getTime() isnt currentDate1.getTime()) and (dayCounter1 < 365))
                 currentDate1.setDate(currentDate1.getDate() - 1)
                 dayCounter1++
@@ -117,8 +111,7 @@ module.exports = class BankSubTitleView extends BaseView
                 numberOfDays = daysPerMonth.six
             else if currentDate1.getTime() < sixMonthAgo
                 numberOfDays = daysPerMonth.twelve
-            console.log "after while"
-            console.log currentDate1
+
 
         currentDate = new Date()
         currentDate.setHours 12,0,0,0

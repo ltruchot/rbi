@@ -89,6 +89,14 @@ module.exports = class EntryView extends BaseView
             console.log "Delete fixed cost success."
             @destroyPopupFixedCost event
             $('#search-text').keyup()
+
+            #refresh monthly analysis
+            if window.rbiCurrentOperations?
+              for id, operation of window.rbiCurrentOperations
+                if operation.fixedCostId? and (operation.fixedCostId = fixedCostId)
+                  operation.isFixedCost = false
+                  operation.fixedCostId = null
+              window.views.monthlyAnalysisView.displayMonthlySums window.rbiCurrentOperations
           error: ->
             console.log "Delete fixed cost failed."
 
@@ -209,7 +217,7 @@ module.exports = class EntryView extends BaseView
       @operationMin = (parseFloat (@model.get 'amount') * 0.9)
       jqPopup.append '<input type="radio" name="fixed-cost-option" value="standard" checked="true" /> <label>Toutes les opérations intitulées "' + @operationTitle + '" d\'un montant entre  ' + @operationMin.money() + ' et ' + @operationMax.money() + '</label><br />'
       jqPopup.append '<input type="radio" name="fixed-cost-option" value="onetime" /> <label>Seulement cette opération</label><br />'
-      jqPopup.append '<input type="radio" name="fixed-cost-option" valur="custom" disabled="true" /> <label>Définir une règle</label>'
+      # jqPopup.append '<input type="radio" name="fixed-cost-option" valur="custom" disabled="true" /> <label>Définir une règle</label>'
     else
       jqPopup.append '<p>Cette action enlevera l\'opération des frais fixes, ainsi que <strong>les autres opérations précédemment associées</strong>.</p>'
 

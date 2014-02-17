@@ -10745,11 +10745,19 @@ cursor not-allowed {
 .google-pie-chart div {
   padding-bottom: 10px !important;
 }
+.search-panel-td1 {
+  border-bottom: 0 !important;
+}
+.search-panel-td2 {
+  border-top: 0 !important;
+}
 #context-box {
   border: 1px solid #2b2b2b;
+  max-height: 535px;
+  overflow: auto;
 }
 #context-box h2 {
-  margin: 0;
+  margin: 5px;
   font-size: 1.4em;
   text-align: center;
 }
