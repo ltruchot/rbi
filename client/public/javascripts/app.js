@@ -1540,17 +1540,36 @@ module.exports = ConfigurationView = (function(_super) {
     'keyup #configuration-budget-amount': 'setBudget'
   };
 
-  ConfigurationView.prototype.reloadBudget = function() {
-    var accountNumber, budgetByAccount, currentBudget;
+  ConfigurationView.prototype.reloadBudget = function(callerId) {
+    var accountNumber, budgetByAccount, callerMirror, currentBudget;
+    if (callerId == null) {
+      callerId = null;
+    }
+    callerMirror = null;
+    if (callerId != null) {
+      if (callerId === 'account-budget-amount') {
+        callerMirror = '#configuration-budget-amount';
+      } else if (callerId === 'configuration-budget-amount') {
+        callerMirror = '#account-budget-amount';
+      }
+    }
     accountNumber = window.rbiActiveData.accountNumber;
     budgetByAccount = window.rbiActiveData.budgetByAccount || [];
     currentBudget = budgetByAccount[accountNumber] || 0;
     if (currentBudget > 0) {
-      $('#account-budget-amount').val(budgetByAccount[accountNumber]);
-      $('#configuration-budget-amount').val(budgetByAccount[accountNumber]);
+      if (callerMirror != null) {
+        $(callerMirror).val(budgetByAccount[accountNumber]);
+      } else {
+        $('#account-budget-amount').val(budgetByAccount[accountNumber]);
+        $('#configuration-budget-amount').val(budgetByAccount[accountNumber]);
+      }
     } else {
-      $('#account-budget-amount').val(0);
-      $('#configuration-budget-amount').val(0);
+      if (callerMirror != null) {
+        $(callerMirror).val(0);
+      } else {
+        $('#account-budget-amount').val(0);
+        $('#configuration-budget-amount').val(0);
+      }
     }
     return this.getLastMonthDebitAmount(currentBudget, function(percentage) {
       if (this.currentChart != null) {
@@ -1624,11 +1643,12 @@ module.exports = ConfigurationView = (function(_super) {
           budgetByAccount: window.rbiActiveData.budgetByAccount
         }, {
           success: function() {
-            $('#account-budget-amount').val(budgetValue);
+            var callerId;
+            callerId = jqBudgetInput.attr('id');
             if (view) {
-              return view.reloadBudget();
+              return view.reloadBudget(callerId);
             } else {
-              return _this.reloadBudget();
+              return _this.reloadBudget(callerId);
             }
           },
           error: function() {

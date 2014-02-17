@@ -17,7 +17,16 @@ module.exports = class ConfigurationView extends BaseView
       'change select#account-choice' : 'reloadBudget'
       'keyup #configuration-budget-amount' : 'setBudget'
 
-    reloadBudget: ->
+    reloadBudget: (callerId = null) ->
+
+      #prepare caller mirror (other input concerned by live change)
+      callerMirror = null
+      if callerId?
+        if callerId is 'account-budget-amount'
+          callerMirror = '#configuration-budget-amount'
+        else if callerId is 'configuration-budget-amount'
+          callerMirror = '#account-budget-amount'
+
       #prepare budget
       accountNumber = window.rbiActiveData.accountNumber
       budgetByAccount = window.rbiActiveData.budgetByAccount or []
@@ -25,11 +34,17 @@ module.exports = class ConfigurationView extends BaseView
 
       #set budget
       if currentBudget > 0
-        $('#account-budget-amount').val budgetByAccount[accountNumber]
-        $('#configuration-budget-amount').val budgetByAccount[accountNumber]
+        if callerMirror?
+          $(callerMirror).val budgetByAccount[accountNumber]
+        else
+          $('#account-budget-amount').val budgetByAccount[accountNumber]
+          $('#configuration-budget-amount').val budgetByAccount[accountNumber]
       else
-        $('#account-budget-amount').val 0
-        $('#configuration-budget-amount').val 0
+        if callerMirror?
+          $(callerMirror).val 0
+        else
+          $('#account-budget-amount').val 0
+          $('#configuration-budget-amount').val 0
 
       #chart budget
       @getLastMonthDebitAmount currentBudget, (percentage) ->
@@ -87,11 +102,11 @@ module.exports = class ConfigurationView extends BaseView
           window.rbiActiveData.budgetByAccount[accountNumber] = budgetValue
           window.rbiActiveData.config.save budgetByAccount: window.rbiActiveData.budgetByAccount,
             success:=>
-              $('#account-budget-amount').val budgetValue
+              callerId = jqBudgetInput.attr('id')
               if view
-                view.reloadBudget()
+                view.reloadBudget callerId
               else
-                @reloadBudget()
+                @reloadBudget callerId
             error: ->
               console.log 'Error: budget configuration not saved'
 
