@@ -99,6 +99,9 @@ module.exports = class BankSubTitleView extends BaseView
             currentDate1 = new Date()
             currentDate1.setHours 12,0,0,0
             amountDate = new Date(amount.get 'date')
+            amountDate.setHours 12,0,0,0
+            console.log currentDate1
+            console.log amountDate
             console.log "after set date"
             console.log currentDate1
             console.log amountDate
