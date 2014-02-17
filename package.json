@@ -54,6 +54,12 @@
     },
     "CozyInstance": {
       "description": "Afin d'afficher le contenu dans votre langue, l'application doit accéder à vos préférences."
+    },
+    "RbiConfig": {
+      "description": "Afin de sauver une configuration spécifique à votre Relevé Bancaire Intelligent."
+    },
+    "RbiFixedCost": {
+      "description": "Afin de sauver les règles et données liées à vos frais fixes."
     }
   },
   "cozy-displayName": "RBI"
