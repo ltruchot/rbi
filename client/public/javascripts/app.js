@@ -1843,6 +1843,9 @@ module.exports = BankSubTitleView = (function(_super) {
     window.collections.amounts.setAccount(account);
     return window.collections.amounts.fetch({
       success: function(amounts) {
+        console.log(view);
+        console.log(view.setupLastYearAmountsFlot);
+        console.log(amounts);
         view.setupLastYearAmountsFlot(amounts);
         $(window).resize(function() {
           return view.setupLastYearAmountsFlot(amounts);

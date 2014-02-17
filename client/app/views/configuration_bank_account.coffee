@@ -63,6 +63,9 @@ module.exports = class BankSubTitleView extends BaseView
         window.collections.amounts.setAccount account
         window.collections.amounts.fetch
             success: (amounts) ->
+                console.log view
+                console.log view.setupLastYearAmountsFlot
+                console.log amounts
                 view.setupLastYearAmountsFlot amounts
                 $(window).resize () ->
                     view.setupLastYearAmountsFlot amounts
