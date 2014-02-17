@@ -1,21 +1,21 @@
-FixedCost = require '../models/rbifixedcost'
+RbiFixedCost = require '../models/rbifixedcost'
 
 module.exports.setFixedCost = (req, res) ->
-    FixedCost.set req.body, (err, fixedCost) ->
+    RbiFixedCost.set req.body, (err, fixedCost) ->
         if err?
             res.send 500, error: "Server error while setting fixed cost."
         else
             res.send 201, fixedCost
 
 module.exports.getFixedCost = (req, res) ->
-    FixedCost.get (err, fixedCost) ->
+    RbiFixedCost.get (err, fixedCost) ->
         if err?
             res.send 500, error: "Server error while setting fixed cost."
         else
             res.send 200, fixedCost
 
 module.exports.loadFixedCost = (req, res, next, fixedCostID) ->
-    FixedCost.find fixedCostID, (err, fixedCost) =>
+    RbiFixedCost.find fixedCostID, (err, fixedCost) =>
         if err? or not fixedCost?
             res.send 404, error: "Bank Alert not found"
         else

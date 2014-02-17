@@ -1,18 +1,18 @@
 americano = require 'americano'
 
-module.exports = FixedCost = americano.getModel 'RbiFixedCost',
+module.exports = RbiFixedCost = americano.getModel 'RbiFixedCost',
     idTable: Object
     type: String
     accountNumber: String
     uniquery: String
 
-FixedCost.get = (callback) ->
-    FixedCost.request 'all', (err, fixedCosts) ->
+RbiFixedCost.get = (callback) ->
+    RbiFixedCost.request 'all', (err, fixedCosts) ->
         return callback err if err
         callback null, fixedCosts
 
-FixedCost.set = (hash, callback) ->
-    FixedCost.request 'all', (err, fixedCosts) ->
+RbiFixedCost.set = (hash, callback) ->
+    RbiFixedCost.request 'all', (err, fixedCosts) ->
         return callback err if err
         alreadyExist = false
         for cost in fixedCosts
@@ -20,5 +20,5 @@ FixedCost.set = (hash, callback) ->
                 alreadyExist = true
                 cost.updateAttributes hash, callback
         if not alreadyExist
-            FixedCost.create hash, callback
+            RbiFixedCost.create hash, callback
 
