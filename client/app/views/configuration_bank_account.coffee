@@ -100,20 +100,12 @@ module.exports = class BankSubTitleView extends BaseView
             currentDate.setHours 12,0,0,0
             amountDate = new Date(amount.get 'date')
 
-            console.log "BEGIN bugged while loop"
-            i = 0
-            console.log "i = " + i
-            console.log "amountDate.getTime() = " +  amountDate.getTime()
-            console.log "currentDate.getTime() = " + currentDate.getTime()
-            while ((amountDate.getTime() isnt currentDate.getTime()) and (i < 365))
+            dayCounter1 = 0
+
+            while ((amountDate.getTime() isnt currentDate.getTime()) and (dayCounter1 < 365))
                 currentDate.setDate(currentDate.getDate() - 1)
-                i++
-            console.log "i after while"
-            console.log i
-            console.log "currentDate after while"
-            console.log currentDate
-            console.log "--------------"
-            if i < 364
+                dayCounter1++
+            if dayCounter1 < 364
                 @formattedAmounts[currentDate.getTime()] = amount.get 'amount'
             if currentDate.getTime() < threeMonthAgo
                 numberOfDays = daysPerMonth.six
@@ -126,8 +118,8 @@ module.exports = class BankSubTitleView extends BaseView
         minAmount = parseFloat @model.get('amount')
         maxAmount = parseFloat @model.get('amount')
 
-        i = 0
-        while i < numberOfDays
+        dayCounter2 = 0
+        while dayCounter2 < numberOfDays
             if @formattedAmounts[currentDate.getTime()]
                 lastAmount = parseFloat @formattedAmounts[currentDate.getTime()]
             flotReadyAmounts.push [currentDate.getTime(), lastAmount]
@@ -136,7 +128,7 @@ module.exports = class BankSubTitleView extends BaseView
                 minAmount = lastAmount
             if lastAmount > maxAmount
                 maxAmount = lastAmount
-            i++
+            dayCounter2++
 
         $("#max-amount").html maxAmount.money()
         $("#min-amount").html minAmount.money()

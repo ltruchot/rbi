@@ -1866,7 +1866,7 @@ module.exports = BankSubTitleView = (function(_super) {
   };
 
   BankSubTitleView.prototype.setupLastYearAmountsFlot = function(amounts) {
-    var currentDate, dayRatio, daysPerMonth, flotReadyAmounts, i, lastAmount, maxAmount, minAmount, numberOfDays, plot, sixMonthAgo, threeMonthAgo,
+    var currentDate, dayCounter2, dayRatio, daysPerMonth, flotReadyAmounts, lastAmount, maxAmount, minAmount, numberOfDays, plot, sixMonthAgo, threeMonthAgo,
       _this = this;
     this.formattedAmounts = [];
     flotReadyAmounts = [];
@@ -1882,28 +1882,19 @@ module.exports = BankSubTitleView = (function(_super) {
     sixMonthAgo = sixMonthAgo.setMonth(sixMonthAgo.getMonth() - 6);
     dayRatio = 4;
     amounts.each(function(amount) {
-      var amountDate, currentDate, i;
+      var amountDate, currentDate, dayCounter1;
       if (window.rbiActiveData.olderOperationDate > moment(amount.get('date'))) {
         window.rbiActiveData.olderOperationDate = moment(amount.get('date'));
       }
       currentDate = new Date();
       currentDate.setHours(12, 0, 0, 0);
       amountDate = new Date(amount.get('date'));
-      console.log("BEGIN bugged while loop");
-      i = 0;
-      console.log("i = " + i);
-      console.log("amountDate.getTime() = " + amountDate.getTime());
-      console.log("currentDate.getTime() = " + currentDate.getTime());
-      while ((amountDate.getTime() !== currentDate.getTime()) && (i < 365)) {
+      dayCounter1 = 0;
+      while ((amountDate.getTime() !== currentDate.getTime()) && (dayCounter1 < 365)) {
         currentDate.setDate(currentDate.getDate() - 1);
-        i++;
+        dayCounter1++;
       }
-      console.log("i after while");
-      console.log(i);
-      console.log("currentDate after while");
-      console.log(currentDate);
-      console.log("--------------");
-      if (i < 364) {
+      if (dayCounter1 < 364) {
         _this.formattedAmounts[currentDate.getTime()] = amount.get('amount');
       }
       if (currentDate.getTime() < threeMonthAgo) {
@@ -1917,8 +1908,8 @@ module.exports = BankSubTitleView = (function(_super) {
     lastAmount = parseFloat(this.model.get('amount'));
     minAmount = parseFloat(this.model.get('amount'));
     maxAmount = parseFloat(this.model.get('amount'));
-    i = 0;
-    while (i < numberOfDays) {
+    dayCounter2 = 0;
+    while (dayCounter2 < numberOfDays) {
       if (this.formattedAmounts[currentDate.getTime()]) {
         lastAmount = parseFloat(this.formattedAmounts[currentDate.getTime()]);
       }
@@ -1930,7 +1921,7 @@ module.exports = BankSubTitleView = (function(_super) {
       if (lastAmount > maxAmount) {
         maxAmount = lastAmount;
       }
-      i++;
+      dayCounter2++;
     }
     $("#max-amount").html(maxAmount.money());
     $("#min-amount").html(minAmount.money());
