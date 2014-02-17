@@ -36,6 +36,11 @@ module.exports = class ConfigurationBankView extends BaseView
         # add accounts
         for account in @bank.accounts.models
             @addOne account
+        #preselect if no account number selected
+        accountNumber = window.rbiActiveData.accountNumber or ""
+        if (accountNumber is "") and ($("#account-choice option").length > 1)
+          $("#account-choice option:eq(1)").attr('selected', 'true').click()
+          $("#account-choice").change()
         @
 
 

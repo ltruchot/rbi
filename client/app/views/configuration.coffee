@@ -158,6 +158,6 @@ module.exports = class ConfigurationView extends BaseView
 
             #no account number
             if accountNumber is ""
-              if $("#account-choice option").not(':disabled')[0]?
-                $("#account-choice option").not(':disabled')[0].click()
+              $('#configuration-btn').click()
+
       @

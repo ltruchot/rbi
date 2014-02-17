@@ -889,7 +889,7 @@ module.exports = AppView = (function(_super) {
   AppView.prototype.el = 'body.application';
 
   AppView.prototype.afterRender = function() {
-    return window.collections.banks.fetch({
+    window.collections.banks.fetch({
       data: {
         withAccountOnly: true
       },
@@ -919,6 +919,9 @@ module.exports = AppView = (function(_super) {
       error: function() {
         return console.log("Fatal error: could not get the banks list");
       }
+    });
+    return $('#account-budget-icon').click(function() {
+      return $('#account-budget-amount').focus();
     });
   };
 
@@ -1693,9 +1696,7 @@ module.exports = ConfigurationView = (function(_super) {
             $(view.elAccounts).prepend(require("./templates/balance_banks_empty"));
           }
           if (accountNumber === "") {
-            if ($("#account-choice option").not(':disabled')[0] != null) {
-              return $("#account-choice option").not(':disabled')[0].click();
-            }
+            return $('#configuration-btn').click();
           }
         });
       }
@@ -1750,7 +1751,7 @@ module.exports = ConfigurationBankView = (function(_super) {
   };
 
   ConfigurationBankView.prototype.render = function() {
-    var account, _i, _len, _ref;
+    var account, accountNumber, _i, _len, _ref;
     console.log('render bank view');
     this.viewTitle = new BankTitleView(this.bank);
     this.$el.html(this.viewTitle.render().el);
@@ -1760,6 +1761,11 @@ module.exports = ConfigurationBankView = (function(_super) {
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       account = _ref[_i];
       this.addOne(account);
+    }
+    accountNumber = window.rbiActiveData.accountNumber || "";
+    if ((accountNumber === "") && ($("#account-choice option").length > 1)) {
+      $("#account-choice option:eq(1)").attr('selected', 'true').click();
+      $("#account-choice").change();
     }
     return this;
   };
