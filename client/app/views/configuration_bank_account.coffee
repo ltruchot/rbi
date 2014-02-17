@@ -63,9 +63,6 @@ module.exports = class BankSubTitleView extends BaseView
         window.collections.amounts.setAccount account
         window.collections.amounts.fetch
             success: (amounts) ->
-                console.log view
-                console.log view.setupLastYearAmountsFlot
-                console.log amounts
                 view.setupLastYearAmountsFlot amounts
                 $(window).resize () ->
                     view.setupLastYearAmountsFlot amounts
@@ -80,7 +77,6 @@ module.exports = class BankSubTitleView extends BaseView
         return (day + '/' + month + '/' + year)
 
     setupLastYearAmountsFlot: (amounts) ->
-        console.log amounts
         view = @
         @formattedAmounts = []
         flotReadyAmounts = []
@@ -96,26 +92,30 @@ module.exports = class BankSubTitleView extends BaseView
         dayRatio = 4
 
         amounts.each (amount) ->
-            console.log amount
 
             #set older date for other use
             if window.rbiActiveData.olderOperationDate > moment(amount.get 'date') then window.rbiActiveData.olderOperationDate = moment(amount.get 'date')
-
-            currentDate = new Date()
-            currentDate.setHours 12,0,0,0
+            console.log "before set date"
+            currentDate1 = new Date()
+            currentDate1.setHours 12,0,0,0
             amountDate = new Date(amount.get 'date')
+            console.log "after set date"
+            console.log currentDate1
+            console.log amountDate
 
             dayCounter1 = 0
-
-            while ((amountDate.getTime() isnt currentDate.getTime()) and (dayCounter1 < 365))
-                currentDate.setDate(currentDate.getDate() - 1)
+            console.log "before while"
+            while ((amountDate.getTime() isnt currentDate1.getTime()) and (dayCounter1 < 365))
+                currentDate1.setDate(currentDate1.getDate() - 1)
                 dayCounter1++
             if dayCounter1 < 364
-                view.formattedAmounts[currentDate.getTime()] = amount.get 'amount'
-            if currentDate.getTime() < threeMonthAgo
+                view.formattedAmounts[currentDate1.getTime()] = amount.get 'amount'
+            if currentDate1.getTime() < threeMonthAgo
                 numberOfDays = daysPerMonth.six
-            else if currentDate.getTime() < sixMonthAgo
+            else if currentDate1.getTime() < sixMonthAgo
                 numberOfDays = daysPerMonth.twelve
+            console.log "after while"
+            console.log currentDate1
 
         currentDate = new Date()
         currentDate.setHours 12,0,0,0

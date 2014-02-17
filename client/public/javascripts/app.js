@@ -1843,9 +1843,6 @@ module.exports = BankSubTitleView = (function(_super) {
     window.collections.amounts.setAccount(account);
     return window.collections.amounts.fetch({
       success: function(amounts) {
-        console.log(view);
-        console.log(view.setupLastYearAmountsFlot);
-        console.log(amounts);
         view.setupLastYearAmountsFlot(amounts);
         $(window).resize(function() {
           return view.setupLastYearAmountsFlot(amounts);
@@ -1870,7 +1867,6 @@ module.exports = BankSubTitleView = (function(_super) {
 
   BankSubTitleView.prototype.setupLastYearAmountsFlot = function(amounts) {
     var currentDate, dayCounter2, dayRatio, daysPerMonth, flotReadyAmounts, lastAmount, maxAmount, minAmount, numberOfDays, plot, sixMonthAgo, threeMonthAgo, view;
-    console.log(amounts);
     view = this;
     this.formattedAmounts = [];
     flotReadyAmounts = [];
@@ -1886,27 +1882,33 @@ module.exports = BankSubTitleView = (function(_super) {
     sixMonthAgo = sixMonthAgo.setMonth(sixMonthAgo.getMonth() - 6);
     dayRatio = 4;
     amounts.each(function(amount) {
-      var amountDate, currentDate, dayCounter1;
-      console.log(amount);
+      var amountDate, currentDate1, dayCounter1;
       if (window.rbiActiveData.olderOperationDate > moment(amount.get('date'))) {
         window.rbiActiveData.olderOperationDate = moment(amount.get('date'));
       }
-      currentDate = new Date();
-      currentDate.setHours(12, 0, 0, 0);
+      console.log("before set date");
+      currentDate1 = new Date();
+      currentDate1.setHours(12, 0, 0, 0);
       amountDate = new Date(amount.get('date'));
+      console.log("after set date");
+      console.log(currentDate1);
+      console.log(amountDate);
       dayCounter1 = 0;
-      while ((amountDate.getTime() !== currentDate.getTime()) && (dayCounter1 < 365)) {
-        currentDate.setDate(currentDate.getDate() - 1);
+      console.log("before while");
+      while ((amountDate.getTime() !== currentDate1.getTime()) && (dayCounter1 < 365)) {
+        currentDate1.setDate(currentDate1.getDate() - 1);
         dayCounter1++;
       }
       if (dayCounter1 < 364) {
-        view.formattedAmounts[currentDate.getTime()] = amount.get('amount');
+        view.formattedAmounts[currentDate1.getTime()] = amount.get('amount');
       }
-      if (currentDate.getTime() < threeMonthAgo) {
-        return numberOfDays = daysPerMonth.six;
-      } else if (currentDate.getTime() < sixMonthAgo) {
-        return numberOfDays = daysPerMonth.twelve;
+      if (currentDate1.getTime() < threeMonthAgo) {
+        numberOfDays = daysPerMonth.six;
+      } else if (currentDate1.getTime() < sixMonthAgo) {
+        numberOfDays = daysPerMonth.twelve;
       }
+      console.log("after while");
+      return console.log(currentDate1);
     });
     currentDate = new Date();
     currentDate.setHours(12, 0, 0, 0);

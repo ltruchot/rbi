@@ -33,6 +33,28 @@
     "test": "cake tests",
     "start": "coffee server.coffee"
   },
-  "cozy-permissions": {},
+  "cozy-permissions": {
+     "Bank": {
+      "description": "Les banques auxquelles vous pouvez accéder via l'application."
+    },
+    "BankAccount": {
+      "description": "Vos différents comptes bancaires."
+    },
+    "BankOperation": {
+      "description": "Une opération bancaire."
+    },
+    "BankAlert": {
+      "description": "Une alerte liée à vos comptes bancaires."
+    },
+    "send mail to user": {
+      "description": "A votre demande, des rapports journaliers, hebdomadaires ou mensuels peuvent vous être envoyés par email."
+    },
+    "Notification": {
+      "description": "Des notifications sont créées lorsque des alertes sont mises en place dans l'application."
+    },
+    "CozyInstance": {
+      "description": "Afin d'afficher le contenu dans votre langue, l'application doit accéder à vos préférences."
+    }
+  },
   "cozy-displayName": "RBI"
 }
