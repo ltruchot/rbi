@@ -21,7 +21,7 @@ module.exports = class BankSubTitleView extends BaseView
 
     afterRender: ->
         accountNumber = window.rbiActiveData.accountNumber
-        if accountNumber isnt "" and accountNumber is @model.get 'accountNumber'
+        if (accountNumber isnt "") and (accountNumber is @model.get('accountNumber'))
             @chooseAccount()
 
     chooseAccount: (event) ->
@@ -33,7 +33,8 @@ module.exports = class BankSubTitleView extends BaseView
         window.activeObjects.trigger "changeActiveAccount", @model
 
         #save configuration
-        window.rbiActiveData.config.save accountNumber: @model.get 'accountNumber',
+        window.rbiActiveData.config.save
+            accountNumber: @model.get('accountNumber')
             error: ->
                 console.log 'Error: configuration not saved'
         window.rbiActiveData.accountNumber = @model.get 'accountNumber'
@@ -57,15 +58,15 @@ module.exports = class BankSubTitleView extends BaseView
             @$(".row").addClass("active")
 
     loadLastYearAmounts: (account, callback) ->
+        view = @
         window.collections.amounts.reset()
         window.collections.amounts.setAccount account
         window.collections.amounts.fetch
-            success: (amounts) =>
-                @setupLastYearAmountsFlot amounts
-                if callback?
-                    callback()
-                $(window).resize () =>
-                    @setupLastYearAmountsFlot amounts
+            success: (amounts) ->
+                view.setupLastYearAmountsFlot amounts
+                $(window).resize () ->
+                    view.setupLastYearAmountsFlot amounts
+                if callback? then callback()
             error: ->
                 console.log "error fetching amounts of last year"
 
@@ -76,7 +77,8 @@ module.exports = class BankSubTitleView extends BaseView
         return (day + '/' + month + '/' + year)
 
     setupLastYearAmountsFlot: (amounts) ->
-
+        console.log amounts
+        view = @
         @formattedAmounts = []
         flotReadyAmounts = []
         daysPerMonth =
@@ -90,11 +92,11 @@ module.exports = class BankSubTitleView extends BaseView
         sixMonthAgo = sixMonthAgo.setMonth(sixMonthAgo.getMonth() - 6)
         dayRatio = 4
 
-        amounts.each (amount) =>
+        amounts.each (amount) ->
+            console.log amount
 
             #set older date for other use
-            if window.rbiActiveData.olderOperationDate > moment(amount.get 'date')
-                window.rbiActiveData.olderOperationDate = moment(amount.get 'date')
+            if window.rbiActiveData.olderOperationDate > moment(amount.get 'date') then window.rbiActiveData.olderOperationDate = moment(amount.get 'date')
 
             currentDate = new Date()
             currentDate.setHours 12,0,0,0
@@ -106,7 +108,7 @@ module.exports = class BankSubTitleView extends BaseView
                 currentDate.setDate(currentDate.getDate() - 1)
                 dayCounter1++
             if dayCounter1 < 364
-                @formattedAmounts[currentDate.getTime()] = amount.get 'amount'
+                view.formattedAmounts[currentDate.getTime()] = amount.get 'amount'
             if currentDate.getTime() < threeMonthAgo
                 numberOfDays = daysPerMonth.six
             else if currentDate.getTime() < sixMonthAgo

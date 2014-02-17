@@ -1804,7 +1804,7 @@ module.exports = BankSubTitleView = (function(_super) {
   BankSubTitleView.prototype.afterRender = function() {
     var accountNumber;
     accountNumber = window.rbiActiveData.accountNumber;
-    if (accountNumber !== "" && accountNumber === this.model.get('accountNumber')) {
+    if ((accountNumber !== "") && (accountNumber === this.model.get('accountNumber'))) {
       return this.chooseAccount();
     }
   };
@@ -1814,11 +1814,10 @@ module.exports = BankSubTitleView = (function(_super) {
     this.$el.attr('selected', 'true');
     window.activeObjects.trigger("changeActiveAccount", this.model);
     window.rbiActiveData.config.save({
-      accountNumber: this.model.get('accountNumber', {
-        error: function() {
-          return console.log('Error: configuration not saved');
-        }
-      })
+      accountNumber: this.model.get('accountNumber'),
+      error: function() {
+        return console.log('Error: configuration not saved');
+      }
     });
     window.rbiActiveData.accountNumber = this.model.get('accountNumber');
     window.rbiActiveData.bankAccount = this.model;
@@ -1838,18 +1837,19 @@ module.exports = BankSubTitleView = (function(_super) {
   };
 
   BankSubTitleView.prototype.loadLastYearAmounts = function(account, callback) {
-    var _this = this;
+    var view;
+    view = this;
     window.collections.amounts.reset();
     window.collections.amounts.setAccount(account);
     return window.collections.amounts.fetch({
       success: function(amounts) {
-        _this.setupLastYearAmountsFlot(amounts);
-        if (callback != null) {
-          callback();
-        }
-        return $(window).resize(function() {
-          return _this.setupLastYearAmountsFlot(amounts);
+        view.setupLastYearAmountsFlot(amounts);
+        $(window).resize(function() {
+          return view.setupLastYearAmountsFlot(amounts);
         });
+        if (callback != null) {
+          return callback();
+        }
       },
       error: function() {
         return console.log("error fetching amounts of last year");
@@ -1866,8 +1866,9 @@ module.exports = BankSubTitleView = (function(_super) {
   };
 
   BankSubTitleView.prototype.setupLastYearAmountsFlot = function(amounts) {
-    var currentDate, dayCounter2, dayRatio, daysPerMonth, flotReadyAmounts, lastAmount, maxAmount, minAmount, numberOfDays, plot, sixMonthAgo, threeMonthAgo,
-      _this = this;
+    var currentDate, dayCounter2, dayRatio, daysPerMonth, flotReadyAmounts, lastAmount, maxAmount, minAmount, numberOfDays, plot, sixMonthAgo, threeMonthAgo, view;
+    console.log(amounts);
+    view = this;
     this.formattedAmounts = [];
     flotReadyAmounts = [];
     daysPerMonth = {
@@ -1883,6 +1884,7 @@ module.exports = BankSubTitleView = (function(_super) {
     dayRatio = 4;
     amounts.each(function(amount) {
       var amountDate, currentDate, dayCounter1;
+      console.log(amount);
       if (window.rbiActiveData.olderOperationDate > moment(amount.get('date'))) {
         window.rbiActiveData.olderOperationDate = moment(amount.get('date'));
       }
@@ -1895,7 +1897,7 @@ module.exports = BankSubTitleView = (function(_super) {
         dayCounter1++;
       }
       if (dayCounter1 < 364) {
-        _this.formattedAmounts[currentDate.getTime()] = amount.get('amount');
+        view.formattedAmounts[currentDate.getTime()] = amount.get('amount');
       }
       if (currentDate.getTime() < threeMonthAgo) {
         return numberOfDays = daysPerMonth.six;
