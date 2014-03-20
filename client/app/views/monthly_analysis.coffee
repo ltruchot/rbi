@@ -129,6 +129,7 @@ module.exports = class MonthlyAnalysisView extends BaseView
 
   displayPieChart: (operations)->
     $('#pie_chart').empty()
+    dataTable = []
     chartColors = []
     operationTypes =
       withdrawals:
@@ -297,9 +298,6 @@ module.exports = class MonthlyAnalysisView extends BaseView
         if not isKnownType
           others.amount += amount
 
-    #set common data
-    dataTable = [['Type', 'Montant']]
-
     #set found data by type
     for finalType, finalObj of operationTypes
       if finalObj.amount > 0
@@ -312,42 +310,95 @@ module.exports = class MonthlyAnalysisView extends BaseView
       chartColors.push others.color
 
     #create chart with options
-    if dataTable.length > 2
+    if dataTable.length > 1
+      #@createGooglePieChart dataTable, chartColors
+      @createFlotPieChart dataTable, chartColors
 
-      data = google.visualization.arrayToDataTable dataTable
-      numberformatter = new google.visualization.NumberFormat
-          suffix: '€'
-          decimalSymbol: ','
-          fractionDigits: ' '
+  createFlotPieChart: (dataTable, chartColors) ->
+    data = []
+    for item, index in dataTable
+      entry =
+        label: item[0]
+        data: item[1]
+        color: chartColors[index]
+      data.push entry
 
-      numberformatter.format data, 1
-      options =
-        width: 'auto'
-        height: '160'
-        backgroundColor: 'transparent'
-        colors: chartColors
-        tooltip:
-          textStyle:
-            color: '#666666'
-            fontSize: 11
-          showColorCode: true
+    # //  { label: "Series1",  data: 10},
+    # //  { label: "Series2",  data: 30},
+    # //  { label: "Series3",  data: 90},
+    # //  { label: "Series4",  data: 70},
+    # //  { label: "Series5",  data: 80},
+    # //  { label: "Series6",  data: 110}
+    # //];
+    # label
+
+    labelFormatter = (label, series) ->
+      return "<div style='font-size:8pt; text-align:center; padding:2px; color:white;'>" + label + "<br/>" + series.data[0][1].money() + "</div>"
+
+    $.plot '#pie_chart', data,
+      series:
+        pie:
+          show: true
+          radius: 1
+          label:
+            show: true
+            radius: 3/5
+            formatter: labelFormatter
+            background:
+              opacity: 0.5
         legend:
-          position: 'right'
-          textStyle:
-            color: 'black'
-            fontSize: 12
-        pieSliceText: 'value'
-        pieSliceTextStyle:
-            fontSize: '13'
-            bold: 'true'
+          show: true
+          labelFormatter: null #or (fn: string, series object -> string)
+          labelBoxBorderColor: null
+          # noColumns: number
+          position: "ne" #or "nw" or "se" or "sw"
+          # margin: number of pixels or [x margin, y margin]
+          # backgroundColor: null or color
+          # backgroundOpacity: number between 0 and 1
+          # container: null or jQuery object/DOM element/jQuery expression
+          # sorted: null/false, true, "ascending", "descending", "reverse", or a comparator
 
-        chartArea:
-          left: 20
-          top: 20
-          height: "180"
-          width: "300"
-      chart = new google.visualization.PieChart document.getElementById('pie_chart')
-      chart.draw data, options
+
+
+  # createGooglePieChart: (dataTable, chartColors)->
+
+  #   #set common data
+  #   dataTable.unshift ['Type', 'Montant']
+
+  #   data = google.visualization.arrayToDataTable dataTable
+  #   numberformatter = new google.visualization.NumberFormat
+  #       suffix: '€'
+  #       decimalSymbol: ','
+  #       fractionDigits: ' '
+
+  #   numberformatter.format data, 1
+  #   options =
+  #     width: 'auto'
+  #     height: '160'
+  #     backgroundColor: 'transparent'
+  #     colors: chartColors
+  #     tooltip:
+  #       textStyle:
+  #         color: '#666666'
+  #         fontSize: 11
+  #       showColorCode: true
+  #     legend:
+  #       position: 'right'
+  #       textStyle:
+  #         color: 'black'
+  #         fontSize: 12
+  #     pieSliceText: 'value'
+  #     pieSliceTextStyle:
+  #         fontSize: '13'
+  #         bold: 'true'
+
+  #     chartArea:
+  #       left: 20
+  #       top: 20
+  #       height: "180"
+  #       width: "300"
+  #   chart = new google.visualization.PieChart document.getElementById('pie_chart')
+  #   chart.draw data, options
 
   getAmountsByMonth: (monthStart)->
 

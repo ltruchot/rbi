@@ -1,10 +1,10 @@
 {
-  "name": "cozy-rbi",
+  "name": "mon-releve-malin",
   "version": "1.0.0",
   "engines": [
     "node = 0.8.x"
   ],
-  "description": "Revelé Bancaire Intelligent",
+  "description": "Mon Relevé Malin complète l'application Mes Comptes, en proposant une gestion de budget simple et semi-automatisée. L'interface claire et ergonomique de Mon Relevé Malin incite à naviguer dans l'historique de ses relevés de comptes, où les mouvements sont catégorisés, et peuvent être augmentés par le croisement avec les données d'Intermarché et d'Orange.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -38,29 +38,20 @@
       "description": "Les banques auxquelles vous pouvez accéder via l'application."
     },
     "BankAccount": {
-      "description": "Vos différents comptes bancaires."
+      "description": "Lire la liste de vos différents comptes bancaires, pour vous les présenter."
     },
     "BankOperation": {
-      "description": "Une opération bancaire."
-    },
-    "BankAlert": {
-      "description": "Une alerte liée à vos comptes bancaires."
-    },
-    "send mail to user": {
-      "description": "A votre demande, des rapports journaliers, hebdomadaires ou mensuels peuvent vous être envoyés par email."
-    },
-    "Notification": {
-      "description": "Des notifications sont créées lorsque des alertes sont mises en place dans l'application."
+      "description": "Lire vos opérations bancaires pour vous les présenter."
     },
     "CozyInstance": {
       "description": "Afin d'afficher le contenu dans votre langue, l'application doit accéder à vos préférences."
     },
     "RbiConfig": {
-      "description": "Afin de sauver une configuration spécifique à votre Relevé Bancaire Intelligent."
+      "description": "Afin de sauvegarder une configuration spécifique à votre Relevé Bancaire Intelligent."
     },
     "RbiFixedCost": {
-      "description": "Afin de sauver les règles et données liées à vos frais fixes."
+      "description": "Afin de sauvegarder les règles et données liées à vos frais fixes."
     }
   },
-  "cozy-displayName": "RBI"
+  "cozy-displayName": "Mon Relevé Malin"
 }

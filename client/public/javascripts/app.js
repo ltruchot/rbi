@@ -147,6 +147,10 @@ module.exports = {
       variableCost: {
         encoded: "&#57393;",
         decoded: ""
+      },
+      config: {
+        encoded: "&#57486;",
+        decoded: ""
       }
     };
     window.collections.banks = new BanksCollection();
@@ -2227,8 +2231,9 @@ module.exports = MonthlyAnalysisView = (function(_super) {
   };
 
   MonthlyAnalysisView.prototype.displayPieChart = function(operations) {
-    var amount, chart, chartColors, data, dataTable, finalObj, finalType, id, isKnownType, numberformatter, obj, operation, operationTypes, options, others, pattern, raw, type, _i, _len, _ref1;
+    var amount, chartColors, dataTable, finalObj, finalType, id, isKnownType, obj, operation, operationTypes, others, pattern, raw, type, _i, _len, _ref1;
     $('#pie_chart').empty();
+    dataTable = [];
     chartColors = [];
     operationTypes = {
       withdrawals: {
@@ -2316,7 +2321,6 @@ module.exports = MonthlyAnalysisView = (function(_super) {
         }
       }
     }
-    dataTable = [['Type', 'Montant']];
     for (finalType in operationTypes) {
       finalObj = operationTypes[finalType];
       if (finalObj.amount > 0) {
@@ -2328,48 +2332,48 @@ module.exports = MonthlyAnalysisView = (function(_super) {
       dataTable.push([others.name, others.amount]);
       chartColors.push(others.color);
     }
-    if (dataTable.length > 2) {
-      data = google.visualization.arrayToDataTable(dataTable);
-      numberformatter = new google.visualization.NumberFormat({
-        suffix: '€',
-        decimalSymbol: ',',
-        fractionDigits: ' '
-      });
-      numberformatter.format(data, 1);
-      options = {
-        width: 'auto',
-        height: '160',
-        backgroundColor: 'transparent',
-        colors: chartColors,
-        tooltip: {
-          textStyle: {
-            color: '#666666',
-            fontSize: 11
-          },
-          showColorCode: true
-        },
-        legend: {
-          position: 'right',
-          textStyle: {
-            color: 'black',
-            fontSize: 12
+    if (dataTable.length > 1) {
+      return this.createFlotPieChart(dataTable, chartColors);
+    }
+  };
+
+  MonthlyAnalysisView.prototype.createFlotPieChart = function(dataTable, chartColors) {
+    var data, entry, index, item, labelFormatter, _i, _len;
+    data = [];
+    for (index = _i = 0, _len = dataTable.length; _i < _len; index = ++_i) {
+      item = dataTable[index];
+      entry = {
+        label: item[0],
+        data: item[1],
+        color: chartColors[index]
+      };
+      data.push(entry);
+    }
+    labelFormatter = function(label, series) {
+      return "<div style='font-size:8pt; text-align:center; padding:2px; color:white;'>" + label + "<br/>" + series.data[0][1].money() + "</div>";
+    };
+    return $.plot('#pie_chart', data, {
+      series: {
+        pie: {
+          show: true,
+          radius: 1,
+          label: {
+            show: true,
+            radius: 3 / 5,
+            formatter: labelFormatter,
+            background: {
+              opacity: 0.5
+            }
           }
         },
-        pieSliceText: 'value',
-        pieSliceTextStyle: {
-          fontSize: '13',
-          bold: 'true'
-        },
-        chartArea: {
-          left: 20,
-          top: 20,
-          height: "180",
-          width: "300"
+        legend: {
+          show: true,
+          labelFormatter: null,
+          labelBoxBorderColor: null,
+          position: "ne"
         }
-      };
-      chart = new google.visualization.PieChart(document.getElementById('pie_chart'));
-      return chart.draw(data, options);
-    }
+      }
+    });
   };
 
   MonthlyAnalysisView.prototype.getAmountsByMonth = function(monthStart) {
@@ -2599,7 +2603,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<ul><li class="menu-item active"><span class="current-arrow"></span><a href="#analyse-mensuelle"><div class="icon"><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span></div>Analyse mensuelle</a></li><li class="menu-item"><a href="#analyse-mensuelle-comparee"><div class="icon"><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span></div>Analyse mensuelle comparée</a></li><li class="menu-item"><a href="#achats-en-ligne"><div class="icon"><span aria-hidden="true" data-icon="&#57398;" class="fs1"></span></div>Achats en ligne</a></li><li class="menu-item"><a href="#alertes"><div class="icon"><span aria-hidden="true" data-icon="&#57803;" class="fs1"></span></div>Alertes</a></li></ul>');
+buf.push('<ul><li class="menu-item active"><span class="current-arrow"></span><a href="#analyse-mensuelle"><div class="icon"><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span></div>Analyse mensuelle</a></li><li class="menu-item"><a href="#analyse-mensuelle-comparee"><div class="icon"><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span></div>Analyse mensuelle comparée</a></li><li class="menu-item"><a href="#budget"><div class="icon"><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span></div>Budget prévisionnnel</a></li><li class="menu-item"><a href="#achats-en-ligne"><div class="icon"><span aria-hidden="true" data-icon="&#57398;" class="fs1"></span></div>Achats en ligne</a></li><li class="menu-item"><a href="#alertes"><div class="icon"><span aria-hidden="true" data-icon="&#57803;" class="fs1"></span></div>Alertes</a></li><li class="menu-item"><a href="#parametres"><div class="icon"><span aria-hidden="true" data-icon="&#57486;" class="fs1"></span></div>Paramètres</a></li></ul>');
 }
 return buf.join("");
 };
@@ -2611,7 +2615,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><table id="monthly-report"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2" class="search-panel-td1"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="credits-search-btn" class="search-btn grey1"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1 big-size-icon"></span><span id="credits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Crédits</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="debits-search-btn" class="search-btn grey2"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1 big-size-icon"></span><span id="debits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Débits</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="search-panel-td2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="fixed-cost-search-btn" class="search-btn grey3"><span aria-hidden="true" data-icon="&#57481;" class="pull-left fs1 big-size-icon"></span><span id="fixed-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Frais fixes</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="variable-cost-search-btn" class="search-btn grey4"><span aria-hidden="true" data-icon="&#57393;" class="pull-left fs1 big-size-icon"></span><span id="variable-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Dépenses</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="google-pie-chart"><div id="pie_chart" style="width:268px;height:180px;margin:auto;">&nbsp;</div><br/><br/></td></tr></table>');
+buf.push('<h1><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><table id="monthly-report"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2" class="search-panel-td1"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="credits-search-btn" class="search-btn grey1"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1 big-size-icon"></span><span id="credits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Crédits</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="debits-search-btn" class="search-btn grey2"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1 big-size-icon"></span><span id="debits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Débits</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="search-panel-td2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="fixed-cost-search-btn" class="search-btn grey3"><span aria-hidden="true" data-icon="&#57481;" class="pull-left fs1 big-size-icon"></span><span id="fixed-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Frais fixes</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="variable-cost-search-btn" class="search-btn grey4"><span aria-hidden="true" data-icon="&#57393;" class="pull-left fs1 big-size-icon"></span><span id="variable-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Dépenses</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="google-pie-chart"><div id="pie_chart" style="min-height:180px;margin:auto;">&nbsp;</div><br/><br/></td></tr></table>');
 }
 return buf.join("");
 };

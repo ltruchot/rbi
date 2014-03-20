@@ -37,7 +37,7 @@ module.exports =
             plus:
                 encoded: "&#57602;"
                 decoded: ""
-            minus :
+            minus:
                 encoded: "&#57601;"
                 decoded: ""
             positiveEvolution:
@@ -52,6 +52,9 @@ module.exports =
             variableCost:
                 encoded: "&#57393;"
                 decoded: ""
+            config:
+                encoded: "&#57486;"
+                decoded: ""
 
 
         #instantiate collections: banks, operations, amounts
