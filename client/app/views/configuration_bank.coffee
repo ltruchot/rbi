@@ -6,7 +6,7 @@ module.exports = class ConfigurationBankView extends BaseView
 
     className: "unclickable-option"
 
-    tagName: "option"
+    tagName: "tr"
     attributes:
         'disabled':'true'
 

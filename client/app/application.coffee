@@ -3,6 +3,8 @@ AppView = require 'views/app'
 BanksCollection = require 'collections/banks'
 BankOperationsCollection = require 'collections/bank_operations'
 BankAmountsCollection = require 'collections/bank_amounts'
+UserConfiguration = require 'models/user_configuration'
+DataManager = require 'lib/data_manager'
 
 module.exports =
 
@@ -16,9 +18,14 @@ module.exports =
 
 
         #set global active data
+        window.rbiActiveData.userConfiguration = new UserConfiguration({})
         window.rbiActiveData.olderOperationDate = moment(new Date())
         window.rbiActiveData.budgetByAccount = {}
         window.rbiActiveData.accountNumber = null
+        window.rbiActiveData.bankAccount = null
+
+        #set the data manager
+        window.rbiDataManager = new DataManager()
 
         #set global rbi color for dynamic use
         window.rbiColors =

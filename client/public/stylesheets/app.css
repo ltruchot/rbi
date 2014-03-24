@@ -10501,9 +10501,6 @@ cursor not-allowed {
 .view-container .row {
   margin: 0;
 }
-.view-container #account-choice {
-  padding: 10px;
-}
 .blue-text {
   color: #40acd6;
 }
@@ -10586,6 +10583,10 @@ cursor not-allowed {
 }
 .pie-chart {
   padding: 10px 0;
+}
+.config-loader {
+  text-align: center;
+  padding-top: 150px;
 }
 #interface-box {
   padding-left: 0;
@@ -10751,6 +10752,7 @@ cursor not-allowed {
   border: 1px solid #2b2b2b;
   max-height: 535px;
   overflow: auto;
+  display: none;
 }
 #context-box h2 {
   margin: 5px;
@@ -10837,6 +10839,23 @@ cursor not-allowed {
   position: relative;
   margin: 0;
   padding: 0;
+}
+.configuration-interface {
+  padding: 10px;
+}
+.configuration-interface p {
+  margin: 0;
+  padding: 0;
+}
+.w50px {
+  width: 50px;
+}
+.w25px {
+  width: 25px;
+}
+#account-choice {
+  padding: 10px;
+  margin: 30px 0;
 }
 .little-text {
   font-size: 0.8em;

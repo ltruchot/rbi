@@ -3,4 +3,10 @@
 //- span &nbsp;Solde :
 //- input.accountAmount(type="text", value="#{Number(model.get('amount')).money()}", disabled="true")
 //- span &euro;
-| #{model.get('title')} n°#{model.get("accountNumber")}
+td #{model.get('title')} n°#{model.get("accountNumber")}
+td.w50px
+  button.btn.btn-xs.btn-default.btn-courant(type="button") courant
+td.w50px
+  button.btn.btn-xs.btn-default.btn-epargne(type="button") épargne
+td.w25px
+  button.btn.btn-xs.btn-default.btn-off(type="button") off

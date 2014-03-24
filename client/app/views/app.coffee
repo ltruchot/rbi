@@ -15,6 +15,8 @@ module.exports = class AppView extends BaseView
 
   el: 'body.application'
 
+  isLoading: true
+
   afterRender: ->
 
 
@@ -22,7 +24,7 @@ module.exports = class AppView extends BaseView
     window.collections.banks.fetch
       data:
         withAccountOnly: true
-      success: ->
+      success: =>
         if not @menuView
           @menuView =  new MenuView()
         if not window.views.configurationView
@@ -36,11 +38,19 @@ module.exports = class AppView extends BaseView
         if not window.views.alertsView
           window.views.alertsView =  new AlertsView()
 
-        # if not window.views.accountsView
-        #     window.views.accountsView = new AccountsView()
-
         @menuView.render()
+
+        #load configuration
+        @displayLoadingView()
+
+
+        # #load configuration
+        # config = window.rbiActiveData.userConfiguration or null
+        # if config? and config.accountNumber? and (config.accountNumber isnt "")
+        #   window.views.monthlyAnalysisView.render()
+        # else
         window.views.configurationView.render()
+
 
 
         # start routing
@@ -54,5 +64,23 @@ module.exports = class AppView extends BaseView
     #index events (should be in app template)
     $('#account-budget-icon').click ->
       $('#account-budget-amount').focus()
+
+  displayLoadingView: ->
+    @isLoading = true
+    $('#interface-box').hide()
+    $('#context-box').hide()
+    $('#fullsize-box').show()
+    loaderHtml = '<div class="config-loader">' +
+      "\t" + 'Chargement de vos paramètres...<br /><br />' +
+      "\t" + '<img src="./loader_big_blue.gif" />' +
+      '</div>'
+    $('#fullsize-box').append loaderHtml
+
+  displayInterfaceView: ->
+    $('#fullsize-box').empty().hide()
+    $('#interface-box').show()
+    $('#context-box').show()
+    @isLoading = false
+
 
 

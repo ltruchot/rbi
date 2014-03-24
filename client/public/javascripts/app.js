@@ -91,7 +91,7 @@
   globals.require.brunch = true;
 })();
 require.register("application", function(exports, require, module) {
-var AppView, BankAmountsCollection, BankOperationsCollection, BanksCollection;
+var AppView, BankAmountsCollection, BankOperationsCollection, BanksCollection, DataManager, UserConfiguration;
 
 AppView = require('views/app');
 
@@ -101,6 +101,10 @@ BankOperationsCollection = require('collections/bank_operations');
 
 BankAmountsCollection = require('collections/bank_amounts');
 
+UserConfiguration = require('models/user_configuration');
+
+DataManager = require('lib/data_manager');
+
 module.exports = {
   initialize: function() {
     var Router;
@@ -108,9 +112,12 @@ module.exports = {
     window.collections = {};
     window.views = {};
     window.rbiActiveData = {};
+    window.rbiActiveData.userConfiguration = new UserConfiguration({});
     window.rbiActiveData.olderOperationDate = moment(new Date());
     window.rbiActiveData.budgetByAccount = {};
     window.rbiActiveData.accountNumber = null;
+    window.rbiActiveData.bankAccount = null;
+    window.rbiDataManager = new DataManager();
     window.rbiColors = {
       border_color: "#efefef",
       grid_color: "#ddd",
@@ -514,6 +521,142 @@ module.exports = BaseView = (function(_super) {
 
 });
 
+;require.register("lib/data_manager", function(exports, require, module) {
+var DataManager;
+
+module.exports = DataManager = (function() {
+  function DataManager() {}
+
+  DataManager.prototype.loadLastYearAmounts = function(account, callback) {
+    var that;
+    that = this;
+    window.collections.amounts.reset();
+    window.collections.amounts.setAccount(account);
+    return window.collections.amounts.fetch({
+      success: function(amounts) {
+        that.setupLastYearAmountsFlot(amounts, account);
+        $(window).resize(function() {
+          return that.setupLastYearAmountsFlot(amounts, account);
+        });
+        if (callback != null) {
+          return callback();
+        }
+      },
+      error: function() {
+        return console.log("Error during amounts of last year fetching process");
+      }
+    });
+  };
+
+  DataManager.prototype.setupLastYearAmountsFlot = function(amounts, account) {
+    var currentDate, dayCounter2, dayRatio, daysPerMonth, flotReadyAmounts, formattedAmounts, lastAmount, maxAmount, minAmount, numberOfDays, plot, sixMonthAgo, that, threeMonthAgo;
+    that = this;
+    formattedAmounts = [];
+    flotReadyAmounts = [];
+    daysPerMonth = {
+      twelve: 365,
+      six: 365 / 2,
+      three: 365 / 4
+    };
+    numberOfDays = daysPerMonth.three;
+    threeMonthAgo = new Date();
+    threeMonthAgo = threeMonthAgo.setMonth(threeMonthAgo.getMonth() - 3);
+    sixMonthAgo = new Date();
+    sixMonthAgo = sixMonthAgo.setMonth(sixMonthAgo.getMonth() - 6);
+    dayRatio = 4;
+    amounts.each(function(amount) {
+      var amountDate, currentDate1, dayCounter1;
+      if (window.rbiActiveData.olderOperationDate > moment(amount.get('date'))) {
+        window.rbiActiveData.olderOperationDate = moment(amount.get('date'));
+      }
+      currentDate1 = new Date();
+      currentDate1.setHours(12, 0, 0, 0);
+      amountDate = new Date(amount.get('date'));
+      amountDate.setHours(12, 0, 0, 0);
+      dayCounter1 = 0;
+      while ((amountDate.getTime() !== currentDate1.getTime()) && (dayCounter1 < 365)) {
+        currentDate1.setDate(currentDate1.getDate() - 1);
+        dayCounter1++;
+      }
+      if (dayCounter1 < 364) {
+        formattedAmounts[currentDate1.getTime()] = amount.get('amount');
+      }
+      if (currentDate1.getTime() < threeMonthAgo) {
+        return numberOfDays = daysPerMonth.six;
+      } else if (currentDate1.getTime() < sixMonthAgo) {
+        return numberOfDays = daysPerMonth.twelve;
+      }
+    });
+    currentDate = new Date();
+    currentDate.setHours(12, 0, 0, 0);
+    minAmount = minAmount = maxAmount = parseFloat(account.get('amount'));
+    dayCounter2 = 0;
+    while (dayCounter2 < numberOfDays) {
+      if (formattedAmounts[currentDate.getTime()]) {
+        lastAmount = parseFloat(formattedAmounts[currentDate.getTime()]);
+      }
+      flotReadyAmounts.push([currentDate.getTime(), lastAmount]);
+      currentDate.setDate(currentDate.getDate() - 1);
+      if (lastAmount < minAmount) {
+        minAmount = lastAmount;
+      }
+      if (lastAmount > maxAmount) {
+        maxAmount = lastAmount;
+      }
+      dayCounter2++;
+    }
+    $("#max-amount").html(maxAmount.money());
+    $("#min-amount").html(minAmount.money());
+    minAmount = minAmount - 500;
+    maxAmount = maxAmount + 500;
+    flotReadyAmounts.reverse();
+    $('#amount-stats').empty();
+    return plot = $.plot("#amount-stats", [
+      {
+        data: flotReadyAmounts
+      }
+    ], {
+      series: {
+        lines: {
+          show: true,
+          lineWidth: 2
+        },
+        points: {
+          show: false
+        }
+      },
+      grid: {
+        hoverable: true,
+        clickable: true,
+        borderWidth: 1,
+        tickColor: $border_color,
+        borderColor: '#eeeeee'
+      },
+      colors: [window.rbiColors.blue],
+      shadowSize: 0,
+      yaxis: {
+        min: minAmount,
+        max: maxAmount
+      },
+      xaxis: {
+        mode: "time",
+        minTickSize: [1, "month"],
+        monthNames: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+      },
+      tooltip: true,
+      tooltipOpts: {
+        content: '%y.2&euro;<br /> %x',
+        xDateFormat: '%d/%m/%y'
+      }
+    });
+  };
+
+  return DataManager;
+
+})();
+
+});
+
 ;require.register("lib/view_collection", function(exports, require, module) {
 var BaseView, ViewCollection, _ref,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
@@ -796,7 +939,8 @@ module.exports = Router = (function(_super) {
     'analyse-mensuelle': 'monthly_analysis',
     'analyse-mensuelle-comparee': 'compared_analysis',
     'achats-en-ligne': 'online_shopping',
-    'alertes': 'alerts'
+    'alertes': 'alerts',
+    'parametres': 'configuration'
   };
 
   Router.prototype.monthly_analysis = function() {
@@ -817,6 +961,11 @@ module.exports = Router = (function(_super) {
   Router.prototype.alerts = function() {
     var _ref1;
     return (_ref1 = window.views.alertsView) != null ? _ref1.render() : void 0;
+  };
+
+  Router.prototype.configuration = function() {
+    var _ref1;
+    return (_ref1 = window.views.configurationView) != null ? _ref1.render() : void 0;
   };
 
   return Router;
@@ -892,14 +1041,17 @@ module.exports = AppView = (function(_super) {
 
   AppView.prototype.el = 'body.application';
 
+  AppView.prototype.isLoading = true;
+
   AppView.prototype.afterRender = function() {
+    var _this = this;
     window.collections.banks.fetch({
       data: {
         withAccountOnly: true
       },
       success: function() {
-        if (!this.menuView) {
-          this.menuView = new MenuView();
+        if (!_this.menuView) {
+          _this.menuView = new MenuView();
         }
         if (!window.views.configurationView) {
           window.views.configurationView = new ConfigurationView();
@@ -916,7 +1068,8 @@ module.exports = AppView = (function(_super) {
         if (!window.views.alertsView) {
           window.views.alertsView = new AlertsView();
         }
-        this.menuView.render();
+        _this.menuView.render();
+        _this.displayLoadingView();
         window.views.configurationView.render();
         return Backbone.history.start();
       },
@@ -927,6 +1080,23 @@ module.exports = AppView = (function(_super) {
     return $('#account-budget-icon').click(function() {
       return $('#account-budget-amount').focus();
     });
+  };
+
+  AppView.prototype.displayLoadingView = function() {
+    var loaderHtml;
+    this.isLoading = true;
+    $('#interface-box').hide();
+    $('#context-box').hide();
+    $('#fullsize-box').show();
+    loaderHtml = '<div class="config-loader">' + "\t" + 'Chargement de vos paramètres...<br /><br />' + "\t" + '<img src="./loader_big_blue.gif" />' + '</div>';
+    return $('#fullsize-box').append(loaderHtml);
+  };
+
+  AppView.prototype.displayInterfaceView = function() {
+    $('#fullsize-box').empty().hide();
+    $('#interface-box').show();
+    $('#context-box').show();
+    return this.isLoading = false;
   };
 
   return AppView;
@@ -1511,13 +1681,11 @@ module.exports = ComparedAnalysisView = (function(_super) {
 });
 
 ;require.register("views/configuration", function(exports, require, module) {
-var BaseView, Config, ConfigurationBankView, ConfigurationView, _ref,
+var BaseView, ConfigurationBankView, ConfigurationView, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
-
-Config = require('models/user_configuration');
 
 ConfigurationBankView = require('./configuration_bank');
 
@@ -1531,9 +1699,9 @@ module.exports = ConfigurationView = (function(_super) {
 
   ConfigurationView.prototype.template = require('./templates/configuration');
 
-  ConfigurationView.prototype.el = '#configuration';
+  ConfigurationView.prototype.el = 'div#interface-box';
 
-  ConfigurationView.prototype.elAccounts = 'select#account-choice';
+  ConfigurationView.prototype.elAccounts = '#account-choice';
 
   ConfigurationView.prototype.accounts = 0;
 
@@ -1643,7 +1811,7 @@ module.exports = ConfigurationView = (function(_super) {
       if (budgetValue > 0) {
         accountNumber = window.rbiActiveData.accountNumber;
         window.rbiActiveData.budgetByAccount[accountNumber] = budgetValue;
-        return window.rbiActiveData.config.save({
+        return window.rbiActiveData.userConfiguration.save({
           budgetByAccount: window.rbiActiveData.budgetByAccount
         }, {
           success: function() {
@@ -1674,14 +1842,10 @@ module.exports = ConfigurationView = (function(_super) {
     });
   };
 
-  ConfigurationView.prototype.initialize = function() {
-    return window.rbiActiveData.config = new Config({});
-  };
-
   ConfigurationView.prototype.render = function() {
     var _this = this;
     ConfigurationView.__super__.render.call(this);
-    window.rbiActiveData.config.fetch({
+    window.rbiActiveData.userConfiguration.fetch({
       success: function(currentConfig) {
         var accountNumber, budgetByAccount, treatment, view;
         accountNumber = currentConfig.get('accountNumber') || "";
@@ -1712,17 +1876,20 @@ module.exports = ConfigurationView = (function(_super) {
         };
         return async.concat(window.collections.banks.models, treatment, function(err, results) {
           if (err) {
-            console.log(err);
-            alert(window.i18n("error_loading_accounts"));
-          }
-          this.accounts = results.length;
-          if (this.accounts === 0) {
-            $(view.elAccounts).prepend(require("./templates/balance_banks_empty"));
-          }
-          if (accountNumber === "") {
-            return $('#configuration-btn').click();
+            return console.log(err);
+          } else {
+            this.accounts = results.length;
+            if (this.accounts === 0) {
+              $(view.elAccounts).prepend(require("./templates/balance_banks_empty"));
+            }
+            if (accountNumber === "") {
+              return $('#configuration-btn').click();
+            }
           }
         });
+      },
+      error: function() {
+        return console.log('error during user configuration fetching process');
       }
     });
     return this;
@@ -1750,7 +1917,7 @@ module.exports = ConfigurationBankView = (function(_super) {
 
   ConfigurationBankView.prototype.className = "unclickable-option";
 
-  ConfigurationBankView.prototype.tagName = "option";
+  ConfigurationBankView.prototype.tagName = "tr";
 
   ConfigurationBankView.prototype.attributes = {
     'disabled': 'true'
@@ -1823,7 +1990,7 @@ BaseView = require('../lib/base_view');
 module.exports = BankSubTitleView = (function(_super) {
   __extends(BankSubTitleView, _super);
 
-  BankSubTitleView.prototype.tagName = 'option';
+  BankSubTitleView.prototype.tagName = 'tr';
 
   BankSubTitleView.prototype.template = require('./templates/configuration_bank_account');
 
@@ -1833,10 +2000,10 @@ module.exports = BankSubTitleView = (function(_super) {
   }
 
   BankSubTitleView.prototype.events = {
-    'click': 'chooseAccount'
+    'click .btn-courant': 'chooseAccount',
+    'click .btn-epargne': 'setDepositAccount',
+    'click .btn-off': 'setOffAccount'
   };
-
-  BankSubTitleView.prototype.formattedAmounts = [];
 
   BankSubTitleView.prototype.initialize = function() {
     return this.listenTo(window.activeObjects, 'changeActiveAccount', this.checkActive);
@@ -1850,11 +2017,48 @@ module.exports = BankSubTitleView = (function(_super) {
     }
   };
 
+  BankSubTitleView.prototype.setDepositAccount = function(event) {
+    var jqBtnDeposit, otherButtons;
+    if (event != null) {
+      jqBtnDeposit = $(event.currentTarget);
+      if (jqBtnDeposit.hasClass("btn-default")) {
+        otherButtons = (jqBtnDeposit.closest("tr")).find(".btn");
+        otherButtons.removeClass("btn-info btn-danger").addClass("btn-default");
+        return jqBtnDeposit.removeClass("btn-default").addClass("btn-warning");
+      }
+    }
+  };
+
+  BankSubTitleView.prototype.setOffAccount = function(event) {
+    var jqBtnOff, otherButtons;
+    if (event != null) {
+      jqBtnOff = $(event.currentTarget);
+      if (jqBtnOff.hasClass("btn-default")) {
+        otherButtons = (jqBtnOff.closest("tr")).find(".btn");
+        otherButtons.removeClass("btn-info btn-warning").addClass("btn-default");
+        return jqBtnOff.removeClass("btn-default").addClass("btn-danger");
+      }
+    }
+  };
+
   BankSubTitleView.prototype.chooseAccount = function(event) {
-    var today;
+    var ancestor, today;
+    if (event != null) {
+      $(".btn-courant").each(function() {
+        var btnOff;
+        if ($(this).hasClass("btn-info")) {
+          $(this).removeClass("btn-info").addClass("btn-default");
+          btnOff = ($(this).closest("tr")).find(".btn-off");
+          return btnOff.removeClass("btn-default").addClass("btn-danger");
+        }
+      });
+      $(event.currentTarget).removeClass("btn-default").addClass("btn-info");
+      ancestor = $(event.currentTarget).closest("tr");
+      ancestor.find('.btn').removeClass("btn-warning btn-danger").addClass("btn-default");
+    }
     this.$el.attr('selected', 'true');
     window.activeObjects.trigger("changeActiveAccount", this.model);
-    window.rbiActiveData.config.save({
+    window.rbiActiveData.userConfiguration.save({
       accountNumber: this.model.get('accountNumber'),
       error: function() {
         return console.log('Error: configuration not saved');
@@ -1866,7 +2070,11 @@ module.exports = BankSubTitleView = (function(_super) {
     $("#current-amount-date").text(today);
     $("#account-amount-balance").html((this.model.get('amount')).money());
     return this.loadLastYearAmounts(this.model, function() {
-      return window.views.monthlyAnalysisView.render();
+      if (window.views.appView.isLoading) {
+        window.views.monthlyAnalysisView.render();
+        window.views.appView.displayInterfaceView();
+        return window.app.router.navigate('analyse-mensuelle');
+      }
     });
   };
 
@@ -2051,6 +2259,10 @@ module.exports = MenuView = (function(_super) {
     return this;
   };
 
+  MenuView.prototype.afterRender = function() {
+    return this.adjustPadding();
+  };
+
   MenuView.prototype.activateMenuItem = function(event) {
     var jqMenuItem;
     jqMenuItem = $(event.currentTarget);
@@ -2063,6 +2275,26 @@ module.exports = MenuView = (function(_super) {
     if ($(window).width() < 768) {
       return window.scrollTo(0, 535);
     }
+  };
+
+  MenuView.prototype.adjustPadding = function() {
+    return $('#mainnav .menu-item > a').each(function() {
+      var text;
+      text = $(this).text() || null;
+      if ((text.length != null) && (text.length > 25)) {
+        return $(this).css({
+          'padding-top': '10px'
+        });
+      } else if ((text.length != null) && (text.length < 11)) {
+        return $(this).css({
+          'padding-top': '20px'
+        });
+      } else {
+        return $(this).css({
+          'padding-top': '16px'
+        });
+      }
+    });
   };
 
   return MenuView;
@@ -2556,18 +2788,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div id="modalConfiguration" tabindex="-1" role="dialog" aria-labelledby="showModalLabel" aria-hidden="true" style="display: none;" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" data-dismiss="modal" aria-hidden="true" data-original-title="" class="close">×</button><h4 class="modal-title">Paramètres</h4></div><div class="modal-body"><label class="control-label">Mon choix de compte</label><select id="account-choice" size="1" class="form-control input-lg"></select><br/><label for="monthly-budget" class="control-label">Mon budget du mois</label><div class="input-group input-middle-size"><input id="configuration-budget-amount" type="text" name="monthly-budget" class="form-control"/><span class="input-group-addon">&euro;</span></div></div><div class="modal-footer"><em class="info-user little-text">Les modifications sont prises en compte instantanément&nbsp;</em><button type="button" data-dismiss="modal" data-original-title="" class="btn btn-default">J\'ai terminé</button></div></div></div></div>');
-}
-return buf.join("");
-};
-});
-
-;require.register("views/templates/configuration_bank", function(exports, require, module) {
-module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
-attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
-var buf = [];
-with (locals || {}) {
-var interp;
+buf.push('<h1>Paramètres</h1><div class="configuration-interface"><p>Veuillez selectionner le compte courant lié à votre relevé malin.</p><table id="account-choice" class="col-md-12"></table><br/><br/><p>Si vos comptes n\'apparaissent pas ici, veuillez les ajouter dans l\'application "MesComptes".</p></div>');
 }
 return buf.join("");
 };
@@ -2579,7 +2800,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('' + escape((interp = model.get('title')) == null ? '' : interp) + ' n°' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '');
+buf.push('<td>' + escape((interp = model.get('title')) == null ? '' : interp) + ' n°' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</td><td class="w50px"><button type="button" class="btn btn-xs btn-default btn-courant">courant</button></td><td class="w50px"><button type="button" class="btn btn-xs btn-default btn-epargne">épargne</button></td><td class="w25px"><button type="button" class="btn btn-xs btn-default btn-off">off</button></td>');
 }
 return buf.join("");
 };
@@ -2591,7 +2812,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('' + escape((interp = model.get('name')) == null ? '' : interp) + '');
+buf.push('<td colspan="3">' + escape((interp = model.get('name')) == null ? '' : interp) + '</td>');
 }
 return buf.join("");
 };

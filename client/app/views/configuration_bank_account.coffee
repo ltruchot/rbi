@@ -2,7 +2,7 @@ BaseView = require '../lib/base_view'
 
 module.exports = class BankSubTitleView extends BaseView
 
-    tagName: 'option'
+    tagName: 'tr'
 
     template: require('./templates/configuration_bank_account')
 
@@ -10,9 +10,11 @@ module.exports = class BankSubTitleView extends BaseView
         super()
 
     events:
-        'click' : 'chooseAccount'
+        'click .btn-courant' : 'chooseAccount'
+        'click .btn-epargne' : 'setDepositAccount'
+        'click .btn-off' : 'setOffAccount'
 
-    formattedAmounts: []
+    # formattedAmounts: []
 
 
     initialize: ->
@@ -24,7 +26,33 @@ module.exports = class BankSubTitleView extends BaseView
         if (accountNumber isnt "") and (accountNumber is @model.get('accountNumber'))
             @chooseAccount()
 
+    setDepositAccount: (event) ->
+        if event?
+            jqBtnDeposit = $(event.currentTarget)
+            if jqBtnDeposit.hasClass "btn-default"
+                otherButtons = (jqBtnDeposit.closest "tr").find ".btn"
+                otherButtons.removeClass("btn-info btn-danger").addClass "btn-default"
+                jqBtnDeposit.removeClass("btn-default").addClass "btn-warning"
+
+    setOffAccount: (event) ->
+        if event?
+            jqBtnOff = $(event.currentTarget)
+            if jqBtnOff.hasClass "btn-default"
+                otherButtons = (jqBtnOff.closest "tr").find ".btn"
+                otherButtons.removeClass("btn-info btn-warning").addClass "btn-default"
+                jqBtnOff.removeClass("btn-default").addClass "btn-danger"
+
+
     chooseAccount: (event) ->
+        if event?
+            $(".btn-courant").each ->
+                if $(@).hasClass "btn-info"
+                    $(@).removeClass("btn-info").addClass "btn-default"
+                    btnOff = ($(@).closest "tr").find ".btn-off"
+                    btnOff.removeClass("btn-default").addClass "btn-danger"
+            $(event.currentTarget).removeClass("btn-default").addClass "btn-info"
+            ancestor = $(event.currentTarget).closest "tr"
+            ancestor.find('.btn').removeClass("btn-warning btn-danger").addClass "btn-default"
 
         #set input to checked state
         @$el.attr('selected', 'true')
@@ -33,7 +61,7 @@ module.exports = class BankSubTitleView extends BaseView
         window.activeObjects.trigger "changeActiveAccount", @model
 
         #save configuration
-        window.rbiActiveData.config.save
+        window.rbiActiveData.userConfiguration.save
             accountNumber: @model.get('accountNumber')
             error: ->
                 console.log 'Error: configuration not saved'
@@ -42,14 +70,22 @@ module.exports = class BankSubTitleView extends BaseView
         #save bank account
         window.rbiActiveData.bankAccount = @model
 
-        #set date & amoubt to widgets
+        #set date & amount to widgets
         today = @formatDate(new Date())
         $("#current-amount-date").text today
         $("#account-amount-balance").html (@model.get 'amount').money()
 
         #load calculated amounts to set up the flot chart and render montly analysis view
+        # window.rbiDataManager.loadLastYearAmounts @model, ->
+        #     if window.views.appView.isLoading
+        #         window.views.monthlyAnalysisView.render()
+        #         window.views.appView.displayInterfaceView()
         @loadLastYearAmounts @model, ->
-            window.views.monthlyAnalysisView.render()
+            if window.views.appView.isLoading
+                window.views.monthlyAnalysisView.render()
+                window.views.appView.displayInterfaceView()
+                window.app.router.navigate 'analyse-mensuelle'
+                #window.views.monthlyAnalysisView.render()
 
 
     checkActive: (account) ->

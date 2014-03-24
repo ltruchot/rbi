@@ -8,7 +8,7 @@ module.exports = class Router extends Backbone.Router
     'analyse-mensuelle-comparee' : 'compared_analysis'
     'achats-en-ligne' : 'online_shopping'
     'alertes' : 'alerts'
-
+    'parametres' : 'configuration'
 
   monthly_analysis: ->
     window.views.monthlyAnalysisView?.render()
@@ -21,3 +21,6 @@ module.exports = class Router extends Backbone.Router
 
   alerts: ->
     window.views.alertsView?.render()
+
+  configuration: ->
+    window.views.configurationView?.render()

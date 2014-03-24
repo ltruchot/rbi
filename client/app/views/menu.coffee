@@ -19,6 +19,9 @@ module.exports = class MenuView extends BaseView
 
       @
 
+  afterRender: ->
+    @adjustPadding()
+
   activateMenuItem: (event)->
     jqMenuItem = $(event.currentTarget)
     if not jqMenuItem.hasClass 'active'
@@ -28,3 +31,16 @@ module.exports = class MenuView extends BaseView
       jqMenuItem.prepend $('<span class="current-arrow"></span>')
     if $(window).width() < 768
       window.scrollTo 0,535
+
+  adjustPadding: ->
+    $('#mainnav .menu-item > a').each ->
+      text = $(@).text() or null
+      if text.length? and (text.length > 25)
+        $(@).css
+          'padding-top': '10px'
+      else if text.length? and  (text.length < 11)
+        $(@).css
+          'padding-top': '20px'
+      else
+        $(@).css
+          'padding-top': '16px'

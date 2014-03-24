@@ -1,13 +1,12 @@
 BaseView = require '../lib/base_view'
-Config = require 'models/user_configuration'
 ConfigurationBankView = require './configuration_bank'
 
 module.exports = class ConfigurationView extends BaseView
 
     template: require('./templates/configuration')
 
-    el: '#configuration'
-    elAccounts: 'select#account-choice'
+    el: 'div#interface-box'
+    elAccounts: '#account-choice'
 
     accounts: 0
 
@@ -100,7 +99,7 @@ module.exports = class ConfigurationView extends BaseView
         if budgetValue > 0
           accountNumber = window.rbiActiveData.accountNumber
           window.rbiActiveData.budgetByAccount[accountNumber] = budgetValue
-          window.rbiActiveData.config.save budgetByAccount: window.rbiActiveData.budgetByAccount,
+          window.rbiActiveData.userConfiguration.save budgetByAccount: window.rbiActiveData.budgetByAccount,
             success:=>
               callerId = jqBudgetInput.attr('id')
               if view
@@ -123,15 +122,12 @@ module.exports = class ConfigurationView extends BaseView
       $('#account-budget-amount').keyup (event) ->
         view.setBudget event, view
 
-    initialize: ->
-      window.rbiActiveData.config = new Config({})
-
     render: ->
       # lay down the template
       super()
 
       #check current configuration
-      window.rbiActiveData.config.fetch
+      window.rbiActiveData.userConfiguration.fetch
         success: (currentConfig) =>
 
           #prepare chosen account number and budget
@@ -163,16 +159,18 @@ module.exports = class ConfigurationView extends BaseView
           async.concat window.collections.banks.models, treatment, (err, results) ->
             if err
               console.log err
-              alert window.i18n "error_loading_accounts"
+            else
+              @accounts = results.length
 
-            @accounts = results.length
+              #no accounts
+              if @accounts == 0
+                $(view.elAccounts).prepend require "./templates/balance_banks_empty"
 
-            #no accounts
-            if @accounts == 0
-              $(view.elAccounts).prepend require "./templates/balance_banks_empty"
+              #no account number
+              if accountNumber is ""
+                $('#configuration-btn').click()
 
-            #no account number
-            if accountNumber is ""
-              $('#configuration-btn').click()
+        error: ->
+          console.log 'error during user configuration fetching process'
 
       @
