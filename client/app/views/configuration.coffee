@@ -167,8 +167,8 @@ module.exports = class ConfigurationView extends BaseView
                 $(view.elAccounts).prepend require "./templates/balance_banks_empty"
 
               #no account number
-              if accountNumber is ""
-                $('#configuration-btn').click()
+              # if accountNumber is ""
+              #   $('#configuration-btn').click()
 
         error: ->
           console.log 'error during user configuration fetching process'

@@ -7,6 +7,6 @@ td #{model.get('title')} n°#{model.get("accountNumber")}
 td.w50px
   button.btn.btn-xs.btn-default.btn-courant(type="button") courant
 td.w50px
-  button.btn.btn-xs.btn-default.btn-epargne(type="button") épargne
+  button.btn.btn-xs.btn-default.btn-epargne(type="button", id="#{model.get('accountNumber')}") épargne
 td.w25px
-  button.btn.btn-xs.btn-default.btn-off(type="button") off
+  button.btn.btn-xs.btn-danger.btn-off(type="button") off

@@ -4,5 +4,6 @@ module.exports = class Config extends Backbone.Model
     isNew: -> true
     defaults:
       accountNumber:''
+      depositList: []
       budgetByAcount: {}
 

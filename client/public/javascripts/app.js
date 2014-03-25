@@ -910,6 +910,7 @@ module.exports = Config = (function(_super) {
 
   Config.prototype.defaults = {
     accountNumber: '',
+    depositList: [],
     budgetByAcount: {}
   };
 
@@ -1880,10 +1881,7 @@ module.exports = ConfigurationView = (function(_super) {
           } else {
             this.accounts = results.length;
             if (this.accounts === 0) {
-              $(view.elAccounts).prepend(require("./templates/balance_banks_empty"));
-            }
-            if (accountNumber === "") {
-              return $('#configuration-btn').click();
+              return $(view.elAccounts).prepend(require("./templates/balance_banks_empty"));
             }
           }
         });
@@ -2010,9 +2008,20 @@ module.exports = BankSubTitleView = (function(_super) {
   };
 
   BankSubTitleView.prototype.afterRender = function() {
-    var accountNumber;
+    var accountNumber, currentAccountNumber, deposit, depositList, jqBtnDeposit, jqBtnOff, _i, _len;
+    currentAccountNumber = this.model.get("accountNumber");
+    depositList = window.rbiActiveData.userConfiguration.get("depositList") || [];
+    for (_i = 0, _len = depositList.length; _i < _len; _i++) {
+      deposit = depositList[_i];
+      if (deposit === currentAccountNumber) {
+        jqBtnDeposit = this.$el.find(".btn-epargne");
+        jqBtnOff = this.$el.find(".btn-off");
+        jqBtnDeposit.removeClass("btn-default").addClass("btn-warning");
+        jqBtnOff.removeClass("btn-danger").addClass("btn-default");
+      }
+    }
     accountNumber = window.rbiActiveData.accountNumber;
-    if ((accountNumber !== "") && (accountNumber === this.model.get('accountNumber'))) {
+    if ((accountNumber !== "") && (accountNumber === currentAccountNumber)) {
       return this.chooseAccount();
     }
   };
@@ -2024,9 +2033,10 @@ module.exports = BankSubTitleView = (function(_super) {
       if (jqBtnDeposit.hasClass("btn-default")) {
         otherButtons = (jqBtnDeposit.closest("tr")).find(".btn");
         otherButtons.removeClass("btn-info btn-danger").addClass("btn-default");
-        return jqBtnDeposit.removeClass("btn-default").addClass("btn-warning");
+        jqBtnDeposit.removeClass("btn-default").addClass("btn-warning");
       }
     }
+    return this.saveConfiguration();
   };
 
   BankSubTitleView.prototype.setOffAccount = function(event) {
@@ -2036,30 +2046,45 @@ module.exports = BankSubTitleView = (function(_super) {
       if (jqBtnOff.hasClass("btn-default")) {
         otherButtons = (jqBtnOff.closest("tr")).find(".btn");
         otherButtons.removeClass("btn-info btn-warning").addClass("btn-default");
-        return jqBtnOff.removeClass("btn-default").addClass("btn-danger");
+        jqBtnOff.removeClass("btn-default").addClass("btn-danger");
       }
     }
+    return this.saveConfiguration();
+  };
+
+  BankSubTitleView.prototype.saveConfiguration = function() {
+    var depositAccountList;
+    depositAccountList = [];
+    $('.btn-epargne').each(function() {
+      if ($(this).hasClass("btn-warning")) {
+        return depositAccountList.push($(this).attr("id"));
+      }
+    });
+    return window.rbiActiveData.userConfiguration.save({
+      depositList: depositAccountList,
+      error: function() {
+        return console.log('Error: configuration not saved');
+      }
+    });
   };
 
   BankSubTitleView.prototype.chooseAccount = function(event) {
-    var ancestor, today;
-    if (event != null) {
-      $(".btn-courant").each(function() {
-        var btnOff;
-        if ($(this).hasClass("btn-info")) {
-          $(this).removeClass("btn-info").addClass("btn-default");
-          btnOff = ($(this).closest("tr")).find(".btn-off");
-          return btnOff.removeClass("btn-default").addClass("btn-danger");
-        }
-      });
-      $(event.currentTarget).removeClass("btn-default").addClass("btn-info");
-      ancestor = $(event.currentTarget).closest("tr");
-      ancestor.find('.btn').removeClass("btn-warning btn-danger").addClass("btn-default");
-    }
-    this.$el.attr('selected', 'true');
+    var thatBtnCourant, thatOtherButtons, today;
+    $(".btn-courant").each(function() {
+      var btnOff;
+      if ($(this).hasClass("btn-info")) {
+        $(this).removeClass("btn-info").addClass("btn-default");
+        btnOff = ($(this).closest("tr")).find(".btn-off");
+        return btnOff.removeClass("btn-default").addClass("btn-danger");
+      }
+    });
+    thatBtnCourant = this.$el.find(".btn-courant");
+    thatBtnCourant.removeClass("btn-default").addClass("btn-info");
+    thatOtherButtons = this.$el.find(".btn");
+    thatOtherButtons.removeClass("btn-warning btn-danger").addClass("btn-default");
     window.activeObjects.trigger("changeActiveAccount", this.model);
     window.rbiActiveData.userConfiguration.save({
-      accountNumber: this.model.get('accountNumber'),
+      accountNumber: this.model.get("accountNumber"),
       error: function() {
         return console.log('Error: configuration not saved');
       }
@@ -2800,7 +2825,9 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<td>' + escape((interp = model.get('title')) == null ? '' : interp) + ' n°' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</td><td class="w50px"><button type="button" class="btn btn-xs btn-default btn-courant">courant</button></td><td class="w50px"><button type="button" class="btn btn-xs btn-default btn-epargne">épargne</button></td><td class="w25px"><button type="button" class="btn btn-xs btn-default btn-off">off</button></td>');
+buf.push('<td>' + escape((interp = model.get('title')) == null ? '' : interp) + ' n°' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</td><td class="w50px"><button type="button" class="btn btn-xs btn-default btn-courant">courant</button></td><td class="w50px"><button');
+buf.push(attrs({ 'type':("button"), 'id':("" + (model.get('accountNumber')) + ""), "class": ('btn') + ' ' + ('btn-xs') + ' ' + ('btn-default') + ' ' + ('btn-epargne') }, {"type":true,"id":true}));
+buf.push('>épargne</button></td><td class="w25px"><button type="button" class="btn btn-xs btn-danger btn-off">off</button></td>');
 }
 return buf.join("");
 };

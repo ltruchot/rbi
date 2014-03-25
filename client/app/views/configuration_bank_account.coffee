@@ -21,9 +21,19 @@ module.exports = class BankSubTitleView extends BaseView
         # @listenTo @model, 'change', @render
         @listenTo window.activeObjects, 'changeActiveAccount', @checkActive
 
+
     afterRender: ->
+        currentAccountNumber = @model.get("accountNumber")
+        depositList = window.rbiActiveData.userConfiguration.get("depositList") or []
+        for deposit in depositList
+            if deposit is currentAccountNumber
+                jqBtnDeposit = @$el.find ".btn-epargne"
+                jqBtnOff = @$el.find ".btn-off"
+                jqBtnDeposit.removeClass("btn-default").addClass "btn-warning"
+                jqBtnOff.removeClass("btn-danger").addClass "btn-default"
+
         accountNumber = window.rbiActiveData.accountNumber
-        if (accountNumber isnt "") and (accountNumber is @model.get('accountNumber'))
+        if (accountNumber isnt "") and (accountNumber is currentAccountNumber)
             @chooseAccount()
 
     setDepositAccount: (event) ->
@@ -33,6 +43,8 @@ module.exports = class BankSubTitleView extends BaseView
                 otherButtons = (jqBtnDeposit.closest "tr").find ".btn"
                 otherButtons.removeClass("btn-info btn-danger").addClass "btn-default"
                 jqBtnDeposit.removeClass("btn-default").addClass "btn-warning"
+        @saveConfiguration()
+
 
     setOffAccount: (event) ->
         if event?
@@ -41,28 +53,41 @@ module.exports = class BankSubTitleView extends BaseView
                 otherButtons = (jqBtnOff.closest "tr").find ".btn"
                 otherButtons.removeClass("btn-info btn-warning").addClass "btn-default"
                 jqBtnOff.removeClass("btn-default").addClass "btn-danger"
+        @saveConfiguration()
+
+    saveConfiguration: ->
+        depositAccountList = []
+        $('.btn-epargne').each ->
+            if $(@).hasClass "btn-warning"
+                depositAccountList.push $(@).attr("id")
+        window.rbiActiveData.userConfiguration.save
+            depositList: depositAccountList
+            error: ->
+                console.log 'Error: configuration not saved'
 
 
     chooseAccount: (event) ->
-        if event?
-            $(".btn-courant").each ->
-                if $(@).hasClass "btn-info"
-                    $(@).removeClass("btn-info").addClass "btn-default"
-                    btnOff = ($(@).closest "tr").find ".btn-off"
-                    btnOff.removeClass("btn-default").addClass "btn-danger"
-            $(event.currentTarget).removeClass("btn-default").addClass "btn-info"
-            ancestor = $(event.currentTarget).closest "tr"
-            ancestor.find('.btn').removeClass("btn-warning btn-danger").addClass "btn-default"
+        $(".btn-courant").each ->
+            if $(@).hasClass "btn-info"
+                $(@).removeClass("btn-info").addClass "btn-default"
+                btnOff = ($(@).closest "tr").find ".btn-off"
+                btnOff.removeClass("btn-default").addClass "btn-danger"
 
         #set input to checked state
-        @$el.attr('selected', 'true')
+        #@$el.attr('selected', 'true')
+        thatBtnCourant = @$el.find ".btn-courant"
+        thatBtnCourant.removeClass("btn-default").addClass "btn-info"
+        thatOtherButtons = @$el.find ".btn"
+        thatOtherButtons.removeClass("btn-warning btn-danger").addClass "btn-default"
+
+
 
         #trigger "changeActiveAccount" to fire @listenTo linked
         window.activeObjects.trigger "changeActiveAccount", @model
 
         #save configuration
         window.rbiActiveData.userConfiguration.save
-            accountNumber: @model.get('accountNumber')
+            accountNumber: @model.get "accountNumber"
             error: ->
                 console.log 'Error: configuration not saved'
         window.rbiActiveData.accountNumber = @model.get 'accountNumber'
