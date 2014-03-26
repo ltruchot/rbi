@@ -5,25 +5,44 @@ module.exports = class MenuView extends BaseView
 
   el: 'div#mainnav'
 
-  events:
-    'click .menu-item' : 'activateMenuItem'
+  # events:
+  #   'click .menu-item' : 'activateMenuItem'
 
   subViews: []
 
   initialize: ->
 
   render: ->
-      # lay down the template
-      super()
-      view = @
 
-      @
+    # lay down the template
+    super()
+    view = @
+
+    @
 
   afterRender: ->
     @adjustPadding()
+    that = @
+    window.app.router.bind "route", (method) ->
+      route = null
+      if method?
+        for currentRoute, currentMethod of window.app.router.routes
+          if (currentRoute isnt "") and (currentMethod is method)
+            route = currentRoute
+            break
+      if route?
+        $('.menu-item').each ->
+          if $(@).children('a').attr("href").replace("#", "") is route
+            that.activateMenuItem $(@)
+            return false
 
-  activateMenuItem: (event)->
-    jqMenuItem = $(event.currentTarget)
+      if $("#context-box").html() is ""
+        $("#context-box").hide()
+      else
+        $("#context-box").show()
+
+  activateMenuItem: (jqMenuItem)->
+    #jqMenuItem = $(event.currentTarget)
     if not jqMenuItem.hasClass 'active'
       $('.menu-item').removeClass 'active'
       $('.current-arrow').remove()

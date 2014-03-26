@@ -4,6 +4,8 @@ module.exports = class BankSubTitleView extends BaseView
 
     tagName: 'tr'
 
+    className: 'account-line'
+
     template: require('./templates/configuration_bank_account')
 
     constructor: (@model) ->
@@ -23,50 +25,71 @@ module.exports = class BankSubTitleView extends BaseView
 
 
     afterRender: ->
-        currentAccountNumber = @model.get("accountNumber")
+
+        #console.log "------ begin afterRender ------"
+        currentAccountNumber = window.rbiActiveData.accountNumber
+        thatAccountNumber = (@model.get "accountNumber")
         depositList = window.rbiActiveData.userConfiguration.get("depositList") or []
         for deposit in depositList
-            if deposit is currentAccountNumber
+            if deposit is thatAccountNumber
                 jqBtnDeposit = @$el.find ".btn-epargne"
                 jqBtnOff = @$el.find ".btn-off"
                 jqBtnDeposit.removeClass("btn-default").addClass "btn-warning"
                 jqBtnOff.removeClass("btn-danger").addClass "btn-default"
 
-        accountNumber = window.rbiActiveData.accountNumber
-        if (accountNumber isnt "") and (accountNumber is currentAccountNumber)
+        # console.log ("registered account number : " + currentAccountNumber)
+        # console.log ("that account number : " + thatAccountNumber)
+        if thatAccountNumber? and (thatAccountNumber isnt "") and (thatAccountNumber is currentAccountNumber)
+            # console.log ("Auto chose this account : " + thatAccountNumber)
             @chooseAccount()
+        #console.log "------- end afterRender -------"
 
-    setDepositAccount: (event) ->
-        if event?
-            jqBtnDeposit = $(event.currentTarget)
+    setDepositAccount: (currentEvent) ->
+        if currentEvent?
+            jqBtnDeposit = $(currentEvent.currentTarget)
             if jqBtnDeposit.hasClass "btn-default"
                 otherButtons = (jqBtnDeposit.closest "tr").find ".btn"
                 otherButtons.removeClass("btn-info btn-danger").addClass "btn-default"
                 jqBtnDeposit.removeClass("btn-default").addClass "btn-warning"
-        @saveConfiguration()
+            @saveConfiguration currentEvent
 
 
-    setOffAccount: (event) ->
-        if event?
-            jqBtnOff = $(event.currentTarget)
+    setOffAccount: (currentEvent) ->
+        if currentEvent?
+            jqBtnOff = $(currentEvent.currentTarget)
             if jqBtnOff.hasClass "btn-default"
                 otherButtons = (jqBtnOff.closest "tr").find ".btn"
                 otherButtons.removeClass("btn-info btn-warning").addClass "btn-default"
                 jqBtnOff.removeClass("btn-default").addClass "btn-danger"
-        @saveConfiguration()
+            @saveConfiguration currentEvent
 
-    saveConfiguration: ->
+    saveConfiguration: (currentEvent) ->
+        #console.log "------ begin saveConfiguration ------"
         depositAccountList = []
+        accountChosen = ""
+        # if currentEvent?
+        #     console.log "it's an event !"
+        #     console.log currentEvent
         $('.btn-epargne').each ->
             if $(@).hasClass "btn-warning"
-                depositAccountList.push $(@).attr("id")
+                depositAccountList.push $(@).attr("account-number")
+        $('.btn-courant').each ->
+            if $(@).hasClass "btn-info"
+                accountChosen = $(@).attr("account-number")
+        # else
+        #     console.log "not an event !"
+        #     accountChosen = window.rbiActiveData.accountNumber
+        console.log "chosen : " + accountChosen
         window.rbiActiveData.userConfiguration.save
+            accountNumber: accountChosen
             depositList: depositAccountList
             error: ->
-                console.log 'Error: configuration not saved'
+                console.log "Error: configuration can't be saved."
+        #console.log "------- end saveConfiguration -------"
 
 
-    chooseAccount: (event) ->
+    chooseAccount: (currentEvent) ->
+        #console.log "------ begin chooseAccount ------"
         $(".btn-courant").each ->
             if $(@).hasClass "btn-info"
                 $(@).removeClass("btn-info").addClass "btn-default"
@@ -86,17 +109,21 @@ module.exports = class BankSubTitleView extends BaseView
         window.activeObjects.trigger "changeActiveAccount", @model
 
         #save configuration
-        window.rbiActiveData.userConfiguration.save
-            accountNumber: @model.get "accountNumber"
-            error: ->
-                console.log 'Error: configuration not saved'
+        # window.rbiActiveData.userConfiguration.save
+        #     accountNumber: @model.get "accountNumber"
+        #     error: ->
+        #         console.log 'Error: configuration not saved'
         window.rbiActiveData.accountNumber = @model.get 'accountNumber'
+        if currentEvent?
+            # console.log "catch event !"
+            # console.log currentEvent
+            @saveConfiguration()
 
         #save bank account
         window.rbiActiveData.bankAccount = @model
 
         #set date & amount to widgets
-        today = @formatDate(new Date())
+        today = moment(new Date()).format('L');
         $("#current-amount-date").text today
         $("#account-amount-balance").html (@model.get 'amount').money()
 
@@ -106,11 +133,13 @@ module.exports = class BankSubTitleView extends BaseView
         #         window.views.monthlyAnalysisView.render()
         #         window.views.appView.displayInterfaceView()
         @loadLastYearAmounts @model, ->
+            window.views.appView.isLoading
             if window.views.appView.isLoading
-                window.views.monthlyAnalysisView.render()
                 window.views.appView.displayInterfaceView()
-                window.app.router.navigate 'analyse-mensuelle'
-                #window.views.monthlyAnalysisView.render()
+                window.views.monthlyAnalysisView.render()
+                window.app.router.navigate 'analyse-mensuelle', {trigger: true}
+
+        #console.log "------- end chooseAccount -------"
 
 
     checkActive: (account) ->

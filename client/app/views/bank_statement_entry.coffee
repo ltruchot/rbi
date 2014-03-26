@@ -155,7 +155,7 @@ module.exports = class EntryView extends BaseView
         url: "bankoperations/query"
         data: @data
         success: (objects) =>
-          console.log "get operation linked request sent successfully!"
+          #console.log "get operation linked request sent successfully!"
           if objects? and objects.length > 0
 
             #add operations to id table
@@ -237,7 +237,7 @@ module.exports = class EntryView extends BaseView
         data: fixedCost
 
         success: (objects) =>
-          console.log "fixed cost sent successfully!"
+          #console.log "fixed cost sent successfully!"
 
           #set fixed cost status to model
           @model.set "fixedCostId", objects.id

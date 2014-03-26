@@ -3,6 +3,7 @@ BaseView = require '../lib/base_view'
 #AccountsView = require 'views/accounts'
 ConfigurationView = require 'views/configuration'
 MonthlyAnalysisView = require 'views/monthly_analysis'
+ForecastBudgetView = require 'views/forecast_budget'
 ComparedAnalysisView = require 'views/compared_analysis'
 OnlineShoppingView = require 'views/online_shopping'
 AlertsView = require 'views/alerts'
@@ -31,6 +32,8 @@ module.exports = class AppView extends BaseView
           window.views.configurationView = new ConfigurationView()
         if not window.views.monthlyAnalysisView
           window.views.monthlyAnalysisView = new MonthlyAnalysisView()
+        if not window.views.forecastBudgetView
+          window.views.forecastBudgetView = new ForecastBudgetView()
         if not window.views.comparedAnalysisView
           window.views.comparedAnalysisView = new ComparedAnalysisView()
         if not window.views.onlineShoppingView
@@ -40,21 +43,23 @@ module.exports = class AppView extends BaseView
 
         @menuView.render()
 
-        #load configuration
-        @displayLoadingView()
-
-
         # #load configuration
         # config = window.rbiActiveData.userConfiguration or null
         # if config? and config.accountNumber? and (config.accountNumber isnt "")
         #   window.views.monthlyAnalysisView.render()
         # else
-        window.views.configurationView.render()
-
+        #window.views.configurationView.render()
 
 
         # start routing
         Backbone.history.start()
+
+        #loading during configuration
+        @displayLoadingView()
+        #configuration is a necessary step, routing to monthly analysis if minimal parameters are OK
+        if document.location.hash isnt "#" + "parametres"
+          window.app.router.navigate 'parametres', {trigger: true}
+
       error: ->
 
         # could not get banks, or 0 banks available - fatal error
@@ -67,8 +72,7 @@ module.exports = class AppView extends BaseView
 
   displayLoadingView: ->
     @isLoading = true
-    $('#interface-box').hide()
-    $('#context-box').hide()
+    $('#two-cols-box').hide()
     $('#fullsize-box').show()
     loaderHtml = '<div class="config-loader">' +
       "\t" + 'Chargement de vos paramètres...<br /><br />' +
@@ -78,8 +82,7 @@ module.exports = class AppView extends BaseView
 
   displayInterfaceView: ->
     $('#fullsize-box').empty().hide()
-    $('#interface-box').show()
-    $('#context-box').show()
+    $('#two-cols-box').show()
     @isLoading = false
 
 

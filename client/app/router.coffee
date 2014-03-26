@@ -5,6 +5,7 @@ module.exports = class Router extends Backbone.Router
   routes:
     '': 'monthly_analysis'
     'analyse-mensuelle' : 'monthly_analysis'
+    'budget-previsionnel' : 'forecast_budget'
     'analyse-mensuelle-comparee' : 'compared_analysis'
     'achats-en-ligne' : 'online_shopping'
     'alertes' : 'alerts'
@@ -12,6 +13,9 @@ module.exports = class Router extends Backbone.Router
 
   monthly_analysis: ->
     window.views.monthlyAnalysisView?.render()
+
+  forecast_budget: ->
+    window.views.forecastBudgetView?.render()
 
   compared_analysis: ->
     window.views.comparedAnalysisView?.render()

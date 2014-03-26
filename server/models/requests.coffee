@@ -9,6 +9,7 @@ allByBankAccount = (doc) -> emit doc.bankAccount, doc
 allReportsByFrequency = (doc) -> emit [doc.type, doc.frequency], doc
 allByBankAccountAndType = (doc) -> emit [doc.bankAccount, doc.type], doc
 allByBankAccountAndDate = (doc) -> emit [doc.bankAccount, doc.date], doc
+allByAccountNumber = (doc) -> emit doc.accountNumber, doc
 
 allOperationsLike = (doc) ->
     emit [doc.bankAccount, doc.date, doc.amount.toFixed(2), doc.title], doc
@@ -62,3 +63,4 @@ module.exports =
 
     rbifixedcost:
         all: americano.defaultRequests.all
+        allByAccountNumber: allByAccountNumber

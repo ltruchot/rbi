@@ -10,6 +10,8 @@ module.exports = class ConfigurationView extends BaseView
 
     accounts: 0
 
+    isMonoBox: true
+
     subViews: []
 
     events:
@@ -114,8 +116,8 @@ module.exports = class ConfigurationView extends BaseView
     afterRender: ->
 
       #patch chrome and IE for click on select > option
-      $(@elAccounts).change ->
-        this.options[this.selectedIndex].click()
+      # $(@elAccounts).change ->
+      #   this.options[this.selectedIndex].click()
 
       #general widget budget keyup
       view = @
@@ -132,11 +134,15 @@ module.exports = class ConfigurationView extends BaseView
 
           #prepare chosen account number and budget
           accountNumber = currentConfig.get('accountNumber') or ""
-          if accountNumber isnt ""
+          if accountNumber? and accountNumber isnt ""
             window.rbiActiveData.accountNumber = accountNumber
             budgetByAccount = currentConfig.get('budgetByAccount') or {}
             window.rbiActiveData.budgetByAccount = budgetByAccount
             @reloadBudget()
+          else
+            if window.views.appView.isLoading
+              #window.app.router.navigate 'parametres', {trigger: true}
+              window.views.appView.displayInterfaceView()
 
           # prepare the banks list
           view = @

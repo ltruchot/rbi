@@ -58,7 +58,10 @@ module.exports =
         post: rbifixedcost.setFixedCost
         get: rbifixedcost.getFixedCost
     'rbifixedcostID': param: rbifixedcost.loadFixedCost
+    'accountNumber': param: rbifixedcost.setAccountNumber
     'rbifixedcost/:rbifixedcostID':
         get: rbifixedcost.show
         put: rbifixedcost.update
         del: rbifixedcost.destroy
+    'rbifixedcost/getRegularOperationsByAccountNumber/:accountNumber' :
+        get: rbifixedcost.getRegularOperationsByAccountNumber

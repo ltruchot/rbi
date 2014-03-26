@@ -19,14 +19,17 @@ module.exports = class ConfigurationBankView extends BaseView
 
     addOne: (account) ->
         # add the account
-        console.log 'add one bank view'
+        #console.log 'add one bank view'
         viewAccount = new BankSubTitleView account
         @subViews.push viewAccount
         account.view = viewAccount
         @$el.after viewAccount.render().el
+        accountNumber = viewAccount.model.get "accountNumber"
+        amount = viewAccount.model.get "amount"
+        $(viewAccount.render().el).after '<tr class="bottom-margin"><td class="bottom-sep">N° ' + accountNumber + '</td><td class="bottom-sep" colspan="3" style="text-align:right;">' + amount.money() +  '</td></tr>'
 
     render: ->
-        console.log 'render bank view'
+        #console.log 'render bank view'
         # generate the title
         @viewTitle = new BankTitleView @bank
         @$el.html @viewTitle.render().el
@@ -36,11 +39,13 @@ module.exports = class ConfigurationBankView extends BaseView
         # add accounts
         for account in @bank.accounts.models
             @addOne account
+
         #preselect if no account number selected
-        accountNumber = window.rbiActiveData.accountNumber or ""
-        if (accountNumber is "") and ($("#account-choice option").length > 1)
-          $("#account-choice option:eq(1)").attr('selected', 'true').click()
-          $("#account-choice").change()
+        #accountNumber = window.rbiActiveData.accountNumber or ""
+        # if (accountNumber is "") and ($("#account-choice option").length > 1)
+        #   $("#account-choice option:eq(1)").attr('selected', 'true').click()
+        #   $("#account-choice").change()
+
         @
 
 

@@ -65,14 +65,14 @@ module.exports = class BankStatementView extends BaseView
                 url: "bankoperations/byDate"
                 data: @data
                 success: (operations) ->
-                    console.log "sent successfully!"
+                    #console.log "sent successfully!"
                     # console.log objects
                     if operations
                         $.ajax
                             type: "GET"
                             url: "rbifixedcost"
                             success: (fixedCosts) =>
-                                console.log "getting fixed cost success."
+                                #console.log "getting fixed cost success."
                                 window.rbiCurrentOperations = {}
                                 finalOperations = []
                                 for operation, index in operations
@@ -120,7 +120,7 @@ module.exports = class BankStatementView extends BaseView
 
          # check that there are things to send
         unless dateFrom or dateTo
-           console.log "Empty query"
+           #console.log "Empty query"
            @send = false
            window.collections.operations.reset()
            return

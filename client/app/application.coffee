@@ -3,6 +3,7 @@ AppView = require 'views/app'
 BanksCollection = require 'collections/banks'
 BankOperationsCollection = require 'collections/bank_operations'
 BankAmountsCollection = require 'collections/bank_amounts'
+RegularOperationsCollection = require 'collections/regular_operations'
 UserConfiguration = require 'models/user_configuration'
 DataManager = require 'lib/data_manager'
 
@@ -68,6 +69,7 @@ module.exports =
         window.collections.banks = new BanksCollection()
         window.collections.operations = new BankOperationsCollection()
         window.collections.amounts = new BankAmountsCollection()
+        window.collections.regularOperations = new RegularOperationsCollection()
 
         ###
                 views

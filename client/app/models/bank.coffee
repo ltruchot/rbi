@@ -16,4 +16,4 @@ module.exports = class Bank extends Backbone.Model
 
     updateAmount: ->
         @set("amount", @accounts.getSum())
-        console.log "updated balance bank " + @get("name") + " is now " + @get("amount")
+        #console.log "updated balance bank " + @get("name") + " is now " + @get("amount")

@@ -91,7 +91,7 @@
   globals.require.brunch = true;
 })();
 require.register("application", function(exports, require, module) {
-var AppView, BankAmountsCollection, BankOperationsCollection, BanksCollection, DataManager, UserConfiguration;
+var AppView, BankAmountsCollection, BankOperationsCollection, BanksCollection, DataManager, RegularOperationsCollection, UserConfiguration;
 
 AppView = require('views/app');
 
@@ -100,6 +100,8 @@ BanksCollection = require('collections/banks');
 BankOperationsCollection = require('collections/bank_operations');
 
 BankAmountsCollection = require('collections/bank_amounts');
+
+RegularOperationsCollection = require('collections/regular_operations');
 
 UserConfiguration = require('models/user_configuration');
 
@@ -163,6 +165,7 @@ module.exports = {
     window.collections.banks = new BanksCollection();
     window.collections.operations = new BankOperationsCollection();
     window.collections.amounts = new BankAmountsCollection();
+    window.collections.regularOperations = new RegularOperationsCollection();
     /*
             views
     */
@@ -388,6 +391,36 @@ module.exports = Banks = (function(_super) {
   };
 
   return Banks;
+
+})(Backbone.Collection);
+
+});
+
+;require.register("collections/regular_operations", function(exports, require, module) {
+var RegularOperation, RegularOperations, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+RegularOperation = require('../models/regular_operation');
+
+module.exports = RegularOperations = (function(_super) {
+  __extends(RegularOperations, _super);
+
+  function RegularOperations() {
+    _ref = RegularOperations.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  RegularOperations.prototype.model = RegularOperation;
+
+  RegularOperations.prototype.url = "rbifixedcost";
+
+  RegularOperations.prototype.setAccount = function(accountNumber) {
+    this.accountNumber = accountNumber;
+    return this.url = "rbifixedcost/getRegularOperationsByAccountNumber/" + this.accountNumber;
+  };
+
+  return RegularOperations;
 
 })(Backbone.Collection);
 
@@ -797,8 +830,7 @@ module.exports = Bank = (function(_super) {
   };
 
   Bank.prototype.updateAmount = function() {
-    this.set("amount", this.accounts.getSum());
-    return console.log("updated balance bank " + this.get("name") + " is now " + this.get("amount"));
+    return this.set("amount", this.accounts.getSum());
   };
 
   return Bank;
@@ -889,6 +921,25 @@ module.exports = BankOperation = (function(_super) {
 
 });
 
+;require.register("models/regular_operation", function(exports, require, module) {
+var RegularOperation, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+module.exports = RegularOperation = (function(_super) {
+  __extends(RegularOperation, _super);
+
+  function RegularOperation() {
+    _ref = RegularOperation.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  return RegularOperation;
+
+})(Backbone.Model);
+
+});
+
 ;require.register("models/user_configuration", function(exports, require, module) {
 var Config, _ref,
   __hasProp = {}.hasOwnProperty,
@@ -938,6 +989,7 @@ module.exports = Router = (function(_super) {
   Router.prototype.routes = {
     '': 'monthly_analysis',
     'analyse-mensuelle': 'monthly_analysis',
+    'budget-previsionnel': 'forecast_budget',
     'analyse-mensuelle-comparee': 'compared_analysis',
     'achats-en-ligne': 'online_shopping',
     'alertes': 'alerts',
@@ -947,6 +999,11 @@ module.exports = Router = (function(_super) {
   Router.prototype.monthly_analysis = function() {
     var _ref1;
     return (_ref1 = window.views.monthlyAnalysisView) != null ? _ref1.render() : void 0;
+  };
+
+  Router.prototype.forecast_budget = function() {
+    var _ref1;
+    return (_ref1 = window.views.forecastBudgetView) != null ? _ref1.render() : void 0;
   };
 
   Router.prototype.compared_analysis = function() {
@@ -1012,7 +1069,7 @@ module.exports = AlertsView = (function(_super) {
 });
 
 ;require.register("views/app", function(exports, require, module) {
-var AlertsView, AppView, BaseView, ComparedAnalysisView, ConfigurationView, MenuView, MonthlyAnalysisView, OnlineShoppingView, _ref,
+var AlertsView, AppView, BaseView, ComparedAnalysisView, ConfigurationView, ForecastBudgetView, MenuView, MonthlyAnalysisView, OnlineShoppingView, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1021,6 +1078,8 @@ BaseView = require('../lib/base_view');
 ConfigurationView = require('views/configuration');
 
 MonthlyAnalysisView = require('views/monthly_analysis');
+
+ForecastBudgetView = require('views/forecast_budget');
 
 ComparedAnalysisView = require('views/compared_analysis');
 
@@ -1060,6 +1119,9 @@ module.exports = AppView = (function(_super) {
         if (!window.views.monthlyAnalysisView) {
           window.views.monthlyAnalysisView = new MonthlyAnalysisView();
         }
+        if (!window.views.forecastBudgetView) {
+          window.views.forecastBudgetView = new ForecastBudgetView();
+        }
         if (!window.views.comparedAnalysisView) {
           window.views.comparedAnalysisView = new ComparedAnalysisView();
         }
@@ -1070,9 +1132,13 @@ module.exports = AppView = (function(_super) {
           window.views.alertsView = new AlertsView();
         }
         _this.menuView.render();
+        Backbone.history.start();
         _this.displayLoadingView();
-        window.views.configurationView.render();
-        return Backbone.history.start();
+        if (document.location.hash !== "#" + "parametres") {
+          return window.app.router.navigate('parametres', {
+            trigger: true
+          });
+        }
       },
       error: function() {
         return console.log("Fatal error: could not get the banks list");
@@ -1086,8 +1152,7 @@ module.exports = AppView = (function(_super) {
   AppView.prototype.displayLoadingView = function() {
     var loaderHtml;
     this.isLoading = true;
-    $('#interface-box').hide();
-    $('#context-box').hide();
+    $('#two-cols-box').hide();
     $('#fullsize-box').show();
     loaderHtml = '<div class="config-loader">' + "\t" + 'Chargement de vos paramètres...<br /><br />' + "\t" + '<img src="./loader_big_blue.gif" />' + '</div>';
     return $('#fullsize-box').append(loaderHtml);
@@ -1095,8 +1160,7 @@ module.exports = AppView = (function(_super) {
 
   AppView.prototype.displayInterfaceView = function() {
     $('#fullsize-box').empty().hide();
-    $('#interface-box').show();
-    $('#context-box').show();
+    $('#two-cols-box').show();
     return this.isLoading = false;
   };
 
@@ -1178,14 +1242,12 @@ module.exports = BankStatementView = (function(_super) {
         data: this.data,
         success: function(operations) {
           var _this = this;
-          console.log("sent successfully!");
           if (operations) {
             return $.ajax({
               type: "GET",
               url: "rbifixedcost",
               success: function(fixedCosts) {
                 var finalOperations, fixedCost, index, operation, operationRemoved, _i, _j, _len, _len1;
-                console.log("getting fixed cost success.");
                 window.rbiCurrentOperations = {};
                 finalOperations = [];
                 for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
@@ -1243,7 +1305,6 @@ module.exports = BankStatementView = (function(_super) {
       dateTo = this.params.dateTo ? moment(this.params.dateTo).format('YYYY-MM-DD') : null;
     }
     if (!(dateFrom || dateTo)) {
-      console.log("Empty query");
       this.send = false;
       window.collections.operations.reset();
       return;
@@ -1484,7 +1545,6 @@ module.exports = EntryView = (function(_super) {
         data: this.data,
         success: function(objects) {
           var object, _i, _len;
-          console.log("get operation linked request sent successfully!");
           if ((objects != null) && objects.length > 0) {
             for (_i = 0, _len = objects.length; _i < _len; _i++) {
               object = objects[_i];
@@ -1559,7 +1619,6 @@ module.exports = EntryView = (function(_super) {
       data: fixedCost,
       success: function(objects) {
         var id, _i, _len, _ref;
-        console.log("fixed cost sent successfully!");
         _this.model.set("fixedCostId", objects.id);
         _this.model.set("isFixedCost", true);
         _ref = fixedCost.idTable;
@@ -1706,6 +1765,8 @@ module.exports = ConfigurationView = (function(_super) {
 
   ConfigurationView.prototype.accounts = 0;
 
+  ConfigurationView.prototype.isMonoBox = true;
+
   ConfigurationView.prototype.subViews = [];
 
   ConfigurationView.prototype.events = {
@@ -1834,9 +1895,6 @@ module.exports = ConfigurationView = (function(_super) {
 
   ConfigurationView.prototype.afterRender = function() {
     var view;
-    $(this.elAccounts).change(function() {
-      return this.options[this.selectedIndex].click();
-    });
     view = this;
     return $('#account-budget-amount').keyup(function(event) {
       return view.setBudget(event, view);
@@ -1850,11 +1908,15 @@ module.exports = ConfigurationView = (function(_super) {
       success: function(currentConfig) {
         var accountNumber, budgetByAccount, treatment, view;
         accountNumber = currentConfig.get('accountNumber') || "";
-        if (accountNumber !== "") {
+        if ((accountNumber != null) && accountNumber !== "") {
           window.rbiActiveData.accountNumber = accountNumber;
           budgetByAccount = currentConfig.get('budgetByAccount') || {};
           window.rbiActiveData.budgetByAccount = budgetByAccount;
           _this.reloadBudget();
+        } else {
+          if (window.views.appView.isLoading) {
+            window.views.appView.displayInterfaceView();
+          }
         }
         view = _this;
         treatment = function(bank, callback) {
@@ -1931,17 +1993,18 @@ module.exports = ConfigurationBankView = (function(_super) {
   }
 
   ConfigurationBankView.prototype.addOne = function(account) {
-    var viewAccount;
-    console.log('add one bank view');
+    var accountNumber, amount, viewAccount;
     viewAccount = new BankSubTitleView(account);
     this.subViews.push(viewAccount);
     account.view = viewAccount;
-    return this.$el.after(viewAccount.render().el);
+    this.$el.after(viewAccount.render().el);
+    accountNumber = viewAccount.model.get("accountNumber");
+    amount = viewAccount.model.get("amount");
+    return $(viewAccount.render().el).after('<tr class="bottom-margin"><td class="bottom-sep">N° ' + accountNumber + '</td><td class="bottom-sep" colspan="3" style="text-align:right;">' + amount.money() + '</td></tr>');
   };
 
   ConfigurationBankView.prototype.render = function() {
-    var account, accountNumber, _i, _len, _ref;
-    console.log('render bank view');
+    var account, _i, _len, _ref;
     this.viewTitle = new BankTitleView(this.bank);
     this.$el.html(this.viewTitle.render().el);
     this.viewTitle = null;
@@ -1950,11 +2013,6 @@ module.exports = ConfigurationBankView = (function(_super) {
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       account = _ref[_i];
       this.addOne(account);
-    }
-    accountNumber = window.rbiActiveData.accountNumber || "";
-    if ((accountNumber === "") && ($("#account-choice option").length > 1)) {
-      $("#account-choice option:eq(1)").attr('selected', 'true').click();
-      $("#account-choice").change();
     }
     return this;
   };
@@ -1990,6 +2048,8 @@ module.exports = BankSubTitleView = (function(_super) {
 
   BankSubTitleView.prototype.tagName = 'tr';
 
+  BankSubTitleView.prototype.className = 'account-line';
+
   BankSubTitleView.prototype.template = require('./templates/configuration_bank_account');
 
   function BankSubTitleView(model) {
@@ -2008,67 +2068,75 @@ module.exports = BankSubTitleView = (function(_super) {
   };
 
   BankSubTitleView.prototype.afterRender = function() {
-    var accountNumber, currentAccountNumber, deposit, depositList, jqBtnDeposit, jqBtnOff, _i, _len;
-    currentAccountNumber = this.model.get("accountNumber");
+    var currentAccountNumber, deposit, depositList, jqBtnDeposit, jqBtnOff, thatAccountNumber, _i, _len;
+    currentAccountNumber = window.rbiActiveData.accountNumber;
+    thatAccountNumber = this.model.get("accountNumber");
     depositList = window.rbiActiveData.userConfiguration.get("depositList") || [];
     for (_i = 0, _len = depositList.length; _i < _len; _i++) {
       deposit = depositList[_i];
-      if (deposit === currentAccountNumber) {
+      if (deposit === thatAccountNumber) {
         jqBtnDeposit = this.$el.find(".btn-epargne");
         jqBtnOff = this.$el.find(".btn-off");
         jqBtnDeposit.removeClass("btn-default").addClass("btn-warning");
         jqBtnOff.removeClass("btn-danger").addClass("btn-default");
       }
     }
-    accountNumber = window.rbiActiveData.accountNumber;
-    if ((accountNumber !== "") && (accountNumber === currentAccountNumber)) {
+    if ((thatAccountNumber != null) && (thatAccountNumber !== "") && (thatAccountNumber === currentAccountNumber)) {
       return this.chooseAccount();
     }
   };
 
-  BankSubTitleView.prototype.setDepositAccount = function(event) {
+  BankSubTitleView.prototype.setDepositAccount = function(currentEvent) {
     var jqBtnDeposit, otherButtons;
-    if (event != null) {
-      jqBtnDeposit = $(event.currentTarget);
+    if (currentEvent != null) {
+      jqBtnDeposit = $(currentEvent.currentTarget);
       if (jqBtnDeposit.hasClass("btn-default")) {
         otherButtons = (jqBtnDeposit.closest("tr")).find(".btn");
         otherButtons.removeClass("btn-info btn-danger").addClass("btn-default");
         jqBtnDeposit.removeClass("btn-default").addClass("btn-warning");
       }
+      return this.saveConfiguration(currentEvent);
     }
-    return this.saveConfiguration();
   };
 
-  BankSubTitleView.prototype.setOffAccount = function(event) {
+  BankSubTitleView.prototype.setOffAccount = function(currentEvent) {
     var jqBtnOff, otherButtons;
-    if (event != null) {
-      jqBtnOff = $(event.currentTarget);
+    if (currentEvent != null) {
+      jqBtnOff = $(currentEvent.currentTarget);
       if (jqBtnOff.hasClass("btn-default")) {
         otherButtons = (jqBtnOff.closest("tr")).find(".btn");
         otherButtons.removeClass("btn-info btn-warning").addClass("btn-default");
         jqBtnOff.removeClass("btn-default").addClass("btn-danger");
       }
+      return this.saveConfiguration(currentEvent);
     }
-    return this.saveConfiguration();
   };
 
-  BankSubTitleView.prototype.saveConfiguration = function() {
-    var depositAccountList;
+  BankSubTitleView.prototype.saveConfiguration = function(currentEvent) {
+    var accountChosen, depositAccountList;
     depositAccountList = [];
+    accountChosen = "";
     $('.btn-epargne').each(function() {
       if ($(this).hasClass("btn-warning")) {
-        return depositAccountList.push($(this).attr("id"));
+        return depositAccountList.push($(this).attr("account-number"));
       }
     });
+    $('.btn-courant').each(function() {
+      if ($(this).hasClass("btn-info")) {
+        return accountChosen = $(this).attr("account-number");
+      }
+    });
+    console.log("chosen : " + accountChosen);
     return window.rbiActiveData.userConfiguration.save({
+      accountNumber: accountChosen,
       depositList: depositAccountList,
       error: function() {
-        return console.log('Error: configuration not saved');
+        return console.log("Error: configuration can't be saved.");
       }
     });
   };
 
-  BankSubTitleView.prototype.chooseAccount = function(event) {
+  BankSubTitleView.prototype.chooseAccount = function(currentEvent) {
     var thatBtnCourant, thatOtherButtons, today;
     $(".btn-courant").each(function() {
       var btnOff;
@@ -2083,22 +2151,22 @@ module.exports = BankSubTitleView = (function(_super) {
     thatOtherButtons = this.$el.find(".btn");
     thatOtherButtons.removeClass("btn-warning btn-danger").addClass("btn-default");
     window.activeObjects.trigger("changeActiveAccount", this.model);
-    window.rbiActiveData.userConfiguration.save({
-      accountNumber: this.model.get("accountNumber"),
-      error: function() {
-        return console.log('Error: configuration not saved');
-      }
-    });
     window.rbiActiveData.accountNumber = this.model.get('accountNumber');
+    if (currentEvent != null) {
+      this.saveConfiguration();
+    }
     window.rbiActiveData.bankAccount = this.model;
-    today = this.formatDate(new Date());
+    today = moment(new Date()).format('L');
     $("#current-amount-date").text(today);
     $("#account-amount-balance").html((this.model.get('amount')).money());
     return this.loadLastYearAmounts(this.model, function() {
+      window.views.appView.isLoading;
       if (window.views.appView.isLoading) {
-        window.views.monthlyAnalysisView.render();
         window.views.appView.displayInterfaceView();
-        return window.app.router.navigate('analyse-mensuelle');
+        window.views.monthlyAnalysisView.render();
+        return window.app.router.navigate('analyse-mensuelle', {
+          trigger: true
+        });
       }
     });
   };
@@ -2250,6 +2318,60 @@ module.exports = BankSubTitleView = (function(_super) {
 
 });
 
+;require.register("views/forecast_budget", function(exports, require, module) {
+var BaseView, ForcastBudgetView, ForecastBudgetEntryView, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+ForecastBudgetEntryView = require("./forecast_budget_entry");
+
+module.exports = ForcastBudgetView = (function(_super) {
+  __extends(ForcastBudgetView, _super);
+
+  function ForcastBudgetView() {
+    _ref = ForcastBudgetView.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  ForcastBudgetView.prototype.template = require('./templates/forecast_budget');
+
+  ForcastBudgetView.prototype.el = 'div#interface-box';
+
+  ForcastBudgetView.prototype.elRegularOperations = '#regular-operations';
+
+  ForcastBudgetView.prototype.render = function() {
+    var accountNumber, view;
+    ForcastBudgetView.__super__.render.call(this);
+    view = this;
+    accountNumber = window.rbiActiveData.accountNumber || null;
+    if ((accountNumber != null) && (accountNumber !== "")) {
+      window.collections.regularOperations.reset();
+      window.collections.regularOperations.setAccount(accountNumber);
+      window.collections.regularOperations.fetch({
+        success: function(regularOperations) {
+          return console.log(regularOperations);
+        },
+        error: function() {
+          return console.log("error fetching regular operations");
+        }
+      });
+      return this;
+    }
+  };
+
+  return ForcastBudgetView;
+
+})(BaseView);
+
+});
+
+;require.register("views/forecast_budget_entry", function(exports, require, module) {
+
+
+});
+
 ;require.register("views/menu", function(exports, require, module) {
 var BaseView, MenuView, _ref,
   __hasProp = {}.hasOwnProperty,
@@ -2269,10 +2391,6 @@ module.exports = MenuView = (function(_super) {
 
   MenuView.prototype.el = 'div#mainnav';
 
-  MenuView.prototype.events = {
-    'click .menu-item': 'activateMenuItem'
-  };
-
   MenuView.prototype.subViews = [];
 
   MenuView.prototype.initialize = function() {};
@@ -2285,12 +2403,39 @@ module.exports = MenuView = (function(_super) {
   };
 
   MenuView.prototype.afterRender = function() {
-    return this.adjustPadding();
+    var that;
+    this.adjustPadding();
+    that = this;
+    return window.app.router.bind("route", function(method) {
+      var currentMethod, currentRoute, route, _ref1;
+      route = null;
+      if (method != null) {
+        _ref1 = window.app.router.routes;
+        for (currentRoute in _ref1) {
+          currentMethod = _ref1[currentRoute];
+          if ((currentRoute !== "") && (currentMethod === method)) {
+            route = currentRoute;
+            break;
+          }
+        }
+      }
+      if (route != null) {
+        $('.menu-item').each(function() {
+          if ($(this).children('a').attr("href").replace("#", "") === route) {
+            that.activateMenuItem($(this));
+            return false;
+          }
+        });
+      }
+      if ($("#context-box").html() === "") {
+        return $("#context-box").hide();
+      } else {
+        return $("#context-box").show();
+      }
+    });
   };
 
-  MenuView.prototype.activateMenuItem = function(event) {
-    var jqMenuItem;
-    jqMenuItem = $(event.currentTarget);
+  MenuView.prototype.activateMenuItem = function(jqMenuItem) {
     if (!jqMenuItem.hasClass('active')) {
       $('.menu-item').removeClass('active');
       $('.current-arrow').remove();
@@ -2825,8 +2970,10 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<td>' + escape((interp = model.get('title')) == null ? '' : interp) + ' n°' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</td><td class="w50px"><button type="button" class="btn btn-xs btn-default btn-courant">courant</button></td><td class="w50px"><button');
-buf.push(attrs({ 'type':("button"), 'id':("" + (model.get('accountNumber')) + ""), "class": ('btn') + ' ' + ('btn-xs') + ' ' + ('btn-default') + ' ' + ('btn-epargne') }, {"type":true,"id":true}));
+buf.push('<td>' + escape((interp = model.get('title')) == null ? '' : interp) + '</td><td class="w75px"><button');
+buf.push(attrs({ 'type':("button"), 'account-number':("" + (model.get('accountNumber')) + ""), "class": ('btn') + ' ' + ('btn-xs') + ' ' + ('btn-default') + ' ' + ('btn-courant') }, {"type":true,"account-number":true}));
+buf.push('>courant</button></td><td class="w50px"><button');
+buf.push(attrs({ 'type':("button"), 'account-number':("" + (model.get('accountNumber')) + ""), "class": ('btn') + ' ' + ('btn-xs') + ' ' + ('btn-default') + ' ' + ('btn-epargne') }, {"type":true,"account-number":true}));
 buf.push('>épargne</button></td><td class="w25px"><button type="button" class="btn btn-xs btn-danger btn-off">off</button></td>');
 }
 return buf.join("");
@@ -2845,13 +2992,25 @@ return buf.join("");
 };
 });
 
+;require.register("views/templates/forecast_budget", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<h1>Budget prévisionnel</h1><div><span>Mes opérations régulières</span><table id="regular-operations"></table></div>');
+}
+return buf.join("");
+};
+});
+
 ;require.register("views/templates/menu", function(exports, require, module) {
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
 attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<ul><li class="menu-item active"><span class="current-arrow"></span><a href="#analyse-mensuelle"><div class="icon"><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span></div>Analyse mensuelle</a></li><li class="menu-item"><a href="#analyse-mensuelle-comparee"><div class="icon"><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span></div>Analyse mensuelle comparée</a></li><li class="menu-item"><a href="#budget"><div class="icon"><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span></div>Budget prévisionnnel</a></li><li class="menu-item"><a href="#achats-en-ligne"><div class="icon"><span aria-hidden="true" data-icon="&#57398;" class="fs1"></span></div>Achats en ligne</a></li><li class="menu-item"><a href="#alertes"><div class="icon"><span aria-hidden="true" data-icon="&#57803;" class="fs1"></span></div>Alertes</a></li><li class="menu-item"><a href="#parametres"><div class="icon"><span aria-hidden="true" data-icon="&#57486;" class="fs1"></span></div>Paramètres</a></li></ul>');
+buf.push('<ul><li class="menu-item active"><span class="current-arrow"></span><a href="#analyse-mensuelle"><div class="icon"><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span></div>Analyse mensuelle</a></li><li class="menu-item"><a href="#budget-previsionnel"><div class="icon"><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span></div>Budget prévisionnel</a></li><li class="menu-item"><a href="#analyse-mensuelle-comparee"><div class="icon"><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span></div>Analyse mensuelle comparée</a></li><li class="menu-item"><a href="#achats-en-ligne"><div class="icon"><span aria-hidden="true" data-icon="&#57398;" class="fs1"></span></div>Achats en ligne</a></li><li class="menu-item"><a href="#alertes"><div class="icon"><span aria-hidden="true" data-icon="&#57803;" class="fs1"></span></div>Alertes</a></li><li class="menu-item"><a href="#parametres"><div class="icon"><span aria-hidden="true" data-icon="&#57486;" class="fs1"></span></div>Paramètres</a></li></ul>');
 }
 return buf.join("");
 };

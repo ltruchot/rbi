@@ -22,3 +22,8 @@ RbiFixedCost.set = (hash, callback) ->
         if not alreadyExist
             RbiFixedCost.create hash, callback
 
+RbiFixedCost.allByAccountNumber = (accountNumber, callback) ->
+    params =
+        key: accountNumber
+    RbiFixedCost.request "allByAccountNumber", params, callback
+

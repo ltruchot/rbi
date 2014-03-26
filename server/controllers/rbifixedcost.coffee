@@ -38,3 +38,17 @@ module.exports.update = (req, res) ->
 
 module.exports.show = (req, res) ->
     res.send 200, @fixedCost
+
+module.exports.setAccountNumber = (req, res, next, accountNumber) ->
+    console.log accountNumber
+    if accountNumber? and (accountNumber isnt "")
+        req.accountNumber = accountNumber
+    next()
+
+module.exports.getRegularOperationsByAccountNumber = (req, res) ->
+    #console.log @accountNumber
+    RbiFixedCost.allByAccountNumber req.accountNumber, (err, operations) ->
+        if err?
+            res.send 500, error: 'Server error occurred while retrieving data'
+        else
+            res.send 200, operations
