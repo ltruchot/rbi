@@ -75,7 +75,6 @@ module.exports.query = (req, res) ->
 
 module.exports.byDate = (req, res) ->
     paramAccounts = req.body.accounts or [-1]
-
     BankOperation.allFromBankAccounts paramAccounts, (err, operations) ->
         if err?
             res.send 500, error: 'Server error occurred while retrieving data'
@@ -126,6 +125,7 @@ module.exports.byDate = (req, res) ->
                     # if fixedCosts or variableCosts
                     #     console.log 'costs !'
                     res.send 200, results
+
 
 ###
     dev only

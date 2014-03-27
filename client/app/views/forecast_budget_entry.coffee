@@ -1,12 +1,15 @@
-# BaseView = require '../lib/base_view'
+BaseView = require '../lib/base_view'
+module.exports = class ForecastBudgetEntryView extends BaseView
 
-# module.exports = class EntryView extends BaseView
+  template: require './templates/forecast_budget_entry'
 
-#   template: require './templates/bank_statement_entry'
+  tagName: 'tr'
 
-#   tagName: 'tr'
+  events:
+    "click .modify-regular-operation" : "modifyRegularOperation"
 
-#   events:
+  rules: {}
+
 #     #mouse interaction with cost type icon
 #     'mouseenter .popup-container > .variable-cost' : 'switchFixedCostIcon'
 #     'mouseleave .popup-container > .variable-cost' : 'switchFixedCostIcon'
@@ -21,38 +24,40 @@
 #     'click #remove-fixed-cost' : 'removeFixedCost'
 
 
-#   #--------------------------- BEGIN BACKBONE METHODS --------------------------
-#   constructor: (@model, @account, @showAccountNum = false) ->
-#     super()
+  #--------------------------- BEGIN BACKBONE METHODS --------------------------
+  constructor: (@model) ->
+    super()
 
-#   render: ->
-#     if @model.get("amount") > 0
-#       @$el.addClass "success"
-#     @model.account = @account
-#     @model.formattedDate = moment(@model.get('date')).format "DD/MM/YYYY"
+  render: ->
 
-#     if (@model.get 'amount') > 0
-#       @model.costClass = 'not-displayed-cost'
-#     else
-#       @model.costClass = "variable-cost"
-#       @model.costIcon = "&#57482;"
-#       if @model.get 'isFixedCost'
-#         @model.costClass = "fixed-cost"
-#         @model.costIcon = "&#57481;"
+    if @model.get("uniquery")?
+      @model.set "rules", (@deserializeUniquery @model.get("uniquery"))
 
-#     if @showAccountNum
-#       hint = "#{@model.account.get('title')}, " + \
-#              "n°#{@model.account.get('accountNumber')}"
-#       @model.hint = "#{@model.account.get('title')}, " + \
-#                     "n°#{@model.account.get('accountNumber')}"
-#     else
-#       @model.hint = "#{@model.get('raw')}"
-#     super()
-#     @
-#   #---------------------------- END BACKBONE METHODS ---------------------------
+    super()
+    @
+  #---------------------------- END BACKBONE METHODS ---------------------------
 
 
-#   #---------------------------- BEGIN EVENTS METHODS ---------------------------
+  #---------------------------- BEGIN EVENTS METHODS ---------------------------
+  modifyRegularOperation: (currentEvent) ->
+    console.log "modify !"
+    $("#search-regular-operations").val @rules.queryWords
+    $("#search-min-amount").val @rules.queryMin
+    $("#search-max-amount").val @rules.queryMax
+    $("#search-regular-operations").keyup()
+
+  deserializeUniquery: (uniquery)->
+    queryParts = []
+    @rules = {}
+
+    if uniquery? and ((typeof uniquery) is "string")
+      queryParts = uniquery.split("(#|#)")
+
+    @rules.queryAccountNumber = queryParts[0] or ""
+    @rules.queryWords = queryParts[1] or ""
+    @rules.queryMin = Number(queryParts[2] or 0)
+    @rules.queryMax = Number(queryParts[3] or 0)
+    return @rules
 
 #   destroyPopupFixedCost: (event) ->
 
@@ -91,12 +96,12 @@
 #             $('#search-text').keyup()
 
 #             #refresh monthly analysis
-#             if window.rbiCurrentOperations?
-#               for id, operation of window.rbiCurrentOperations
+#             if window.rbiActiveData.currentOperations?
+#               for id, operation of window.rbiActiveData.currentOperations
 #                 if operation.fixedCostId? and (operation.fixedCostId = fixedCostId)
 #                   operation.isFixedCost = false
 #                   operation.fixedCostId = null
-#               window.views.monthlyAnalysisView.displayMonthlySums window.rbiCurrentOperations
+#               window.views.monthlyAnalysisView.displayMonthlySums window.rbiActiveData.currentOperations
 #           error: ->
 #             console.log "Delete fixed cost failed."
 
@@ -224,7 +229,7 @@
 #     #inject popup
 #     jqPopup.appendTo jqIconParent
 
-#   #----------------------------- END EVENTS METHODS ----------------------------
+  #----------------------------- END EVENTS METHODS ----------------------------
 
 
 #   #------------------- BEGIN SERVER COMMUNICATION METHODS ----------------------
@@ -245,10 +250,10 @@
 
 #           #refresh monthly analysis
 #           for id in fixedCost.idTable
-#             if window.rbiCurrentOperations[id]?
-#               window.rbiCurrentOperations[id].isFixedCost = true
-#               window.rbiCurrentOperations[id].fixedCostId = fixedCost.id
-#           window.views.monthlyAnalysisView.displayMonthlySums window.rbiCurrentOperations
+#             if window.rbiActiveData.currentOperations[id]?
+#               window.rbiActiveData.currentOperations[id].isFixedCost = true
+#               window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id
+#           window.views.monthlyAnalysisView.displayMonthlySums window.rbiActiveData.currentOperations
 
 #           callback()
 

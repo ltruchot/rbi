@@ -119,6 +119,7 @@ module.exports = {
     window.rbiActiveData.budgetByAccount = {};
     window.rbiActiveData.accountNumber = null;
     window.rbiActiveData.bankAccount = null;
+    window.rbiActiveData.currentOperations = null;
     window.rbiDataManager = new DataManager();
     window.rbiColors = {
       border_color: "#efefef",
@@ -1171,13 +1172,11 @@ module.exports = AppView = (function(_super) {
 });
 
 ;require.register("views/bank_statement", function(exports, require, module) {
-var BalanceOperationView, BankOperationsCollection, BankStatementView, BaseView,
+var BalanceOperationView, BankStatementView, BaseView,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
-
-BankOperationsCollection = require("../collections/bank_operations");
 
 BalanceOperationView = require("./bank_statement_entry");
 
@@ -1235,6 +1234,7 @@ module.exports = BankStatementView = (function(_super) {
     }
     displayFixedCosts = this.data != null ? this.data.fixedCosts || false : false;
     displayVariableCosts = this.data != null ? this.data.variableCosts || false : false;
+    console.log(this.data);
     if (this.send) {
       return $.ajax({
         type: "POST",
@@ -1248,7 +1248,7 @@ module.exports = BankStatementView = (function(_super) {
               url: "rbifixedcost",
               success: function(fixedCosts) {
                 var finalOperations, fixedCost, index, operation, operationRemoved, _i, _j, _len, _len1;
-                window.rbiCurrentOperations = {};
+                window.rbiActiveData.currentOperations = {};
                 finalOperations = [];
                 for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
                   operation = operations[index];
@@ -1271,11 +1271,11 @@ module.exports = BankStatementView = (function(_super) {
                   }
                   if (!operationRemoved) {
                     finalOperations.push(operation);
-                    window.rbiCurrentOperations[operation.id] = operation;
+                    window.rbiActiveData.currentOperations[operation.id] = operation;
                   }
                 }
                 if (callback != null) {
-                  callback(window.rbiCurrentOperations);
+                  callback(window.rbiActiveData.currentOperations);
                 }
                 window.collections.operations.reset(finalOperations);
                 return view.addAll();
@@ -1443,6 +1443,7 @@ module.exports = EntryView = (function(_super) {
     } else {
       this.model.hint = "" + (this.model.get('raw'));
     }
+    console.log(this.model);
     EntryView.__super__.render.call(this);
     return this;
   };
@@ -1479,8 +1480,8 @@ module.exports = EntryView = (function(_super) {
           console.log("Delete fixed cost success.");
           _this.destroyPopupFixedCost(event);
           $('#search-text').keyup();
-          if (window.rbiCurrentOperations != null) {
-            _ref = window.rbiCurrentOperations;
+          if (window.rbiActiveData.currentOperations != null) {
+            _ref = window.rbiActiveData.currentOperations;
             for (id in _ref) {
               operation = _ref[id];
               if ((operation.fixedCostId != null) && (operation.fixedCostId = fixedCostId)) {
@@ -1488,7 +1489,7 @@ module.exports = EntryView = (function(_super) {
                 operation.fixedCostId = null;
               }
             }
-            return window.views.monthlyAnalysisView.displayMonthlySums(window.rbiCurrentOperations);
+            return window.views.monthlyAnalysisView.displayMonthlySums(window.rbiActiveData.currentOperations);
           }
         },
         error: function() {
@@ -1624,12 +1625,12 @@ module.exports = EntryView = (function(_super) {
         _ref = fixedCost.idTable;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           id = _ref[_i];
-          if (window.rbiCurrentOperations[id] != null) {
-            window.rbiCurrentOperations[id].isFixedCost = true;
-            window.rbiCurrentOperations[id].fixedCostId = fixedCost.id;
+          if (window.rbiActiveData.currentOperations[id] != null) {
+            window.rbiActiveData.currentOperations[id].isFixedCost = true;
+            window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id;
           }
         }
-        window.views.monthlyAnalysisView.displayMonthlySums(window.rbiCurrentOperations);
+        window.views.monthlyAnalysisView.displayMonthlySums(window.rbiActiveData.currentOperations);
         return callback();
       },
       error: function(err) {
@@ -1943,7 +1944,7 @@ module.exports = ConfigurationView = (function(_super) {
           } else {
             this.accounts = results.length;
             if (this.accounts === 0) {
-              return $(view.elAccounts).prepend(require("./templates/balance_banks_empty"));
+              return $(view.elAccounts).prepend(require("./templates/configuration_banks_empty"));
             }
           }
         });
@@ -2319,13 +2320,15 @@ module.exports = BankSubTitleView = (function(_super) {
 });
 
 ;require.register("views/forecast_budget", function(exports, require, module) {
-var BaseView, ForcastBudgetView, ForecastBudgetEntryView, _ref,
+var BaseView, ForcastBudgetView, ForecastBudgetEntryView, RegularOpStatementView, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
 ForecastBudgetEntryView = require("./forecast_budget_entry");
+
+RegularOpStatementView = require("./regular_op_statement");
 
 module.exports = ForcastBudgetView = (function(_super) {
   __extends(ForcastBudgetView, _super);
@@ -2341,24 +2344,44 @@ module.exports = ForcastBudgetView = (function(_super) {
 
   ForcastBudgetView.prototype.elRegularOperations = '#regular-operations';
 
+  ForcastBudgetView.prototype.initialize = function() {
+    return window.views.regularOpStatementView = new RegularOpStatementView($('#context-box'));
+  };
+
   ForcastBudgetView.prototype.render = function() {
     var accountNumber, view;
     ForcastBudgetView.__super__.render.call(this);
     view = this;
     accountNumber = window.rbiActiveData.accountNumber || null;
     if ((accountNumber != null) && (accountNumber !== "")) {
-      window.collections.regularOperations.reset();
-      window.collections.regularOperations.setAccount(accountNumber);
-      window.collections.regularOperations.fetch({
-        success: function(regularOperations) {
-          return console.log(regularOperations);
-        },
-        error: function() {
-          return console.log("error fetching regular operations");
-        }
-      });
-      return this;
+      this.displayRegularOperation(accountNumber);
+      window.views.regularOpStatementView.reload();
     }
+    return this;
+  };
+
+  ForcastBudgetView.prototype.displayRegularOperation = function(accountNumber) {
+    var _this = this;
+    window.collections.regularOperations.reset();
+    window.collections.regularOperations.setAccount(accountNumber);
+    return window.collections.regularOperations.fetch({
+      success: function(regularOperations, rawData) {
+        var operation, subView, _i, _len, _ref1;
+        _this.subViews = [];
+        _ref1 = regularOperations.models;
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          operation = _ref1[_i];
+          subView = new ForecastBudgetEntryView(operation);
+          $(_this.elRegularOperations).append(subView.render().el);
+          _this.subViews.push(subView);
+        }
+        return {
+          error: function() {
+            return console.log("error fetching regular operations");
+          }
+        };
+      }
+    });
   };
 
   return ForcastBudgetView;
@@ -2368,7 +2391,63 @@ module.exports = ForcastBudgetView = (function(_super) {
 });
 
 ;require.register("views/forecast_budget_entry", function(exports, require, module) {
+var BaseView, ForecastBudgetEntryView,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
+BaseView = require('../lib/base_view');
+
+module.exports = ForecastBudgetEntryView = (function(_super) {
+  __extends(ForecastBudgetEntryView, _super);
+
+  ForecastBudgetEntryView.prototype.template = require('./templates/forecast_budget_entry');
+
+  ForecastBudgetEntryView.prototype.tagName = 'tr';
+
+  ForecastBudgetEntryView.prototype.events = {
+    "click .modify-regular-operation": "modifyRegularOperation"
+  };
+
+  ForecastBudgetEntryView.prototype.rules = {};
+
+  function ForecastBudgetEntryView(model) {
+    this.model = model;
+    ForecastBudgetEntryView.__super__.constructor.call(this);
+  }
+
+  ForecastBudgetEntryView.prototype.render = function() {
+    if (this.model.get("uniquery") != null) {
+      this.model.set("rules", this.deserializeUniquery(this.model.get("uniquery")));
+    }
+    ForecastBudgetEntryView.__super__.render.call(this);
+    return this;
+  };
+
+  ForecastBudgetEntryView.prototype.modifyRegularOperation = function(currentEvent) {
+    console.log("modify !");
+    $("#search-regular-operations").val(this.rules.queryWords);
+    $("#search-min-amount").val(this.rules.queryMin);
+    $("#search-max-amount").val(this.rules.queryMax);
+    return $("#search-regular-operations").keyup();
+  };
+
+  ForecastBudgetEntryView.prototype.deserializeUniquery = function(uniquery) {
+    var queryParts;
+    queryParts = [];
+    this.rules = {};
+    if ((uniquery != null) && ((typeof uniquery) === "string")) {
+      queryParts = uniquery.split("(#|#)");
+    }
+    this.rules.queryAccountNumber = queryParts[0] || "";
+    this.rules.queryWords = queryParts[1] || "";
+    this.rules.queryMin = Number(queryParts[2] || 0);
+    this.rules.queryMax = Number(queryParts[3] || 0);
+    return this.rules;
+  };
+
+  return ForecastBudgetEntryView;
+
+})(BaseView);
 
 });
 
@@ -2857,6 +2936,473 @@ module.exports = OnlineShoppingView = (function(_super) {
 
 });
 
+;require.register("views/regular_op_statement", function(exports, require, module) {
+var BaseView, RegularOpStatementEntryView, RegularOpStatementView,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+RegularOpStatementEntryView = require("./regular_op_statement_entry");
+
+module.exports = RegularOpStatementView = (function(_super) {
+  var params, subViewLastDate;
+
+  __extends(RegularOpStatementView, _super);
+
+  RegularOpStatementView.prototype.templateHeader = require('./templates/regular_op_statement_header');
+
+  RegularOpStatementView.prototype.events = {
+    'click a.recheck-button': "checkAccount",
+    'click th.sort-date': "sortByDate",
+    'click th.sort-title': "sortByTitle",
+    'click th.sort-amount': "sortByAmount",
+    'keyup input#search-regular-operations': "reload"
+  };
+
+  RegularOpStatementView.prototype.inUse = false;
+
+  RegularOpStatementView.prototype.subViews = [];
+
+  subViewLastDate = '';
+
+  params = null;
+
+  function RegularOpStatementView(el) {
+    this.el = el;
+    RegularOpStatementView.__super__.constructor.call(this);
+  }
+
+  RegularOpStatementView.prototype.render = function() {
+    this.$el.html(require("./templates/regular_op_statement_empty"));
+    return this;
+  };
+
+  RegularOpStatementView.prototype.reload = function(params, callback) {
+    var displayFixedCosts, displayVariableCosts, view;
+    view = this;
+    this.model = window.rbiActiveData.bankAccount;
+    if ((params != null) && (params.dateFrom != null)) {
+      this.params = params;
+    }
+    if (this.model != null) {
+      this.updateFilters();
+      if (this.$("#table-regular-operations").length === 0) {
+        this.$el.html(this.templateHeader({
+          model: this.model
+        }));
+      }
+    }
+    displayFixedCosts = this.data != null ? this.data.fixedCosts || false : false;
+    displayVariableCosts = this.data != null ? this.data.variableCosts || false : false;
+    if (this.send) {
+      return $.ajax({
+        type: "POST",
+        url: "bankoperations/byDate",
+        data: this.data,
+        success: function(operations) {
+          var _this = this;
+          if (operations) {
+            return $.ajax({
+              type: "GET",
+              url: "rbifixedcost",
+              success: function(fixedCosts) {
+                var finalOperations, fixedCost, index, operation, operationRemoved, _i, _j, _len, _len1;
+                window.rbiActiveData.currentOperations = {};
+                finalOperations = [];
+                for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
+                  operation = operations[index];
+                  operation.isFixedCost = false;
+                  if (operation.amount < 0) {
+                    for (_j = 0, _len1 = fixedCosts.length; _j < _len1; _j++) {
+                      fixedCost = fixedCosts[_j];
+                      if ($.inArray(operation.id, fixedCost.idTable) >= 0) {
+                        operation.isFixedCost = true;
+                        operation.fixedCostId = fixedCost.id;
+                        break;
+                      }
+                    }
+                  }
+                  operationRemoved = false;
+                  if (!operationRemoved) {
+                    finalOperations.push(operation);
+                    window.rbiActiveData.currentOperations[operation.id] = operation;
+                  }
+                }
+                if (callback != null) {
+                  callback(window.rbiActiveData.currentOperations);
+                }
+                console.log(finalOperations);
+                window.collections.operations.reset(finalOperations);
+                return view.addAll();
+              },
+              error: function(err) {
+                return console.log("getting fixed cost failed.");
+              }
+            });
+          } else {
+            return window.collections.operations.reset();
+          }
+        },
+        error: function(err) {
+          console.log("there was an error");
+          if (callback != null) {
+            return callback(null);
+          }
+        }
+      });
+    }
+  };
+
+  RegularOpStatementView.prototype.updateFilters = function() {
+    var accountNumber, dateFrom, dateFromVal, dateTo, dateToVal, now, searchTextVal;
+    now = new Date();
+    dateFrom = moment(moment(now).subtract('y', 1)).format('YYYY-MM-DD');
+    dateTo = moment(now).format('YYYY-MM-DD');
+    if (!(dateFrom || dateTo)) {
+      this.send = false;
+      window.collections.operations.reset();
+      return;
+    } else {
+      this.send = true;
+    }
+    if (window.rbiActiveData.bankAccount != null) {
+      accountNumber = window.rbiActiveData.bankAccount.get('accountNumber');
+    } else {
+      this.send = false;
+    }
+    dateFromVal = new Date(dateFrom || null);
+    dateToVal = new Date(dateTo || new Date());
+    this.data = {
+      dateFrom: dateFromVal,
+      dateTo: dateToVal,
+      accounts: [accountNumber]
+    };
+    searchTextVal = $("input#search-regular-operations").val();
+    if ((searchTextVal != null) && (searchTextVal !== "")) {
+      if (searchTextVal === "#credits") {
+        return this.data.credits = true;
+      } else if (searchTextVal === "#debits") {
+        return this.data.debits = true;
+      } else if (searchTextVal === "#frais-fixes") {
+        return this.data.fixedCosts = true;
+      } else if (searchTextVal === "#depenses") {
+        return this.data.variableCosts = true;
+      } else {
+        return this.data.searchText = searchTextVal;
+      }
+    }
+  };
+
+  RegularOpStatementView.prototype.addAll = function() {
+    var index, operation, subView, subViewDate, view, _i, _j, _len, _len1, _ref, _ref1, _results;
+    this.$("#table-regular-operations").html("");
+    this.$(".loading").remove();
+    _ref = this.subViews;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      view = _ref[_i];
+      view.destroy();
+      this.subViews = [];
+    }
+    if (window.collections.operations.models.length === 0) {
+      $("#table-regular-operations").append($('<tr><td>Aucune opération ne correspond à ces critères.</td></tr>'));
+      return;
+    }
+    _ref1 = window.collections.operations.models;
+    _results = [];
+    for (index = _j = 0, _len1 = _ref1.length; _j < _len1; index = ++_j) {
+      operation = _ref1[index];
+      subView = new RegularOpStatementEntryView(operation, this.model);
+      subViewDate = subView.render().model.get('date');
+      if ((this.subViewLastDate !== subViewDate) || (index === 0)) {
+        this.subViewLastDate = subViewDate;
+        this.$("#table-regular-operations").append($('<tr class="special"><td colspan="4">' + moment(this.subViewLastDate).format("DD/MM/YYYY" + '</td></tr>')));
+        _results.push(this.$("#table-regular-operations").append(subView.render().el));
+      } else {
+        _results.push(void 0);
+      }
+    }
+    return _results;
+  };
+
+  RegularOpStatementView.prototype.destroy = function() {
+    var view, _i, _len, _ref, _ref1, _results;
+    if ((_ref = this.viewTitle) != null) {
+      _ref.destroy();
+    }
+    _ref1 = this.subViews;
+    _results = [];
+    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+      view = _ref1[_i];
+      view.destroy();
+      _results.push(RegularOpStatementView.__super__.destroy.call(this));
+    }
+    return _results;
+  };
+
+  return RegularOpStatementView;
+
+})(BaseView);
+
+});
+
+;require.register("views/regular_op_statement_entry", function(exports, require, module) {
+var BaseView, RegularOpStatementEntryView,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+module.exports = RegularOpStatementEntryView = (function(_super) {
+  __extends(RegularOpStatementEntryView, _super);
+
+  RegularOpStatementEntryView.prototype.template = require('./templates/regular_op_statement_entry');
+
+  RegularOpStatementEntryView.prototype.tagName = 'tr';
+
+  RegularOpStatementEntryView.prototype.events = {
+    'mouseenter .popup-container > .variable-cost': 'switchFixedCostIcon',
+    'mouseleave .popup-container > .variable-cost': 'switchFixedCostIcon',
+    'mouseenter .popup-container > .fixed-cost': 'switchFixedCostIcon',
+    'mouseleave .popup-container > .fixed-cost': 'switchFixedCostIcon',
+    'click .popup-container > .variable-cost': 'popupFixedCost',
+    'click .popup-container > .fixed-cost': 'popupFixedCost',
+    'click #cancel-fixed-cost': 'destroyPopupFixedCost',
+    'click #save-fixed-cost': 'prepareFixedCost',
+    'click #remove-fixed-cost': 'removeFixedCost'
+  };
+
+  function RegularOpStatementEntryView(model, account, showAccountNum) {
+    this.model = model;
+    this.account = account;
+    this.showAccountNum = showAccountNum != null ? showAccountNum : false;
+    RegularOpStatementEntryView.__super__.constructor.call(this);
+  }
+
+  RegularOpStatementEntryView.prototype.render = function() {
+    var hint;
+    if (this.model.get("amount") > 0) {
+      this.$el.addClass("success");
+    }
+    this.model.account = this.account;
+    this.model.formattedDate = moment(this.model.get('date')).format("DD/MM/YYYY");
+    if ((this.model.get('amount')) > 0) {
+      this.model.costClass = 'not-displayed-cost';
+    } else {
+      this.model.costClass = "variable-cost";
+      this.model.costIcon = "&#57482;";
+      if (this.model.get('isFixedCost')) {
+        this.model.costClass = "fixed-cost";
+        this.model.costIcon = "&#57481;";
+      }
+    }
+    if (this.showAccountNum) {
+      hint = ("" + (this.model.account.get('title')) + ", ") + ("n°" + (this.model.account.get('accountNumber')));
+      this.model.hint = ("" + (this.model.account.get('title')) + ", ") + ("n°" + (this.model.account.get('accountNumber')));
+    } else {
+      this.model.hint = "" + (this.model.get('raw'));
+    }
+    RegularOpStatementEntryView.__super__.render.call(this);
+    return this;
+  };
+
+  RegularOpStatementEntryView.prototype.destroyPopupFixedCost = function(event) {
+    var jqCaller, jqFixedCostIcon, jqParent, jqPopup;
+    jqCaller = $(event.currentTarget);
+    jqPopup = jqCaller.parent();
+    jqParent = jqPopup.parent();
+    jqFixedCostIcon = jqPopup.children('.iconCostType');
+    jqFixedCostIcon.appendTo(jqParent);
+    jqPopup.remove();
+    if (jqCaller.attr('id') === 'cancel-fixed-cost') {
+      return jqFixedCostIcon.mouseleave();
+    } else {
+      if (jqFixedCostIcon.hasClass('variable-cost')) {
+        return jqFixedCostIcon.removeClass('variable-cost').addClass('fixed-cost');
+      } else {
+        return jqFixedCostIcon.removeClass('fixed-cost').addClass('variable-cost');
+      }
+    }
+  };
+
+  RegularOpStatementEntryView.prototype.removeFixedCost = function(event) {
+    var fixedCostId,
+      _this = this;
+    fixedCostId = this.model.get("fixedCostId" || null);
+    if (fixedCostId != null) {
+      return $.ajax({
+        url: '/rbifixedcost/' + fixedCostId,
+        type: 'DELETE',
+        success: function(result) {
+          var id, operation, _ref;
+          console.log("Delete fixed cost success.");
+          _this.destroyPopupFixedCost(event);
+          $('#search-text').keyup();
+          if (window.rbiActiveData.currentOperations != null) {
+            _ref = window.rbiActiveData.currentOperations;
+            for (id in _ref) {
+              operation = _ref[id];
+              if ((operation.fixedCostId != null) && (operation.fixedCostId = fixedCostId)) {
+                operation.isFixedCost = false;
+                operation.fixedCostId = null;
+              }
+            }
+            return window.views.monthlyAnalysisView.displayMonthlySums(window.rbiActiveData.currentOperations);
+          }
+        },
+        error: function() {
+          return console.log("Delete fixed cost failed.");
+        }
+      });
+    }
+  };
+
+  RegularOpStatementEntryView.prototype.prepareFixedCost = function(event) {
+    var accountNumber, currentUniquery, fixedCostToRegister, jqPopup, neededRequest, userChoice,
+      _this = this;
+    jqPopup = $(event.currentTarget).parent();
+    userChoice = jqPopup.children('input[type=radio]:checked').val();
+    accountNumber = window.rbiActiveData.bankAccount.get('accountNumber');
+    neededRequest = false;
+    fixedCostToRegister = {
+      type: userChoice,
+      accountNumber: accountNumber,
+      idTable: []
+    };
+    switch (userChoice) {
+      case 'standard':
+        this.data = {
+          accounts: [accountNumber],
+          searchText: "",
+          exactSearchText: this.operationTitle,
+          dateFrom: null,
+          dateTo: new Date()
+        };
+        if (this.operationMax < this.operationMin) {
+          this.data.amountFrom = this.operationMax;
+          this.data.amountTo = this.operationMin;
+        } else {
+          this.data.amountFrom = this.operationMin;
+          this.data.amountTo = this.operationMax;
+        }
+        currentUniquery = accountNumber + '(#|#)' + this.operationTitle;
+        currentUniquery += '(#|#)' + this.data.amountFrom + '(#|#)' + this.data.amountTo;
+        fixedCostToRegister.uniquery = currentUniquery;
+        neededRequest = true;
+        break;
+      case 'onetime':
+        fixedCostToRegister.uniquery = "";
+        fixedCostToRegister.idTable.push(this.model.get('id'));
+        break;
+      case 'custom':
+        console.log('custom not ready ');
+    }
+    if (neededRequest) {
+      return $.ajax({
+        type: "POST",
+        url: "bankoperations/query",
+        data: this.data,
+        success: function(objects) {
+          var object, _i, _len;
+          if ((objects != null) && objects.length > 0) {
+            for (_i = 0, _len = objects.length; _i < _len; _i++) {
+              object = objects[_i];
+              fixedCostToRegister.idTable.push(object.id);
+            }
+            return _this.saveFixedCost(fixedCostToRegister, function() {
+              _this.destroyPopupFixedCost(event);
+              return $('#search-text').keyup();
+            });
+          } else {
+            return console.log("Operation(s) not found");
+          }
+        },
+        error: function(err) {
+          return console.log("there was an error");
+        }
+      });
+    } else {
+      return this.saveFixedCost(fixedCostToRegister, function() {
+        _this.destroyPopupFixedCost(event);
+        return $('#search-text').keyup();
+      });
+    }
+  };
+
+  RegularOpStatementEntryView.prototype.switchFixedCostIcon = function(event) {
+    var jqFixedCostIcon;
+    jqFixedCostIcon = $(event.currentTarget);
+    if ((jqFixedCostIcon.attr('data-icon')) === '') {
+      return jqFixedCostIcon.attr('data-icon', '');
+    } else {
+      return jqFixedCostIcon.attr('data-icon', '');
+    }
+  };
+
+  RegularOpStatementEntryView.prototype.popupFixedCost = function(event) {
+    var idValidationBtn, jqFixedCostIcon, jqIconParent, jqPopup, newFixedCost, popupTitle;
+    jqFixedCostIcon = $(event.currentTarget);
+    jqIconParent = jqFixedCostIcon.parent();
+    newFixedCost = jqFixedCostIcon.hasClass('variable-cost');
+    popupTitle = "Ajouter aux frais fixes";
+    idValidationBtn = "save-fixed-cost";
+    if (newFixedCost) {
+      jqFixedCostIcon.attr('data-icon', '');
+    } else {
+      jqFixedCostIcon.attr('data-icon', '');
+      popupTitle = "Retirer des frais fixes";
+      idValidationBtn = "remove-fixed-cost";
+    }
+    jqPopup = $('<div class="popup-fixed-cost"></div>');
+    jqFixedCostIcon.appendTo(jqPopup);
+    jqPopup.append('<span class="fixed-cost-title">' + popupTitle + '</span>');
+    jqPopup.append('<button type="button" id="' + idValidationBtn + '" class="btn btn-xs btn-primary">Valider</button>');
+    jqPopup.append('<button type="button" id="cancel-fixed-cost" class="btn btn-xs btn-danger" >Annuler</button>');
+    this.operationTitle = this.model.get('title');
+    if (newFixedCost) {
+      this.operationMax = parseFloat((this.model.get('amount')) * 1.1);
+      this.operationMin = parseFloat((this.model.get('amount')) * 0.9);
+      jqPopup.append('<input type="radio" name="fixed-cost-option" value="standard" checked="true" /> <label>Toutes les opérations intitulées "' + this.operationTitle + '" d\'un montant entre  ' + this.operationMin.money() + ' et ' + this.operationMax.money() + '</label><br />');
+      jqPopup.append('<input type="radio" name="fixed-cost-option" value="onetime" /> <label>Seulement cette opération</label><br />');
+    } else {
+      jqPopup.append('<p>Cette action enlevera l\'opération des frais fixes, ainsi que <strong>les autres opérations précédemment associées</strong>.</p>');
+    }
+    return jqPopup.appendTo(jqIconParent);
+  };
+
+  RegularOpStatementEntryView.prototype.saveFixedCost = function(fixedCost, callback) {
+    var _this = this;
+    return $.ajax({
+      type: "POST",
+      url: "rbifixedcost",
+      data: fixedCost,
+      success: function(objects) {
+        var id, _i, _len, _ref;
+        _this.model.set("fixedCostId", objects.id);
+        _this.model.set("isFixedCost", true);
+        _ref = fixedCost.idTable;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          id = _ref[_i];
+          if (window.rbiActiveData.currentOperations[id] != null) {
+            window.rbiActiveData.currentOperations[id].isFixedCost = true;
+            window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id;
+          }
+        }
+        window.views.monthlyAnalysisView.displayMonthlySums(window.rbiActiveData.currentOperations);
+        return callback();
+      },
+      error: function(err) {
+        return console.log("there was an error");
+      }
+    });
+  };
+
+  return RegularOpStatementEntryView;
+
+})(BaseView);
+
+});
+
 ;require.register("views/templates/alerts", function(exports, require, module) {
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
 attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
@@ -2870,17 +3416,6 @@ return buf.join("");
 });
 
 ;require.register("views/templates/app", function(exports, require, module) {
-module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
-attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
-var buf = [];
-with (locals || {}) {
-var interp;
-}
-return buf.join("");
-};
-});
-
-;require.register("views/templates/balance_banks_empty", function(exports, require, module) {
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
 attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
 var buf = [];
@@ -2929,17 +3464,6 @@ return buf.join("");
 };
 });
 
-;require.register("views/templates/bank_statement_search", function(exports, require, module) {
-module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
-attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
-var buf = [];
-with (locals || {}) {
-var interp;
-}
-return buf.join("");
-};
-});
-
 ;require.register("views/templates/compared_analysis", function(exports, require, module) {
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
 attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
@@ -2980,6 +3504,17 @@ return buf.join("");
 };
 });
 
+;require.register("views/templates/configuration_bank_empty", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+}
+return buf.join("");
+};
+});
+
 ;require.register("views/templates/configuration_bank_title", function(exports, require, module) {
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
 attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
@@ -2998,7 +3533,19 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1>Budget prévisionnel</h1><div><span>Mes opérations régulières</span><table id="regular-operations"></table></div>');
+buf.push('<h1>Budget prévisionnel</h1><div id="forecast-budget-content"><span>Mes opérations régulières</span><table id="regular-operations" class="col-md-12"><tr><th>Descripteur(s)</th><th>Montant Max</th><th>Montant Mix</th><th>&nbsp;</th></tr></table></div>');
+}
+return buf.join("");
+};
+});
+
+;require.register("views/templates/forecast_budget_entry", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<td>' + escape((interp = (model.get("rules")).queryWords) == null ? '' : interp) + '</td><td>' + escape((interp = (model.get("rules")).queryMin.money()) == null ? '' : interp) + '</td><td>' + escape((interp = (model.get("rules")).queryMax.money()) == null ? '' : interp) + '</td><td><span aria-hidden="true" data-icon="&#57349;" class="fs1 modify-regular-operation blue-text"></span></td>');
 }
 return buf.join("");
 };
@@ -3035,6 +3582,44 @@ var buf = [];
 with (locals || {}) {
 var interp;
 buf.push('<h1>Achats en ligne</h1><div></div>');
+}
+return buf.join("");
+};
+});
+
+;require.register("views/templates/regular_op_statement_empty", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<br/><br/><p class="loading"></p>');
+}
+return buf.join("");
+};
+});
+
+;require.register("views/templates/regular_op_statement_entry", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<td class="operation-title">' + escape((interp = model.get('title')) == null ? '' : interp) + '</td><td class="operation-amount text-right">' + escape((interp = Number(model.get('amount')).money()) == null ? '' : interp) + '</td><td class="text-right"><div class="popup-container"><span');
+buf.push(attrs({ 'aria-hidden':("true"), 'data-icon':("" + (model.costIcon) + ""), "class": ('fs1') + ' ' + ('iconCostType') + ' ' + ("" + (model.costClass) + "") }, {"class":true,"aria-hidden":true,"data-icon":true}));
+buf.push('></span></div></td>');
+}
+return buf.join("");
+};
+});
+
+;require.register("views/templates/regular_op_statement_header", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<h2>Relevé du ' + escape((interp = model.get('title')) == null ? '' : interp) + ' ' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</h2><div id="search-field-regular-operations"><span>descripteurs(s)</span><input id="search-regular-operations"/><span>&nbsp&nbsp;Min :</span><input id="search-min-amount" class="input-small"/><span>&nbsp&nbsp;Max :</span><input id="search-max-amount" class="input-small"/></div><div id="loader-regular-operations" class="text-center loading"><img src="./loader_big_blue.gif"/></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-regular-operations"></tbody></table>');
 }
 return buf.join("");
 };

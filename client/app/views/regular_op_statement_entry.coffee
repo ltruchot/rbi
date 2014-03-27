@@ -1,8 +1,8 @@
 BaseView = require '../lib/base_view'
 
-module.exports = class EntryView extends BaseView
+module.exports = class RegularOpStatementEntryView extends BaseView
 
-  template: require './templates/bank_statement_entry'
+  template: require './templates/regular_op_statement_entry'
 
   tagName: 'tr'
 
@@ -47,7 +47,7 @@ module.exports = class EntryView extends BaseView
                     "n°#{@model.account.get('accountNumber')}"
     else
       @model.hint = "#{@model.get('raw')}"
-    console.log @model
+
     super()
     @
   #---------------------------- END BACKBONE METHODS ---------------------------

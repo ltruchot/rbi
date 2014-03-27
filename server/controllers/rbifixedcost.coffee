@@ -40,7 +40,7 @@ module.exports.show = (req, res) ->
     res.send 200, @fixedCost
 
 module.exports.setAccountNumber = (req, res, next, accountNumber) ->
-    console.log accountNumber
+    #console.log accountNumber
     if accountNumber? and (accountNumber isnt "")
         req.accountNumber = accountNumber
     next()

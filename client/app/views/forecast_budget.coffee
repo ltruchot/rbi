@@ -1,5 +1,6 @@
 BaseView = require '../lib/base_view'
 ForecastBudgetEntryView = require "./forecast_budget_entry"
+RegularOpStatementView = require "./regular_op_statement"
 
 module.exports = class ForcastBudgetView extends BaseView
 
@@ -26,28 +27,39 @@ module.exports = class ForcastBudgetView extends BaseView
   # constructor: (@el) ->
   #     super()
 
-  # initialize: ->
-  #     @listenTo window.activeObjects, 'changeActiveAccount', @reload
+  initialize: ->
+    window.views.regularOpStatementView = new RegularOpStatementView $('#context-box')
 
 
   render: ->
-
     # lay down the template
     super()
-
     view = @
     accountNumber = window.rbiActiveData.accountNumber or null
     if accountNumber? and (accountNumber isnt "")
+      @displayRegularOperation accountNumber
+      window.views.regularOpStatementView.reload()
+    @
 
-      window.collections.regularOperations.reset()
-      window.collections.regularOperations.setAccount accountNumber
-      window.collections.regularOperations.fetch
-        success: (regularOperations) ->
-          #view.addAll()
-          console.log regularOperations
+  displayRegularOperation: (accountNumber) ->
+    window.collections.regularOperations.reset()
+    window.collections.regularOperations.setAccount accountNumber
+    window.collections.regularOperations.fetch
+      success: (regularOperations, rawData) =>
+
+        # remove the previous ones
+        @subViews = []
+
+        # and render all of them
+        for operation in regularOperations.models
+
+          # add the operation to the table
+          subView = new ForecastBudgetEntryView operation
+          $(@elRegularOperations).append subView.render().el
+          @subViews.push subView
+
         error: ->
           console.log "error fetching regular operations"
-      @
 
 
     # reload: (params, callback) ->
@@ -88,7 +100,7 @@ module.exports = class ForcastBudgetView extends BaseView
     #                         url: "rbifixedcost"
     #                         success: (fixedCosts) =>
     #                             #console.log "getting fixed cost success."
-    #                             window.rbiCurrentOperations = {}
+    #                             window.rbiActiveData.currentOperations = {}
     #                             finalOperations = []
     #                             for operation, index in operations
     #                                 operation.isFixedCost = false
@@ -107,10 +119,10 @@ module.exports = class ForcastBudgetView extends BaseView
     #                                     operationRemoved = true
     #                                 if not operationRemoved
     #                                     finalOperations.push operation
-    #                                     window.rbiCurrentOperations[operation.id] = operation
+    #                                     window.rbiActiveData.currentOperations[operation.id] = operation
 
     #                             if callback?
-    #                                 callback window.rbiCurrentOperations
+    #                                 callback window.rbiActiveData.currentOperations
     #                             window.collections.operations.reset finalOperations
     #                             view.addAll()
     #                         error: (err) ->

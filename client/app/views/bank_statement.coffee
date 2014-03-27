@@ -1,5 +1,4 @@
 BaseView = require '../lib/base_view'
-BankOperationsCollection = require "../collections/bank_operations"
 BalanceOperationView = require "./bank_statement_entry"
 
 module.exports = class BankStatementView extends BaseView
@@ -58,7 +57,7 @@ module.exports = class BankStatementView extends BaseView
         displayFixedCosts = if @data? then (@data.fixedCosts or false) else false
         displayVariableCosts = if @data? then (@data.variableCosts or false) else false
 
-
+        console.log @data
         if @send
             $.ajax
                 type: "POST"
@@ -73,7 +72,7 @@ module.exports = class BankStatementView extends BaseView
                             url: "rbifixedcost"
                             success: (fixedCosts) =>
                                 #console.log "getting fixed cost success."
-                                window.rbiCurrentOperations = {}
+                                window.rbiActiveData.currentOperations = {}
                                 finalOperations = []
                                 for operation, index in operations
                                     operation.isFixedCost = false
@@ -92,10 +91,9 @@ module.exports = class BankStatementView extends BaseView
                                         operationRemoved = true
                                     if not operationRemoved
                                         finalOperations.push operation
-                                        window.rbiCurrentOperations[operation.id] = operation
-
+                                        window.rbiActiveData.currentOperations[operation.id] = operation
                                 if callback?
-                                    callback window.rbiCurrentOperations
+                                    callback window.rbiActiveData.currentOperations
                                 window.collections.operations.reset finalOperations
                                 view.addAll()
                             error: (err) ->

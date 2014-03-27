@@ -1,0 +1,11 @@
+td.operation-title
+  | #{model.get('title')}
+  //- .hint--top(data-hint="#{model.hint}")
+  //-     span.infobulle.glyphicon.glyphicon-info-sign
+td.operation-amount.text-right
+  | #{Number(model.get('amount')).money()}
+td.text-right
+  //- span.fs1.orange-text(aria-hidden="true", data-icon="&#57602;")
+  //- |&nbsp;
+  .popup-container
+    span.fs1.iconCostType(class="#{model.costClass}", aria-hidden="true", data-icon="#{model.costIcon}")

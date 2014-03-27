@@ -10885,6 +10885,15 @@ cursor not-allowed {
 .account-line td {
   padding-top: 10px;
 }
+#forecast-budget-content {
+  padding: 10px;
+}
+.modify-regular-operation {
+  cursor: pointer;
+}
+.input-small {
+  width: 40px;
+}
 .little-text {
   font-size: 0.8em;
 }
