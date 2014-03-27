@@ -11,6 +11,8 @@ module.exports = class RegularOpStatementView extends BaseView
     'click th.sort-title' : "sortByTitle"
     'click th.sort-amount' : "sortByAmount"
     'keyup input#search-regular-operations' : "reload"
+    'keyup input#search-min-amount' : "reload"
+    'keyup input#search-max-amount' : "reload"
 
   inUse: false
 
@@ -111,6 +113,10 @@ module.exports = class RegularOpStatementView extends BaseView
     # console.log @params
 
     # get elements
+    jqAmountMin = if ($("#search-min-amount").length is 1) then ($("#search-min-amount").val()).replace(",",".") else null
+    jqAmountMax = if ($("#search-max-amount").length is 1) then ($("#search-max-amount").val()).replace(",",".") else null
+    amountFromVal = (Number(jqAmountMin) or Number.NEGATIVE_INFINITY)
+    amountToVal = (Number(jqAmountMax)  or Number.POSITIVE_INFINITY)
     #if @params?
       # dateFrom = if @params.dateFrom then moment(@params.dateFrom).format 'YYYY-MM-DD' else null
       # dateTo = if @params.dateTo then moment(@params.dateTo).format 'YYYY-MM-DD' else null
@@ -142,6 +148,8 @@ module.exports = class RegularOpStatementView extends BaseView
       dateFrom: dateFromVal
       dateTo: dateToVal
       accounts: [accountNumber]
+      amountFrom: amountFromVal
+      amountTo:   amountToVal
 
 
 

@@ -7,6 +7,7 @@ module.exports = class ForecastBudgetEntryView extends BaseView
 
   events:
     "click .modify-regular-operation" : "modifyRegularOperation"
+    "click .remove-regular-operation" : "removeRegularOperation"
 
   rules: {}
 
@@ -58,6 +59,20 @@ module.exports = class ForecastBudgetEntryView extends BaseView
     @rules.queryMin = Number(queryParts[2] or 0)
     @rules.queryMax = Number(queryParts[3] or 0)
     return @rules
+
+  removeRegularOperation: (event) ->
+    regularOperationId = (@model.get "id") or null
+    if regularOperationId?
+      $.ajax
+          url: '/rbifixedcost/' + regularOperationId
+          type: 'DELETE'
+          success: (result) =>
+            console.log "Delete regular operation success."
+            @destroy()
+            $('#search-regular-operations').keyup()
+
+          error: ->
+            console.log "Delete fixed cost failed."
 
 #   destroyPopupFixedCost: (event) ->
 

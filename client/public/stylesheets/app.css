@@ -10501,15 +10501,6 @@ cursor not-allowed {
 .view-container .row {
   margin: 0;
 }
-.blue-text {
-  color: #40acd6;
-}
-.red-text {
-  color: #f74e4d;
-}
-.orange-text {
-  color: #fac567;
-}
 .month-switcher {
   cursor: pointer;
 }
@@ -10888,7 +10879,8 @@ cursor not-allowed {
 #forecast-budget-content {
   padding: 10px;
 }
-.modify-regular-operation {
+.modify-regular-operation,
+.remove-regular-operation {
   cursor: pointer;
 }
 .input-small {
@@ -10896,6 +10888,15 @@ cursor not-allowed {
 }
 .little-text {
   font-size: 0.8em;
+}
+.blue-text {
+  color: #40acd6;
+}
+.red-text {
+  color: #f74e4d;
+}
+.orange-text {
+  color: #fac567;
 }
 .input-middle-size {
   width: 200px;

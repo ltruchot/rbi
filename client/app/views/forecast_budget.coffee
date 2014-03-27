@@ -8,7 +8,8 @@ module.exports = class ForcastBudgetView extends BaseView
 
   el: 'div#interface-box'
   elRegularOperations: '#regular-operations'
-  # events:
+  #events:
+
   #     'click a.recheck-button' : "checkAccount"
   #     'click th.sort-date' : "sortByDate"
   #     'click th.sort-title' : "sortByTitle"
@@ -60,6 +61,7 @@ module.exports = class ForcastBudgetView extends BaseView
 
         error: ->
           console.log "error fetching regular operations"
+
 
 
     # reload: (params, callback) ->

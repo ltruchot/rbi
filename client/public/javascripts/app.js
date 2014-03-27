@@ -161,6 +161,10 @@ module.exports = {
       config: {
         encoded: "&#57486;",
         decoded: ""
+      },
+      deleteItem: {
+        encoded: "&#57512;",
+        decoded: ""
       }
     };
     window.collections.banks = new BanksCollection();
@@ -2405,7 +2409,8 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
   ForecastBudgetEntryView.prototype.tagName = 'tr';
 
   ForecastBudgetEntryView.prototype.events = {
-    "click .modify-regular-operation": "modifyRegularOperation"
+    "click .modify-regular-operation": "modifyRegularOperation",
+    "click .remove-regular-operation": "removeRegularOperation"
   };
 
   ForecastBudgetEntryView.prototype.rules = {};
@@ -2443,6 +2448,26 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
     this.rules.queryMin = Number(queryParts[2] || 0);
     this.rules.queryMax = Number(queryParts[3] || 0);
     return this.rules;
+  };
+
+  ForecastBudgetEntryView.prototype.removeRegularOperation = function(event) {
+    var regularOperationId,
+      _this = this;
+    regularOperationId = (this.model.get("id")) || null;
+    if (regularOperationId != null) {
+      return $.ajax({
+        url: '/rbifixedcost/' + regularOperationId,
+        type: 'DELETE',
+        success: function(result) {
+          console.log("Delete regular operation success.");
+          _this.destroy();
+          return $('#search-regular-operations').keyup();
+        },
+        error: function() {
+          return console.log("Delete fixed cost failed.");
+        }
+      });
+    }
   };
 
   return ForecastBudgetEntryView;
@@ -2957,7 +2982,9 @@ module.exports = RegularOpStatementView = (function(_super) {
     'click th.sort-date': "sortByDate",
     'click th.sort-title': "sortByTitle",
     'click th.sort-amount': "sortByAmount",
-    'keyup input#search-regular-operations': "reload"
+    'keyup input#search-regular-operations': "reload",
+    'keyup input#search-min-amount': "reload",
+    'keyup input#search-max-amount': "reload"
   };
 
   RegularOpStatementView.prototype.inUse = false;
@@ -3055,7 +3082,11 @@ module.exports = RegularOpStatementView = (function(_super) {
   };
 
   RegularOpStatementView.prototype.updateFilters = function() {
-    var accountNumber, dateFrom, dateFromVal, dateTo, dateToVal, now, searchTextVal;
+    var accountNumber, amountFromVal, amountToVal, dateFrom, dateFromVal, dateTo, dateToVal, jqAmountMax, jqAmountMin, now, searchTextVal;
+    jqAmountMin = $("#search-min-amount").length === 1 ? ($("#search-min-amount").val()).replace(",", ".") : null;
+    jqAmountMax = $("#search-max-amount").length === 1 ? ($("#search-max-amount").val()).replace(",", ".") : null;
+    amountFromVal = Number(jqAmountMin) || Number.NEGATIVE_INFINITY;
+    amountToVal = Number(jqAmountMax) || Number.POSITIVE_INFINITY;
     now = new Date();
     dateFrom = moment(moment(now).subtract('y', 1)).format('YYYY-MM-DD');
     dateTo = moment(now).format('YYYY-MM-DD');
@@ -3076,7 +3107,9 @@ module.exports = RegularOpStatementView = (function(_super) {
     this.data = {
       dateFrom: dateFromVal,
       dateTo: dateToVal,
-      accounts: [accountNumber]
+      accounts: [accountNumber],
+      amountFrom: amountFromVal,
+      amountTo: amountToVal
     };
     searchTextVal = $("input#search-regular-operations").val();
     if ((searchTextVal != null) && (searchTextVal !== "")) {
@@ -3533,7 +3566,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1>Budget prévisionnel</h1><div id="forecast-budget-content"><span>Mes opérations régulières</span><table id="regular-operations" class="col-md-12"><tr><th>Descripteur(s)</th><th>Montant Max</th><th>Montant Mix</th><th>&nbsp;</th></tr></table></div>');
+buf.push('<h1>Budget prévisionnel</h1><div id="forecast-budget-content"><span>Mes opérations régulières</span><table id="regular-operations" class="col-md-12"><tr><th>Descripteur(s)</th><th>Montant Max</th><th>Montant Mix</th><th>&nbsp;</th><th>&nbsp;</th></tr></table></div>');
 }
 return buf.join("");
 };
@@ -3545,7 +3578,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<td>' + escape((interp = (model.get("rules")).queryWords) == null ? '' : interp) + '</td><td>' + escape((interp = (model.get("rules")).queryMin.money()) == null ? '' : interp) + '</td><td>' + escape((interp = (model.get("rules")).queryMax.money()) == null ? '' : interp) + '</td><td><span aria-hidden="true" data-icon="&#57349;" class="fs1 modify-regular-operation blue-text"></span></td>');
+buf.push('<td>' + escape((interp = (model.get("rules")).queryWords) == null ? '' : interp) + '</td><td>' + escape((interp = (model.get("rules")).queryMin.money()) == null ? '' : interp) + '</td><td>' + escape((interp = (model.get("rules")).queryMax.money()) == null ? '' : interp) + '</td><td><span aria-hidden="true" data-icon="&#57349;" class="fs1 modify-regular-operation blue-text"></span></td><td><span aria-hidden="true" data-icon="&#57512;" class="fs1 remove-regular-operation red-text"></span></td>');
 }
 return buf.join("");
 };

@@ -79,6 +79,7 @@ module.exports.byDate = (req, res) ->
         if err?
             res.send 500, error: 'Server error occurred while retrieving data'
         else
+            #console.log req.body
             paramDateFrom =  new Date req.body.dateFrom
             paramDateTo = new Date req.body.dateTo
             paramSearchText = req.body.searchText
@@ -86,6 +87,8 @@ module.exports.byDate = (req, res) ->
             debits = Boolean req.body.debits
             fixedCosts = Boolean req.body.fixedCosts
             variableCosts = Boolean req.body.variableCosts
+            paramAmountFrom =  Number req.body.amountFrom
+            paramAmountTo = Number req.body.amountTo
             async = require "async"
 
             treatment = (operation, callback) ->
@@ -102,6 +105,10 @@ module.exports.byDate = (req, res) ->
                 # text search
                 else if paramSearchText? and paramSearchText isnt "" and \
                         title.search(paramQueryText) < 0
+                    callback null
+
+                # amounts
+                else if amount < paramAmountFrom or amount > paramAmountTo
                     callback null
 
                 #credit search

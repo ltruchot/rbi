@@ -64,6 +64,9 @@ module.exports =
             config:
                 encoded: "&#57486;"
                 decoded: ""
+            deleteItem:
+                encoded: "&#57512;"
+                decoded: ""
 
 
         #instantiate collections: banks, operations, amounts
