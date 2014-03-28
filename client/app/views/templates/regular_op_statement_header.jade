@@ -4,14 +4,16 @@ h2 Relevé du #{model.get('title')} #{model.get("accountNumber")}
 //-     a.recheck-button.btn-link #{window.i18n("balance_recheck_now")}
 #search-field-regular-operations
   //- #span.icon-search.fs1(aria-hidden="true", data-icon"&#57471;")
-  span descripteurs(s)
+  span Motif:
   input#search-regular-operations
-  span &nbsp&nbsp;Min :
+  span &nbsp&nbsp;Min:
   input#search-min-amount.input-small
-  span &nbsp&nbsp;Max :
+  span &nbsp&nbsp;Max:
   input#search-max-amount.input-small
 .text-center.loading#loader-regular-operations
   img(src="./loader_big_blue.gif")
+div
+  button.add-regular-operation(type="button",disabled="true") Ajouter aux opérations régulières
 
 //- table.table.tablesorter.table-striped.table-hover
     //- thead

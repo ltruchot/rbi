@@ -170,7 +170,7 @@ module.exports = class ConfigurationView extends BaseView
 
               #no accounts
               if @accounts == 0
-                $(view.elAccounts).prepend require "./templates/configuration_banks_empty"
+                $(view.elAccounts).prepend require "./templates/configuration_bank_empty"
 
               #no account number
               # if accountNumber is ""

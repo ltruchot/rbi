@@ -7,18 +7,7 @@ module.exports = class RegularOpStatementEntryView extends BaseView
   tagName: 'tr'
 
   events:
-    #mouse interaction with cost type icon
-    'mouseenter .popup-container > .variable-cost' : 'switchFixedCostIcon'
-    'mouseleave .popup-container > .variable-cost' : 'switchFixedCostIcon'
-    'mouseenter .popup-container > .fixed-cost' : 'switchFixedCostIcon'
-    'mouseleave .popup-container > .fixed-cost' : 'switchFixedCostIcon'
-    'click .popup-container > .variable-cost' : 'popupFixedCost'
-    'click .popup-container > .fixed-cost' : 'popupFixedCost'
-
-    #mouse interaction with popup buttons
-    'click #cancel-fixed-cost' : 'destroyPopupFixedCost'
-    'click #save-fixed-cost' : 'prepareFixedCost'
-    'click #remove-fixed-cost' : 'removeFixedCost'
+    'click' : 'applySearch'
 
 
   #--------------------------- BEGIN BACKBONE METHODS --------------------------
@@ -54,6 +43,17 @@ module.exports = class RegularOpStatementEntryView extends BaseView
 
 
   #---------------------------- BEGIN EVENTS METHODS ---------------------------
+  applySearch: ->
+    console.log @model
+    currentAmount = parseFloat(@model.get("amount") or 0)
+    modifier = Math.abs parseFloat(currentAmount * 0.1)
+    title = (@model.get('title') or "").toString()
+    minAmount = (currentAmount - modifier).toFixed(2)
+    maxAmount = (currentAmount + modifier).toFixed(2)
+    $("input#search-regular-operations").val title
+    if minAmount isnt 0 then $("#search-min-amount").val minAmount
+    if maxAmount isnt 0 then $("#search-max-amount").val maxAmount
+    $("input#search-regular-operations").keyup()
 
   destroyPopupFixedCost: (event) ->
 

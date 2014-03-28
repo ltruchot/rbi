@@ -1948,7 +1948,7 @@ module.exports = ConfigurationView = (function(_super) {
           } else {
             this.accounts = results.length;
             if (this.accounts === 0) {
-              return $(view.elAccounts).prepend(require("./templates/configuration_banks_empty"));
+              return $(view.elAccounts).prepend(require("./templates/configuration_bank_empty"));
             }
           }
         });
@@ -2372,6 +2372,7 @@ module.exports = ForcastBudgetView = (function(_super) {
       success: function(regularOperations, rawData) {
         var operation, subView, _i, _len, _ref1;
         _this.subViews = [];
+        $(_this.elRegularOperations).empty();
         _ref1 = regularOperations.models;
         for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
           operation = _ref1[_i];
@@ -2409,8 +2410,9 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
   ForecastBudgetEntryView.prototype.tagName = 'tr';
 
   ForecastBudgetEntryView.prototype.events = {
-    "click .modify-regular-operation": "modifyRegularOperation",
-    "click .remove-regular-operation": "removeRegularOperation"
+    "click .toogle-monthly-budget": "toogleMonthlyBudget",
+    "click .remove-regular-operation": "removeRegularOperation",
+    "click td:eq(0),td:eq(1),td:eq(2)": "modifyRegularOperation"
   };
 
   ForecastBudgetEntryView.prototype.rules = {};
@@ -2429,8 +2431,7 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
   };
 
   ForecastBudgetEntryView.prototype.modifyRegularOperation = function(currentEvent) {
-    console.log("modify !");
-    $("#search-regular-operations").val(this.rules.queryWords);
+    $("#search-regular-operations").val(this.rules.queryPattern);
     $("#search-min-amount").val(this.rules.queryMin);
     $("#search-max-amount").val(this.rules.queryMax);
     return $("#search-regular-operations").keyup();
@@ -2444,9 +2445,11 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
       queryParts = uniquery.split("(#|#)");
     }
     this.rules.queryAccountNumber = queryParts[0] || "";
-    this.rules.queryWords = queryParts[1] || "";
-    this.rules.queryMin = Number(queryParts[2] || 0);
-    this.rules.queryMax = Number(queryParts[3] || 0);
+    this.rules.queryPattern = queryParts[1] || "";
+    this.rules.queryMin = (queryParts[2] != null) && (queryParts[2] !== "NEGATIVE_INFINITY") ? Number(queryParts[2]) : null;
+    this.rules.queryMax = (queryParts[3] != null) && (queryParts[3] !== "POSITIVE_INFINITY") ? Number(queryParts[3]) : null;
+    this.rules.textQueryMin = this.rules.queryMin != null ? this.rules.queryMin.money() : "";
+    this.rules.textQueryMax = this.rules.queryMax != null ? this.rules.queryMax.money() : "";
     return this.rules;
   };
 
@@ -2984,7 +2987,8 @@ module.exports = RegularOpStatementView = (function(_super) {
     'click th.sort-amount': "sortByAmount",
     'keyup input#search-regular-operations': "reload",
     'keyup input#search-min-amount': "reload",
-    'keyup input#search-max-amount': "reload"
+    'keyup input#search-max-amount': "reload",
+    'click .add-regular-operation': "addToRegularOperation"
   };
 
   RegularOpStatementView.prototype.inUse = false;
@@ -3005,8 +3009,127 @@ module.exports = RegularOpStatementView = (function(_super) {
     return this;
   };
 
+  RegularOpStatementView.prototype.getCurrentRules = function() {
+    var rules;
+    rules = null;
+    if (window.rbiActiveData.bankAccount != null) {
+      rules = {
+        accountNumber: window.rbiActiveData.bankAccount.get('accountNumber'),
+        pattern: $("input#search-regular-operations").val() || null,
+        minAmount: $("#search-min-amount").val() || null,
+        maxAmount: $("#search-max-amount").val() || null
+      };
+    }
+    return rules;
+  };
+
+  RegularOpStatementView.prototype.serializeUniquery = function(rules) {
+    var maxAmount, minAmount, separator, uniquery;
+    uniquery = "";
+    separator = "(#|#)";
+    if ((rules != null) && (rules.accountNumber != null)) {
+      uniquery = rules.accountNumber;
+      if (rules.pattern != null) {
+        uniquery += separator + rules.pattern;
+        minAmount = Number(rules.minAmount) || "NEGATIVE_INFINITY";
+        maxAmount = Number(rules.maxAmount) || "POSITIVE_INFINITY";
+        uniquery += separator + minAmount;
+        uniquery += separator + maxAmount;
+      }
+    }
+    console.log(uniquery);
+    return uniquery;
+  };
+
+  RegularOpStatementView.prototype.addToRegularOperation = function() {
+    var rules,
+      _this = this;
+    console.log("add");
+    rules = this.getCurrentRules() || null;
+    if (rules != null) {
+      this.data = {
+        accounts: [rules.accountNumber],
+        searchText: "",
+        exactSearchText: rules.pattern.toString(),
+        dateFrom: null,
+        dateTo: new Date()
+      };
+      if (rules.maxAmont < rules.minAmont) {
+        this.data.amountFrom = rules.maxAmont;
+        this.data.amountTo = rules.minAmont;
+      } else {
+        this.data.amountFrom = rules.minAmont;
+        this.data.amountTo = rules.minAmont;
+      }
+      return $.ajax({
+        type: "POST",
+        url: "bankoperations/query",
+        data: this.data,
+        success: function(objects) {
+          var fixedCostToRegister, object, _i, _len;
+          console.log(objects);
+          console.log("get operation linked request sent successfully!");
+          if ((objects != null) && objects.length > 0) {
+            fixedCostToRegister = {
+              type: "standard",
+              accountNumber: rules.accountNumber,
+              idTable: [],
+              uniquery: _this.serializeUniquery(rules)
+            };
+            for (_i = 0, _len = objects.length; _i < _len; _i++) {
+              object = objects[_i];
+              fixedCostToRegister.idTable.push(object.id);
+            }
+            return _this.saveFixedCost(fixedCostToRegister, function() {
+              $('#search-regular-operations').keyup();
+              return window.views.forecastBudgetView.displayRegularOperation(rules.accountNumber);
+            });
+          } else {
+            return console.log("Operation(s) not found");
+          }
+        },
+        error: function(err) {
+          return console.log("there was an error");
+        }
+      });
+    } else {
+      return console.log("no rules.");
+    }
+  };
+
+  RegularOpStatementView.prototype.saveFixedCost = function(fixedCost, callback) {
+    var _this = this;
+    console.log("save !");
+    return $.ajax({
+      type: "POST",
+      url: "rbifixedcost",
+      data: fixedCost,
+      success: function(objects) {
+        console.log("saved !");
+        return callback();
+      },
+      error: function(err) {
+        return console.log("there was an error");
+      }
+    });
+  };
+
+  RegularOpStatementView.prototype.checkButtonAddState = function() {
+    var buttonAdd, searchInput;
+    searchInput = $("input#search-regular-operations") || null;
+    buttonAdd = $(".add-regular-operation") || null;
+    if ((buttonAdd != null) && (searchInput != null) && (buttonAdd.length === 1) && (searchInput.length === 1)) {
+      if (searchInput.val() !== "") {
+        return buttonAdd.attr("disabled", false);
+      } else {
+        return buttonAdd.attr("disabled", true);
+      }
+    }
+  };
+
   RegularOpStatementView.prototype.reload = function(params, callback) {
     var displayFixedCosts, displayVariableCosts, view;
+    this.checkButtonAddState();
     view = this;
     this.model = window.rbiActiveData.bankAccount;
     if ((params != null) && (params.dateFrom != null)) {
@@ -3059,8 +3182,9 @@ module.exports = RegularOpStatementView = (function(_super) {
                 if (callback != null) {
                   callback(window.rbiActiveData.currentOperations);
                 }
-                console.log(finalOperations);
                 window.collections.operations.reset(finalOperations);
+                window.collections.operations.setComparator("date");
+                window.collections.operations.sort();
                 return view.addAll();
               },
               error: function(err) {
@@ -3194,15 +3318,7 @@ module.exports = RegularOpStatementEntryView = (function(_super) {
   RegularOpStatementEntryView.prototype.tagName = 'tr';
 
   RegularOpStatementEntryView.prototype.events = {
-    'mouseenter .popup-container > .variable-cost': 'switchFixedCostIcon',
-    'mouseleave .popup-container > .variable-cost': 'switchFixedCostIcon',
-    'mouseenter .popup-container > .fixed-cost': 'switchFixedCostIcon',
-    'mouseleave .popup-container > .fixed-cost': 'switchFixedCostIcon',
-    'click .popup-container > .variable-cost': 'popupFixedCost',
-    'click .popup-container > .fixed-cost': 'popupFixedCost',
-    'click #cancel-fixed-cost': 'destroyPopupFixedCost',
-    'click #save-fixed-cost': 'prepareFixedCost',
-    'click #remove-fixed-cost': 'removeFixedCost'
+    'click': 'applySearch'
   };
 
   function RegularOpStatementEntryView(model, account, showAccountNum) {
@@ -3237,6 +3353,24 @@ module.exports = RegularOpStatementEntryView = (function(_super) {
     }
     RegularOpStatementEntryView.__super__.render.call(this);
     return this;
+  };
+
+  RegularOpStatementEntryView.prototype.applySearch = function() {
+    var currentAmount, maxAmount, minAmount, modifier, title;
+    console.log(this.model);
+    currentAmount = parseFloat(this.model.get("amount") || 0);
+    modifier = Math.abs(parseFloat(currentAmount * 0.1));
+    title = (this.model.get('title') || "").toString();
+    minAmount = (currentAmount - modifier).toFixed(2);
+    maxAmount = (currentAmount + modifier).toFixed(2);
+    $("input#search-regular-operations").val(title);
+    if (minAmount !== 0) {
+      $("#search-min-amount").val(minAmount);
+    }
+    if (maxAmount !== 0) {
+      $("#search-max-amount").val(maxAmount);
+    }
+    return $("input#search-regular-operations").keyup();
   };
 
   RegularOpStatementEntryView.prototype.destroyPopupFixedCost = function(event) {
@@ -3566,7 +3700,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1>Budget prévisionnel</h1><div id="forecast-budget-content"><span>Mes opérations régulières</span><table id="regular-operations" class="col-md-12"><tr><th>Descripteur(s)</th><th>Montant Max</th><th>Montant Mix</th><th>&nbsp;</th><th>&nbsp;</th></tr></table></div>');
+buf.push('<h1>Budget prévisionnel</h1><div id="forecast-budget-content"><span>Mes opérations régulières</span><table class="col-md-12"><thead><tr><th>Motif</th><th>Montant Min</th><th>Montant Max</th><th>&nbsp;</th><th>&nbsp;</th></tr></thead><tbody id="regular-operations"></tbody></table></div>');
 }
 return buf.join("");
 };
@@ -3578,7 +3712,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<td>' + escape((interp = (model.get("rules")).queryWords) == null ? '' : interp) + '</td><td>' + escape((interp = (model.get("rules")).queryMin.money()) == null ? '' : interp) + '</td><td>' + escape((interp = (model.get("rules")).queryMax.money()) == null ? '' : interp) + '</td><td><span aria-hidden="true" data-icon="&#57349;" class="fs1 modify-regular-operation blue-text"></span></td><td><span aria-hidden="true" data-icon="&#57512;" class="fs1 remove-regular-operation red-text"></span></td>');
+buf.push('<td>' + escape((interp = (model.get("rules")).queryPattern) == null ? '' : interp) + '</td><td>' + escape((interp = (model.get("rules")).textQueryMin) == null ? '' : interp) + '</td><td>' + escape((interp = (model.get("rules")).textQueryMax) == null ? '' : interp) + '</td><td><input type="checkbox" class="toogle-monthly-budget"/></td><td><span aria-hidden="true" data-icon="&#57512;" class="fs1 remove-regular-operation red-text"></span></td>');
 }
 return buf.join("");
 };
@@ -3652,7 +3786,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h2>Relevé du ' + escape((interp = model.get('title')) == null ? '' : interp) + ' ' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</h2><div id="search-field-regular-operations"><span>descripteurs(s)</span><input id="search-regular-operations"/><span>&nbsp&nbsp;Min :</span><input id="search-min-amount" class="input-small"/><span>&nbsp&nbsp;Max :</span><input id="search-max-amount" class="input-small"/></div><div id="loader-regular-operations" class="text-center loading"><img src="./loader_big_blue.gif"/></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-regular-operations"></tbody></table>');
+buf.push('<h2>Relevé du ' + escape((interp = model.get('title')) == null ? '' : interp) + ' ' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</h2><div id="search-field-regular-operations"><span>Motif:</span><input id="search-regular-operations"/><span>&nbsp&nbsp;Min:</span><input id="search-min-amount" class="input-small"/><span>&nbsp&nbsp;Max:</span><input id="search-max-amount" class="input-small"/></div><div id="loader-regular-operations" class="text-center loading"><img src="./loader_big_blue.gif"/></div><div><button type="button" disabled="true" class="add-regular-operation">Ajouter aux opérations régulières</button></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-regular-operations"></tbody></table>');
 }
 return buf.join("");
 };

@@ -6,8 +6,9 @@ module.exports = class ForecastBudgetEntryView extends BaseView
   tagName: 'tr'
 
   events:
-    "click .modify-regular-operation" : "modifyRegularOperation"
+    "click .toogle-monthly-budget" : "toogleMonthlyBudget"
     "click .remove-regular-operation" : "removeRegularOperation"
+    "click td:eq(0),td:eq(1),td:eq(2)" : "modifyRegularOperation"
 
   rules: {}
 
@@ -41,8 +42,7 @@ module.exports = class ForecastBudgetEntryView extends BaseView
 
   #---------------------------- BEGIN EVENTS METHODS ---------------------------
   modifyRegularOperation: (currentEvent) ->
-    console.log "modify !"
-    $("#search-regular-operations").val @rules.queryWords
+    $("#search-regular-operations").val @rules.queryPattern
     $("#search-min-amount").val @rules.queryMin
     $("#search-max-amount").val @rules.queryMax
     $("#search-regular-operations").keyup()
@@ -55,9 +55,12 @@ module.exports = class ForecastBudgetEntryView extends BaseView
       queryParts = uniquery.split("(#|#)")
 
     @rules.queryAccountNumber = queryParts[0] or ""
-    @rules.queryWords = queryParts[1] or ""
-    @rules.queryMin = Number(queryParts[2] or 0)
-    @rules.queryMax = Number(queryParts[3] or 0)
+    @rules.queryPattern = queryParts[1] or ""
+    @rules.queryMin = if (queryParts[2]? and (queryParts[2] isnt "NEGATIVE_INFINITY")) then Number(queryParts[2]) else null
+    @rules.queryMax = if (queryParts[3]? and (queryParts[3] isnt "POSITIVE_INFINITY")) then Number(queryParts[3]) else null
+    @rules.textQueryMin = if @rules.queryMin? then @rules.queryMin.money() else ""
+    @rules.textQueryMax = if @rules.queryMax? then @rules.queryMax.money() else ""
+
     return @rules
 
   removeRegularOperation: (event) ->

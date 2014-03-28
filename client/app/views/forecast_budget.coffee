@@ -42,6 +42,7 @@ module.exports = class ForcastBudgetView extends BaseView
       window.views.regularOpStatementView.reload()
     @
 
+
   displayRegularOperation: (accountNumber) ->
     window.collections.regularOperations.reset()
     window.collections.regularOperations.setAccount accountNumber
@@ -50,12 +51,14 @@ module.exports = class ForcastBudgetView extends BaseView
 
         # remove the previous ones
         @subViews = []
+        $(@elRegularOperations).empty()
 
         # and render all of them
         for operation in regularOperations.models
 
           # add the operation to the table
           subView = new ForecastBudgetEntryView operation
+
           $(@elRegularOperations).append subView.render().el
           @subViews.push subView
 

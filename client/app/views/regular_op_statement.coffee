@@ -13,6 +13,7 @@ module.exports = class RegularOpStatementView extends BaseView
     'keyup input#search-regular-operations' : "reload"
     'keyup input#search-min-amount' : "reload"
     'keyup input#search-max-amount' : "reload"
+    'click .add-regular-operation' : "addToRegularOperation"
 
   inUse: false
 
@@ -36,7 +37,125 @@ module.exports = class RegularOpStatementView extends BaseView
       # $("#layout-2col-column-right").getNiceScroll().onResize()
     @
 
+  getCurrentRules: ->
+    rules = null
+    if window.rbiActiveData.bankAccount?
+      rules =
+        accountNumber: window.rbiActiveData.bankAccount.get 'accountNumber'
+        pattern: $("input#search-regular-operations").val() or null
+        minAmount: $("#search-min-amount").val() or null
+        maxAmount: $("#search-max-amount").val() or null
+    return rules
+
+  serializeUniquery: (rules) ->
+    uniquery = ""
+    separator = "(#|#)"
+    if rules? and rules.accountNumber?
+      uniquery = rules.accountNumber
+      if rules.pattern?
+        uniquery += separator + rules.pattern
+        minAmount = Number(rules.minAmount) or "NEGATIVE_INFINITY"
+        maxAmount = Number(rules.maxAmount) or "POSITIVE_INFINITY"
+        uniquery += separator + minAmount
+        uniquery += separator + maxAmount
+    console.log uniquery
+    return uniquery
+
+  addToRegularOperation: ->
+    console.log "add"
+    rules = @getCurrentRules() or null
+
+    #get or set needed data
+    if rules?
+      @data =
+        accounts: [rules.accountNumber]
+        searchText: ""
+        exactSearchText: rules.pattern.toString()
+        dateFrom: null
+        dateTo: new Date()
+      if rules.maxAmont < rules.minAmont
+        @data.amountFrom = rules.maxAmont
+        @data.amountTo = rules.minAmont
+      else
+        @data.amountFrom = rules.minAmont
+        @data.amountTo = rules.minAmont
+
+      #standard get operations request
+      $.ajax
+        type: "POST"
+        url: "bankoperations/query"
+        data: @data
+        success: (objects) =>
+          console.log objects
+          console.log "get operation linked request sent successfully!"
+          if objects? and objects.length > 0
+            fixedCostToRegister =
+              type: "standard"
+              accountNumber: rules.accountNumber
+              idTable: []
+              uniquery: @serializeUniquery rules
+
+            #add operations to id table
+            for object in objects
+              fixedCostToRegister.idTable.push object.id
+
+            #save fixed cost and close popup on callback
+            @saveFixedCost fixedCostToRegister, =>
+              $('#search-regular-operations').keyup()
+              window.views.forecastBudgetView.displayRegularOperation rules.accountNumber
+          else
+           console.log "Operation(s) not found"
+        error: (err) ->
+          console.log "there was an error"
+    else
+      console.log "no rules."
+
+
+  #------------------- BEGIN SERVER COMMUNICATION METHODS ----------------------
+  saveFixedCost: (fixedCost, callback) ->
+    console.log "save !"
+
+    #post new fixed cost object
+    $.ajax
+      type: "POST"
+      url: "rbifixedcost"
+      data: fixedCost
+
+      success: (objects) =>
+        console.log "saved !"
+        # console.log fixedCosts
+        #console.log "fixed cost sent successfully!"
+
+        # #set fixed cost status to model
+        # @model.set "fixedCostId", objects.id
+        # @model.set "isFixedCost", true
+
+        # #refresh monthly analysis
+        # for id in fixedCost.idTable
+        #   if window.rbiActiveData.currentOperations[id]?
+        #     window.rbiActiveData.currentOperations[id].isFixedCost = true
+        #     window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id
+        # window.views.monthlyAnalysisView.displayMonthlySums window.rbiActiveData.currentOperations
+
+        callback()
+
+      error: (err) ->
+        console.log "there was an error"
+  #-------------------- END SERVER COMMUNICATION METHODS -----------------------
+
+
+  checkButtonAddState: ->
+    searchInput = $("input#search-regular-operations") or null
+    buttonAdd = $(".add-regular-operation") or null
+    if buttonAdd? and searchInput? and (buttonAdd.length is 1) and (searchInput.length is 1)
+      if searchInput.val() isnt ""
+        buttonAdd.attr "disabled", false
+      else
+        buttonAdd.attr "disabled", true
+
   reload: (params, callback) ->
+
+    @checkButtonAddState()
     view = @
 
     #client or server search ?
@@ -94,8 +213,9 @@ module.exports = class RegularOpStatementView extends BaseView
 
                 if callback?
                   callback window.rbiActiveData.currentOperations
-                console.log finalOperations
                 window.collections.operations.reset finalOperations
+                window.collections.operations.setComparator "date"
+                window.collections.operations.sort()
                 view.addAll()
               error: (err) ->
                 console.log "getting fixed cost failed."

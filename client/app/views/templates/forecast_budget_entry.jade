@@ -1,7 +1,8 @@
-td #{(model.get("rules")).queryWords}
-td #{(model.get("rules")).queryMin.money()}
-td #{(model.get("rules")).queryMax.money()}
+td #{(model.get("rules")).queryPattern}
+td #{(model.get("rules")).textQueryMin}
+td #{(model.get("rules")).textQueryMax}
 td
-  span.fs1.modify-regular-operation.blue-text(aria-hidden="true",data-icon="&#57349;")
+  //- span.fs1.modify-regular-operation.blue-text(aria-hidden="true",data-icon="&#57349;")
+  input.toogle-monthly-budget(type="checkbox")
 td
   span.fs1.remove-regular-operation.red-text(aria-hidden="true",data-icon="&#57512;")
