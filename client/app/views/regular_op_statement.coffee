@@ -69,8 +69,8 @@ module.exports = class RegularOpStatementView extends BaseView
     if rules?
       @data =
         accounts: [rules.accountNumber]
-        searchText: ""
-        exactSearchText: rules.pattern.toString()
+        searchText: rules.pattern.toString()
+        exactSearchText: "" #rules.pattern.toString()
         dateFrom: null
         dateTo: new Date()
       if rules.maxAmont < rules.minAmont

@@ -60,6 +60,17 @@ module.exports = class ForecastBudgetEntryView extends BaseView
     @rules.queryMax = if (queryParts[3]? and (queryParts[3] isnt "POSITIVE_INFINITY")) then Number(queryParts[3]) else null
     @rules.textQueryMin = if @rules.queryMin? then @rules.queryMin.money() else ""
     @rules.textQueryMax = if @rules.queryMax? then @rules.queryMax.money() else ""
+    @rules.textQueryMid = ""
+    min = @rules.queryMin
+    max = @rules.queryMax
+    if min? and max?
+      mid = parseFloat(min) + parseFloat(max)
+      @rules.textQueryMid = (mid / 2).money()
+    else if min?
+      @rules.textQueryMid = "> à " + min.money()
+    else if max?
+      @rules.textQueryMid = "< à " + max.money()
+
 
     return @rules
 

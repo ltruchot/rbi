@@ -57,7 +57,6 @@ module.exports = class BankStatementView extends BaseView
         displayFixedCosts = if @data? then (@data.fixedCosts or false) else false
         displayVariableCosts = if @data? then (@data.variableCosts or false) else false
 
-        console.log @data
         if @send
             $.ajax
                 type: "POST"

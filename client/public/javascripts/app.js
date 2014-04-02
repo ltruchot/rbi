@@ -1238,7 +1238,6 @@ module.exports = BankStatementView = (function(_super) {
     }
     displayFixedCosts = this.data != null ? this.data.fixedCosts || false : false;
     displayVariableCosts = this.data != null ? this.data.variableCosts || false : false;
-    console.log(this.data);
     if (this.send) {
       return $.ajax({
         type: "POST",
@@ -2438,7 +2437,7 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
   };
 
   ForecastBudgetEntryView.prototype.deserializeUniquery = function(uniquery) {
-    var queryParts;
+    var max, mid, min, queryParts;
     queryParts = [];
     this.rules = {};
     if ((uniquery != null) && ((typeof uniquery) === "string")) {
@@ -2450,6 +2449,17 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
     this.rules.queryMax = (queryParts[3] != null) && (queryParts[3] !== "POSITIVE_INFINITY") ? Number(queryParts[3]) : null;
     this.rules.textQueryMin = this.rules.queryMin != null ? this.rules.queryMin.money() : "";
     this.rules.textQueryMax = this.rules.queryMax != null ? this.rules.queryMax.money() : "";
+    this.rules.textQueryMid = "";
+    min = this.rules.queryMin;
+    max = this.rules.queryMax;
+    if ((min != null) && (max != null)) {
+      mid = parseFloat(min) + parseFloat(max);
+      this.rules.textQueryMid = (mid / 2).money();
+    } else if (min != null) {
+      this.rules.textQueryMid = "> à " + min.money();
+    } else if (max != null) {
+      this.rules.textQueryMid = "< à " + max.money();
+    }
     return this.rules;
   };
 
@@ -3049,8 +3059,8 @@ module.exports = RegularOpStatementView = (function(_super) {
     if (rules != null) {
       this.data = {
         accounts: [rules.accountNumber],
-        searchText: "",
-        exactSearchText: rules.pattern.toString(),
+        searchText: rules.pattern.toString(),
+        exactSearchText: "",
         dateFrom: null,
         dateTo: new Date()
       };
@@ -3700,7 +3710,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1>Budget prévisionnel</h1><div id="forecast-budget-content"><span>Mes opérations régulières</span><table class="col-md-12"><thead><tr><th>Motif</th><th>Montant Min</th><th>Montant Max</th><th>&nbsp;</th><th>&nbsp;</th></tr></thead><tbody id="regular-operations"></tbody></table></div>');
+buf.push('<h1>Budget prévisionnel</h1><div id="forecast-budget-content"><span>Mes opérations régulières</span><table class="col-md-12"><thead><tr><th>Motif</th><th>Montant moyen</th><th>&nbsp;</th><th>&nbsp;</th></tr></thead><tbody id="regular-operations"></tbody></table></div>');
 }
 return buf.join("");
 };
@@ -3712,7 +3722,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<td>' + escape((interp = (model.get("rules")).queryPattern) == null ? '' : interp) + '</td><td>' + escape((interp = (model.get("rules")).textQueryMin) == null ? '' : interp) + '</td><td>' + escape((interp = (model.get("rules")).textQueryMax) == null ? '' : interp) + '</td><td><input type="checkbox" class="toogle-monthly-budget"/></td><td><span aria-hidden="true" data-icon="&#57512;" class="fs1 remove-regular-operation red-text"></span></td>');
+buf.push('<td>' + escape((interp = (model.get("rules")).queryPattern) == null ? '' : interp) + '</td><td>' + escape((interp = (model.get("rules")).textQueryMid) == null ? '' : interp) + '</td><td><input type="checkbox" class="toogle-monthly-budget"/></td><td><span aria-hidden="true" data-icon="&#57512;" class="fs1 remove-regular-operation red-text"></span></td>');
 }
 return buf.join("");
 };
