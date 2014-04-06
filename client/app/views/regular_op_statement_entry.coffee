@@ -44,7 +44,6 @@ module.exports = class RegularOpStatementEntryView extends BaseView
 
   #---------------------------- BEGIN EVENTS METHODS ---------------------------
   applySearch: ->
-    console.log @model
     currentAmount = parseFloat(@model.get("amount") or 0)
     modifier = Math.abs parseFloat(currentAmount * 0.1)
     title = (@model.get('title') or "").toString()

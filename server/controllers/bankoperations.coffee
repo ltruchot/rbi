@@ -19,6 +19,13 @@ module.exports.index = (req, res) ->
 module.exports.show = (req, res) ->
     res.send 200, @operation
 
+module.exports.allByAccountNumber = (req, res) ->
+    BankOperation.allFromBankAccount account, (err, operations) ->
+        if err?
+            res.send 500, error: 'Server error occurred while retrieving data'
+        else
+            res.send 200, operations
+
 module.exports.query = (req, res) ->
 
     paramAccounts = req.body.accounts or [-1]

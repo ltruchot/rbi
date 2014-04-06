@@ -25,6 +25,7 @@ module.exports =
         window.rbiActiveData.accountNumber = null
         window.rbiActiveData.bankAccount = null
         window.rbiActiveData.currentOperations = null
+        window.rbiActiveData.allOperationsById = null
 
         #set the data manager
         window.rbiDataManager = new DataManager()

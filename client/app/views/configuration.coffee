@@ -48,16 +48,16 @@ module.exports = class ConfigurationView extends BaseView
           $('#configuration-budget-amount').val 0
 
       #chart budget
-      @getLastMonthDebitAmount currentBudget, (percentage) ->
-        if @currentChart?
-          $('#current-budget-chart').data('easyPieChart').update percentage
-        else
-          @currentChart = $('#current-budget-chart').easyPieChart
-            animate: 1500
-            barColor: window.rbiColors.blue
-            trackColor: window.rbiColors.border_color
-            scaleColor: window.rbiColors.blue
-            lineWidth: 2
+      # @getLastMonthDebitAmount currentBudget, (percentage) ->
+      #   if @currentChart?
+      #     $('#current-budget-chart').data('easyPieChart').update percentage
+      #   else
+      #     @currentChart = $('#current-budget-chart').easyPieChart
+      #       animate: 1500
+      #       barColor: window.rbiColors.blue
+      #       trackColor: window.rbiColors.border_color
+      #       scaleColor: window.rbiColors.blue
+      #       lineWidth: 2
 
     getLastMonthDebitAmount: (budgetValue, callback) ->
       now = moment(new Date())

@@ -8,6 +8,7 @@ module.exports = class ForcastBudgetView extends BaseView
 
   el: 'div#interface-box'
   elRegularOperations: '#regular-operations'
+  currentChart: null
   #events:
 
   #     'click a.recheck-button' : "checkAccount"
@@ -38,12 +39,46 @@ module.exports = class ForcastBudgetView extends BaseView
     view = @
     accountNumber = window.rbiActiveData.accountNumber or null
     if accountNumber? and (accountNumber isnt "")
-      @displayRegularOperation accountNumber
+      @displayRegularOperations accountNumber
       window.views.regularOpStatementView.reload()
     @
 
+  reloadBudget: ->
+    currentBudget = 0
+    budgetExpenses = 0
+    for regularOperation in @subViews
+      if regularOperation.rules? and regularOperation.rules.queryMid?
+        if regularOperation.rules.queryMid > 0
+          currentBudget += regularOperation.rules.queryMid
+        else if regularOperation.rules.queryMid < 0
+          budgetExpenses += regularOperation.rules.queryMid
+    budgetExpenses = Math.abs budgetExpenses
+    percentage = parseInt((budgetExpenses / currentBudget) * 100)
+    percentage = if percentage <= 100 then percentage else 100
+    rest = currentBudget - budgetExpenses
+    $('#current-budget-chart-debit').html rest.money()
+    $('#current-budget-chart').attr 'data-percent', percentage
+    if @currentChart?
+      $('#current-budget-chart').data('easyPieChart').update percentage
+    else
+      @currentChart = $('#current-budget-chart').easyPieChart
+        animate: 1500
+        barColor: window.rbiColors.blue
+        trackColor: window.rbiColors.border_color
+        scaleColor: window.rbiColors.blue
+        lineWidth: 2
+    $("#regular-operations-budget").remove()
+    trToInject = '<tr id="regular-operations-budget">' +
+      "\t" + "<td><strong>Budget</strong></td>" +
+      "\t" + "<td><strong>" + rest.money() + "<strong></td>" +
+      "\t" + "<td>&nbsp;</td>" +
+      "\t" + "<td>&nbsp;</td>" +
+      '</tr>'
+    $("tbody#regular-operations").append trToInject
 
-  displayRegularOperation: (accountNumber) ->
+  displayRegularOperations: (accountNumber) ->
+    if (not accountNumber?) and window.rbiActiveData.accountNumber?
+      accountNumber = window.rbiActiveData.accountNumber
     window.collections.regularOperations.reset()
     window.collections.regularOperations.setAccount accountNumber
     window.collections.regularOperations.fetch
@@ -61,6 +96,7 @@ module.exports = class ForcastBudgetView extends BaseView
 
           $(@elRegularOperations).append subView.render().el
           @subViews.push subView
+        @reloadBudget()
 
         error: ->
           console.log "error fetching regular operations"

@@ -120,6 +120,7 @@ module.exports = {
     window.rbiActiveData.accountNumber = null;
     window.rbiActiveData.bankAccount = null;
     window.rbiActiveData.currentOperations = null;
+    window.rbiActiveData.allOperationsById = null;
     window.rbiDataManager = new DataManager();
     window.rbiColors = {
       border_color: "#efefef",
@@ -171,10 +172,10 @@ module.exports = {
     window.collections.operations = new BankOperationsCollection();
     window.collections.amounts = new BankAmountsCollection();
     window.collections.regularOperations = new RegularOperationsCollection();
+
     /*
             views
-    */
-
+     */
     window.views.appView = new AppView();
     window.views.appView.render();
     window.activeObjects = {};
@@ -227,7 +228,7 @@ module.exports = BankAccounts = (function(_super) {
 });
 
 ;require.register("collections/bank_alerts", function(exports, require, module) {
-var BankAlert, BankAlerts, _ref,
+var BankAlert, BankAlerts,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -237,8 +238,7 @@ module.exports = BankAlerts = (function(_super) {
   __extends(BankAlerts, _super);
 
   function BankAlerts() {
-    _ref = BankAlerts.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return BankAlerts.__super__.constructor.apply(this, arguments);
   }
 
   BankAlerts.prototype.model = BankAlert;
@@ -252,7 +252,7 @@ module.exports = BankAlerts = (function(_super) {
 });
 
 ;require.register("collections/bank_amounts", function(exports, require, module) {
-var BankAmount, BankAmounts, _ref,
+var BankAmount, BankAmounts,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -262,8 +262,7 @@ module.exports = BankAmounts = (function(_super) {
   __extends(BankAmounts, _super);
 
   function BankAmounts() {
-    _ref = BankAmounts.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return BankAmounts.__super__.constructor.apply(this, arguments);
   }
 
   BankAmounts.prototype.model = BankAmount;
@@ -282,7 +281,7 @@ module.exports = BankAmounts = (function(_super) {
 });
 
 ;require.register("collections/bank_operations", function(exports, require, module) {
-var BankOperation, BankOperations, _ref,
+var BankOperation, BankOperations,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -292,8 +291,7 @@ module.exports = BankOperations = (function(_super) {
   __extends(BankOperations, _super);
 
   function BankOperations() {
-    _ref = BankOperations.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return BankOperations.__super__.constructor.apply(this, arguments);
   }
 
   BankOperations.prototype.model = BankOperation;
@@ -310,29 +308,30 @@ module.exports = BankOperations = (function(_super) {
   };
 
   BankOperations.prototype.setComparator = function(type) {
-    var _this = this;
     if (type === "date") {
-      return this.comparator = function(o1, o2) {
-        var d1, d2, sort, t1, t2;
-        d1 = new Date(o1.get("date")).getTime();
-        d2 = new Date(o2.get("date")).getTime();
-        t1 = o1.get("title");
-        t2 = o2.get("title");
-        sort = _this.order === "asc" ? -1 : 1;
-        if (d1 === d2) {
-          if (t1 > t2) {
+      return this.comparator = (function(_this) {
+        return function(o1, o2) {
+          var d1, d2, sort, t1, t2;
+          d1 = new Date(o1.get("date")).getTime();
+          d2 = new Date(o2.get("date")).getTime();
+          t1 = o1.get("title");
+          t2 = o2.get("title");
+          sort = _this.order === "asc" ? -1 : 1;
+          if (d1 === d2) {
+            if (t1 > t2) {
+              return sort;
+            }
+            if (t1 < t2) {
+              return -sort;
+            }
+            return 0;
+          } else if (d1 > d2) {
             return sort;
-          }
-          if (t1 < t2) {
+          } else {
             return -sort;
           }
-          return 0;
-        } else if (d1 > d2) {
-          return sort;
-        } else {
-          return -sort;
-        }
-      };
+        };
+      })(this);
     } else {
       this.orderBy = type;
       return this.comparator = function(o1, o2) {
@@ -366,7 +365,7 @@ module.exports = BankOperations = (function(_super) {
 });
 
 ;require.register("collections/banks", function(exports, require, module) {
-var Bank, Banks, _ref,
+var Bank, Banks,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -376,8 +375,7 @@ module.exports = Banks = (function(_super) {
   __extends(Banks, _super);
 
   function Banks() {
-    _ref = Banks.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return Banks.__super__.constructor.apply(this, arguments);
   }
 
   Banks.prototype.model = Bank;
@@ -385,11 +383,11 @@ module.exports = Banks = (function(_super) {
   Banks.prototype.url = "banks";
 
   Banks.prototype.getSum = function() {
-    var bank, sum, _i, _len, _ref1;
+    var bank, sum, _i, _len, _ref;
     sum = 0;
-    _ref1 = this.models;
-    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-      bank = _ref1[_i];
+    _ref = this.models;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      bank = _ref[_i];
       sum += Number(bank.get("amount"));
     }
     return sum;
@@ -402,7 +400,7 @@ module.exports = Banks = (function(_super) {
 });
 
 ;require.register("collections/regular_operations", function(exports, require, module) {
-var RegularOperation, RegularOperations, _ref,
+var RegularOperation, RegularOperations,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -412,8 +410,7 @@ module.exports = RegularOperations = (function(_super) {
   __extends(RegularOperations, _super);
 
   function RegularOperations() {
-    _ref = RegularOperations.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return RegularOperations.__super__.constructor.apply(this, arguments);
   }
 
   RegularOperations.prototype.model = RegularOperation;
@@ -450,9 +447,7 @@ $(function() {
     console = window.console = window.console || {};
     method = void 0;
     dummy = function() {};
-    methods = 'assert,count,debug,dir,dirxml,error,exception,\
-                   group,groupCollapsed,groupEnd,info,log,markTimeline,\
-                   profile,profileEnd,time,timeEnd,trace,warn'.split(',');
+    methods = 'assert,count,debug,dir,dirxml,error,exception, group,groupCollapsed,groupEnd,info,log,markTimeline, profile,profileEnd,time,timeEnd,trace,warn'.split(',');
     _results = [];
     while (method = methods.pop()) {
       _results.push(console[method] = console[method] || dummy);
@@ -513,7 +508,7 @@ Date.prototype.timeString = function() {
 });
 
 ;require.register("lib/base_view", function(exports, require, module) {
-var BaseView, _ref,
+var BaseView,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -521,8 +516,7 @@ module.exports = BaseView = (function(_super) {
   __extends(BaseView, _super);
 
   function BaseView() {
-    _ref = BaseView.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return BaseView.__super__.constructor.apply(this, arguments);
   }
 
   BaseView.prototype.template = function() {};
@@ -696,7 +690,7 @@ module.exports = DataManager = (function() {
 });
 
 ;require.register("lib/view_collection", function(exports, require, module) {
-var BaseView, ViewCollection, _ref,
+var BaseView, ViewCollection,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -709,8 +703,7 @@ module.exports = ViewCollection = (function(_super) {
   function ViewCollection() {
     this.removeItem = __bind(this.removeItem, this);
     this.addItem = __bind(this.addItem, this);
-    _ref = ViewCollection.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return ViewCollection.__super__.constructor.apply(this, arguments);
   }
 
   ViewCollection.prototype.itemview = null;
@@ -746,21 +739,21 @@ module.exports = ViewCollection = (function(_super) {
   };
 
   ViewCollection.prototype.render = function() {
-    var id, view, _ref1;
-    _ref1 = this.views;
-    for (id in _ref1) {
-      view = _ref1[id];
+    var id, view, _ref;
+    _ref = this.views;
+    for (id in _ref) {
+      view = _ref[id];
       view.$el.detach();
     }
     return ViewCollection.__super__.render.apply(this, arguments);
   };
 
   ViewCollection.prototype.afterRender = function() {
-    var id, view, _ref1;
+    var id, view, _ref;
     this.$collectionEl = $(this.collectionEl);
-    _ref1 = this.views;
-    for (id in _ref1) {
-      view = _ref1[id];
+    _ref = this.views;
+    for (id in _ref) {
+      view = _ref[id];
       this.appendView(view.$el);
     }
     this.onReset(this.collection);
@@ -773,10 +766,10 @@ module.exports = ViewCollection = (function(_super) {
   };
 
   ViewCollection.prototype.onReset = function(newcollection) {
-    var id, view, _ref1;
-    _ref1 = this.views;
-    for (id in _ref1) {
-      view = _ref1[id];
+    var id, view, _ref;
+    _ref = this.views;
+    for (id in _ref) {
+      view = _ref[id];
       view.remove();
     }
     return newcollection.forEach(this.addItem);
@@ -806,7 +799,7 @@ module.exports = ViewCollection = (function(_super) {
 });
 
 ;require.register("models/bank", function(exports, require, module) {
-var Bank, BankAccountsCollection, _ref,
+var Bank, BankAccountsCollection,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -816,8 +809,7 @@ module.exports = Bank = (function(_super) {
   __extends(Bank, _super);
 
   function Bank() {
-    _ref = Bank.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return Bank.__super__.constructor.apply(this, arguments);
   }
 
   Bank.prototype.defaults = {
@@ -845,7 +837,7 @@ module.exports = Bank = (function(_super) {
 });
 
 ;require.register("models/bank_account", function(exports, require, module) {
-var BankAccount, BankOperationsCollection, _ref,
+var BankAccount, BankOperationsCollection,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -855,8 +847,7 @@ module.exports = BankAccount = (function(_super) {
   __extends(BankAccount, _super);
 
   function BankAccount() {
-    _ref = BankAccount.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return BankAccount.__super__.constructor.apply(this, arguments);
   }
 
   BankAccount.prototype.checked = true;
@@ -868,7 +859,7 @@ module.exports = BankAccount = (function(_super) {
 });
 
 ;require.register("models/bank_alert", function(exports, require, module) {
-var BankAlert, _ref,
+var BankAlert,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -876,8 +867,7 @@ module.exports = BankAlert = (function(_super) {
   __extends(BankAlert, _super);
 
   function BankAlert() {
-    _ref = BankAlert.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return BankAlert.__super__.constructor.apply(this, arguments);
   }
 
   BankAlert.prototype.url = "bankalerts";
@@ -889,7 +879,7 @@ module.exports = BankAlert = (function(_super) {
 });
 
 ;require.register("models/bank_amount", function(exports, require, module) {
-var BankAmount, _ref,
+var BankAmount,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -897,8 +887,7 @@ module.exports = BankAmount = (function(_super) {
   __extends(BankAmount, _super);
 
   function BankAmount() {
-    _ref = BankAmount.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return BankAmount.__super__.constructor.apply(this, arguments);
   }
 
   return BankAmount;
@@ -908,7 +897,7 @@ module.exports = BankAmount = (function(_super) {
 });
 
 ;require.register("models/bank_operation", function(exports, require, module) {
-var BankOperation, _ref,
+var BankOperation,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -916,8 +905,7 @@ module.exports = BankOperation = (function(_super) {
   __extends(BankOperation, _super);
 
   function BankOperation() {
-    _ref = BankOperation.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return BankOperation.__super__.constructor.apply(this, arguments);
   }
 
   return BankOperation;
@@ -927,7 +915,7 @@ module.exports = BankOperation = (function(_super) {
 });
 
 ;require.register("models/regular_operation", function(exports, require, module) {
-var RegularOperation, _ref,
+var RegularOperation,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -935,8 +923,7 @@ module.exports = RegularOperation = (function(_super) {
   __extends(RegularOperation, _super);
 
   function RegularOperation() {
-    _ref = RegularOperation.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return RegularOperation.__super__.constructor.apply(this, arguments);
   }
 
   return RegularOperation;
@@ -946,7 +933,7 @@ module.exports = RegularOperation = (function(_super) {
 });
 
 ;require.register("models/user_configuration", function(exports, require, module) {
-var Config, _ref,
+var Config,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -954,8 +941,7 @@ module.exports = Config = (function(_super) {
   __extends(Config, _super);
 
   function Config() {
-    _ref = Config.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return Config.__super__.constructor.apply(this, arguments);
   }
 
   Config.prototype.url = 'rbiconfiguration';
@@ -977,7 +963,7 @@ module.exports = Config = (function(_super) {
 });
 
 ;require.register("router", function(exports, require, module) {
-var AppView, Router, _ref,
+var AppView, Router,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -987,8 +973,7 @@ module.exports = Router = (function(_super) {
   __extends(Router, _super);
 
   function Router() {
-    _ref = Router.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return Router.__super__.constructor.apply(this, arguments);
   }
 
   Router.prototype.routes = {
@@ -1002,33 +987,33 @@ module.exports = Router = (function(_super) {
   };
 
   Router.prototype.monthly_analysis = function() {
-    var _ref1;
-    return (_ref1 = window.views.monthlyAnalysisView) != null ? _ref1.render() : void 0;
+    var _ref;
+    return (_ref = window.views.monthlyAnalysisView) != null ? _ref.render() : void 0;
   };
 
   Router.prototype.forecast_budget = function() {
-    var _ref1;
-    return (_ref1 = window.views.forecastBudgetView) != null ? _ref1.render() : void 0;
+    var _ref;
+    return (_ref = window.views.forecastBudgetView) != null ? _ref.render() : void 0;
   };
 
   Router.prototype.compared_analysis = function() {
-    var _ref1;
-    return (_ref1 = window.views.comparedAnalysisView) != null ? _ref1.render() : void 0;
+    var _ref;
+    return (_ref = window.views.comparedAnalysisView) != null ? _ref.render() : void 0;
   };
 
   Router.prototype.online_shopping = function() {
-    var _ref1;
-    return (_ref1 = window.views.onlineShoppingView) != null ? _ref1.render() : void 0;
+    var _ref;
+    return (_ref = window.views.onlineShoppingView) != null ? _ref.render() : void 0;
   };
 
   Router.prototype.alerts = function() {
-    var _ref1;
-    return (_ref1 = window.views.alertsView) != null ? _ref1.render() : void 0;
+    var _ref;
+    return (_ref = window.views.alertsView) != null ? _ref.render() : void 0;
   };
 
   Router.prototype.configuration = function() {
-    var _ref1;
-    return (_ref1 = window.views.configurationView) != null ? _ref1.render() : void 0;
+    var _ref;
+    return (_ref = window.views.configurationView) != null ? _ref.render() : void 0;
   };
 
   return Router;
@@ -1038,7 +1023,7 @@ module.exports = Router = (function(_super) {
 });
 
 ;require.register("views/alerts", function(exports, require, module) {
-var AlertsView, BaseView, _ref,
+var AlertsView, BaseView,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1048,8 +1033,7 @@ module.exports = AlertsView = (function(_super) {
   __extends(AlertsView, _super);
 
   function AlertsView() {
-    _ref = AlertsView.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return AlertsView.__super__.constructor.apply(this, arguments);
   }
 
   AlertsView.prototype.template = require('./templates/alerts');
@@ -1074,7 +1058,7 @@ module.exports = AlertsView = (function(_super) {
 });
 
 ;require.register("views/app", function(exports, require, module) {
-var AlertsView, AppView, BaseView, ComparedAnalysisView, ConfigurationView, ForecastBudgetView, MenuView, MonthlyAnalysisView, OnlineShoppingView, _ref,
+var AlertsView, AppView, BaseView, ComparedAnalysisView, ConfigurationView, ForecastBudgetView, MenuView, MonthlyAnalysisView, OnlineShoppingView,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1098,8 +1082,7 @@ module.exports = AppView = (function(_super) {
   __extends(AppView, _super);
 
   function AppView() {
-    _ref = AppView.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return AppView.__super__.constructor.apply(this, arguments);
   }
 
   AppView.prototype.template = require('./templates/app');
@@ -1109,42 +1092,43 @@ module.exports = AppView = (function(_super) {
   AppView.prototype.isLoading = true;
 
   AppView.prototype.afterRender = function() {
-    var _this = this;
     window.collections.banks.fetch({
       data: {
         withAccountOnly: true
       },
-      success: function() {
-        if (!_this.menuView) {
-          _this.menuView = new MenuView();
-        }
-        if (!window.views.configurationView) {
-          window.views.configurationView = new ConfigurationView();
-        }
-        if (!window.views.monthlyAnalysisView) {
-          window.views.monthlyAnalysisView = new MonthlyAnalysisView();
-        }
-        if (!window.views.forecastBudgetView) {
-          window.views.forecastBudgetView = new ForecastBudgetView();
-        }
-        if (!window.views.comparedAnalysisView) {
-          window.views.comparedAnalysisView = new ComparedAnalysisView();
-        }
-        if (!window.views.onlineShoppingView) {
-          window.views.onlineShoppingView = new OnlineShoppingView();
-        }
-        if (!window.views.alertsView) {
-          window.views.alertsView = new AlertsView();
-        }
-        _this.menuView.render();
-        Backbone.history.start();
-        _this.displayLoadingView();
-        if (document.location.hash !== "#" + "parametres") {
-          return window.app.router.navigate('parametres', {
-            trigger: true
-          });
-        }
-      },
+      success: (function(_this) {
+        return function() {
+          if (!_this.menuView) {
+            _this.menuView = new MenuView();
+          }
+          if (!window.views.configurationView) {
+            window.views.configurationView = new ConfigurationView();
+          }
+          if (!window.views.monthlyAnalysisView) {
+            window.views.monthlyAnalysisView = new MonthlyAnalysisView();
+          }
+          if (!window.views.forecastBudgetView) {
+            window.views.forecastBudgetView = new ForecastBudgetView();
+          }
+          if (!window.views.comparedAnalysisView) {
+            window.views.comparedAnalysisView = new ComparedAnalysisView();
+          }
+          if (!window.views.onlineShoppingView) {
+            window.views.onlineShoppingView = new OnlineShoppingView();
+          }
+          if (!window.views.alertsView) {
+            window.views.alertsView = new AlertsView();
+          }
+          _this.menuView.render();
+          Backbone.history.start();
+          _this.displayLoadingView();
+          if (document.location.hash !== "#" + "parametres") {
+            return window.app.router.navigate('parametres', {
+              trigger: true
+            });
+          }
+        };
+      })(this),
       error: function() {
         return console.log("Fatal error: could not get the banks list");
       }
@@ -1244,45 +1228,46 @@ module.exports = BankStatementView = (function(_super) {
         url: "bankoperations/byDate",
         data: this.data,
         success: function(operations) {
-          var _this = this;
           if (operations) {
             return $.ajax({
               type: "GET",
               url: "rbifixedcost",
-              success: function(fixedCosts) {
-                var finalOperations, fixedCost, index, operation, operationRemoved, _i, _j, _len, _len1;
-                window.rbiActiveData.currentOperations = {};
-                finalOperations = [];
-                for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
-                  operation = operations[index];
-                  operation.isFixedCost = false;
-                  if (operation.amount < 0) {
-                    for (_j = 0, _len1 = fixedCosts.length; _j < _len1; _j++) {
-                      fixedCost = fixedCosts[_j];
-                      if ($.inArray(operation.id, fixedCost.idTable) >= 0) {
-                        operation.isFixedCost = true;
-                        operation.fixedCostId = fixedCost.id;
-                        break;
+              success: (function(_this) {
+                return function(fixedCosts) {
+                  var finalOperations, fixedCost, index, operation, operationRemoved, _i, _j, _len, _len1;
+                  window.rbiActiveData.currentOperations = {};
+                  finalOperations = [];
+                  for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
+                    operation = operations[index];
+                    operation.isFixedCost = false;
+                    if (operation.amount < 0) {
+                      for (_j = 0, _len1 = fixedCosts.length; _j < _len1; _j++) {
+                        fixedCost = fixedCosts[_j];
+                        if ($.inArray(operation.id, fixedCost.idTable) >= 0) {
+                          operation.isFixedCost = true;
+                          operation.fixedCostId = fixedCost.id;
+                          break;
+                        }
                       }
                     }
+                    operationRemoved = false;
+                    if (displayFixedCosts && (!operation.isFixedCost)) {
+                      operationRemoved = true;
+                    } else if (displayVariableCosts && (operation.isFixedCost || (operation.amount > 0))) {
+                      operationRemoved = true;
+                    }
+                    if (!operationRemoved) {
+                      finalOperations.push(operation);
+                      window.rbiActiveData.currentOperations[operation.id] = operation;
+                    }
                   }
-                  operationRemoved = false;
-                  if (displayFixedCosts && (!operation.isFixedCost)) {
-                    operationRemoved = true;
-                  } else if (displayVariableCosts && (operation.isFixedCost || (operation.amount > 0))) {
-                    operationRemoved = true;
+                  if (callback != null) {
+                    callback(window.rbiActiveData.currentOperations);
                   }
-                  if (!operationRemoved) {
-                    finalOperations.push(operation);
-                    window.rbiActiveData.currentOperations[operation.id] = operation;
-                  }
-                }
-                if (callback != null) {
-                  callback(window.rbiActiveData.currentOperations);
-                }
-                window.collections.operations.reset(finalOperations);
-                return view.addAll();
-              },
+                  window.collections.operations.reset(finalOperations);
+                  return view.addAll();
+                };
+              })(this),
               error: function(err) {
                 return console.log("getting fixed cost failed.");
               }
@@ -1471,30 +1456,31 @@ module.exports = EntryView = (function(_super) {
   };
 
   EntryView.prototype.removeFixedCost = function(event) {
-    var fixedCostId,
-      _this = this;
+    var fixedCostId;
     fixedCostId = this.model.get("fixedCostId" || null);
     if (fixedCostId != null) {
       return $.ajax({
         url: '/rbifixedcost/' + fixedCostId,
         type: 'DELETE',
-        success: function(result) {
-          var id, operation, _ref;
-          console.log("Delete fixed cost success.");
-          _this.destroyPopupFixedCost(event);
-          $('#search-text').keyup();
-          if (window.rbiActiveData.currentOperations != null) {
-            _ref = window.rbiActiveData.currentOperations;
-            for (id in _ref) {
-              operation = _ref[id];
-              if ((operation.fixedCostId != null) && (operation.fixedCostId = fixedCostId)) {
-                operation.isFixedCost = false;
-                operation.fixedCostId = null;
+        success: (function(_this) {
+          return function(result) {
+            var id, operation, _ref;
+            console.log("Delete fixed cost success.");
+            _this.destroyPopupFixedCost(event);
+            $('#search-text').keyup();
+            if (window.rbiActiveData.currentOperations != null) {
+              _ref = window.rbiActiveData.currentOperations;
+              for (id in _ref) {
+                operation = _ref[id];
+                if ((operation.fixedCostId != null) && (operation.fixedCostId = fixedCostId)) {
+                  operation.isFixedCost = false;
+                  operation.fixedCostId = null;
+                }
               }
+              return window.views.monthlyAnalysisView.displayMonthlySums(window.rbiActiveData.currentOperations);
             }
-            return window.views.monthlyAnalysisView.displayMonthlySums(window.rbiActiveData.currentOperations);
-          }
-        },
+          };
+        })(this),
         error: function() {
           return console.log("Delete fixed cost failed.");
         }
@@ -1503,8 +1489,7 @@ module.exports = EntryView = (function(_super) {
   };
 
   EntryView.prototype.prepareFixedCost = function(event) {
-    var accountNumber, currentUniquery, fixedCostToRegister, jqPopup, neededRequest, userChoice,
-      _this = this;
+    var accountNumber, currentUniquery, fixedCostToRegister, jqPopup, neededRequest, userChoice;
     jqPopup = $(event.currentTarget).parent();
     userChoice = jqPopup.children('input[type=radio]:checked').val();
     accountNumber = window.rbiActiveData.bankAccount.get('accountNumber');
@@ -1547,30 +1532,34 @@ module.exports = EntryView = (function(_super) {
         type: "POST",
         url: "bankoperations/query",
         data: this.data,
-        success: function(objects) {
-          var object, _i, _len;
-          if ((objects != null) && objects.length > 0) {
-            for (_i = 0, _len = objects.length; _i < _len; _i++) {
-              object = objects[_i];
-              fixedCostToRegister.idTable.push(object.id);
+        success: (function(_this) {
+          return function(objects) {
+            var object, _i, _len;
+            if ((objects != null) && objects.length > 0) {
+              for (_i = 0, _len = objects.length; _i < _len; _i++) {
+                object = objects[_i];
+                fixedCostToRegister.idTable.push(object.id);
+              }
+              return _this.saveFixedCost(fixedCostToRegister, function() {
+                _this.destroyPopupFixedCost(event);
+                return $('#search-text').keyup();
+              });
+            } else {
+              return console.log("Operation(s) not found");
             }
-            return _this.saveFixedCost(fixedCostToRegister, function() {
-              _this.destroyPopupFixedCost(event);
-              return $('#search-text').keyup();
-            });
-          } else {
-            return console.log("Operation(s) not found");
-          }
-        },
+          };
+        })(this),
         error: function(err) {
           return console.log("there was an error");
         }
       });
     } else {
-      return this.saveFixedCost(fixedCostToRegister, function() {
-        _this.destroyPopupFixedCost(event);
-        return $('#search-text').keyup();
-      });
+      return this.saveFixedCost(fixedCostToRegister, (function(_this) {
+        return function() {
+          _this.destroyPopupFixedCost(event);
+          return $('#search-text').keyup();
+        };
+      })(this));
     }
   };
 
@@ -1616,26 +1605,27 @@ module.exports = EntryView = (function(_super) {
   };
 
   EntryView.prototype.saveFixedCost = function(fixedCost, callback) {
-    var _this = this;
     return $.ajax({
       type: "POST",
       url: "rbifixedcost",
       data: fixedCost,
-      success: function(objects) {
-        var id, _i, _len, _ref;
-        _this.model.set("fixedCostId", objects.id);
-        _this.model.set("isFixedCost", true);
-        _ref = fixedCost.idTable;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          id = _ref[_i];
-          if (window.rbiActiveData.currentOperations[id] != null) {
-            window.rbiActiveData.currentOperations[id].isFixedCost = true;
-            window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id;
+      success: (function(_this) {
+        return function(objects) {
+          var id, _i, _len, _ref;
+          _this.model.set("fixedCostId", objects.id);
+          _this.model.set("isFixedCost", true);
+          _ref = fixedCost.idTable;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            id = _ref[_i];
+            if (window.rbiActiveData.currentOperations[id] != null) {
+              window.rbiActiveData.currentOperations[id].isFixedCost = true;
+              window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id;
+            }
           }
-        }
-        window.views.monthlyAnalysisView.displayMonthlySums(window.rbiActiveData.currentOperations);
-        return callback();
-      },
+          window.views.monthlyAnalysisView.displayMonthlySums(window.rbiActiveData.currentOperations);
+          return callback();
+        };
+      })(this),
       error: function(err) {
         return console.log("there was an error");
       }
@@ -1709,7 +1699,7 @@ module.exports = BankTitleView = (function(_super) {
 });
 
 ;require.register("views/compared_analysis", function(exports, require, module) {
-var BaseView, ComparedAnalysisView, _ref,
+var BaseView, ComparedAnalysisView,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1719,8 +1709,7 @@ module.exports = ComparedAnalysisView = (function(_super) {
   __extends(ComparedAnalysisView, _super);
 
   function ComparedAnalysisView() {
-    _ref = ComparedAnalysisView.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return ComparedAnalysisView.__super__.constructor.apply(this, arguments);
   }
 
   ComparedAnalysisView.prototype.template = require('./templates/compared_analysis');
@@ -1745,7 +1734,7 @@ module.exports = ComparedAnalysisView = (function(_super) {
 });
 
 ;require.register("views/configuration", function(exports, require, module) {
-var BaseView, ConfigurationBankView, ConfigurationView, _ref,
+var BaseView, ConfigurationBankView, ConfigurationView,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1757,8 +1746,7 @@ module.exports = ConfigurationView = (function(_super) {
   __extends(ConfigurationView, _super);
 
   function ConfigurationView() {
-    _ref = ConfigurationView.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return ConfigurationView.__super__.constructor.apply(this, arguments);
   }
 
   ConfigurationView.prototype.template = require('./templates/configuration');
@@ -1796,32 +1784,19 @@ module.exports = ConfigurationView = (function(_super) {
     currentBudget = budgetByAccount[accountNumber] || 0;
     if (currentBudget > 0) {
       if (callerMirror != null) {
-        $(callerMirror).val(budgetByAccount[accountNumber]);
+        return $(callerMirror).val(budgetByAccount[accountNumber]);
       } else {
         $('#account-budget-amount').val(budgetByAccount[accountNumber]);
-        $('#configuration-budget-amount').val(budgetByAccount[accountNumber]);
+        return $('#configuration-budget-amount').val(budgetByAccount[accountNumber]);
       }
     } else {
       if (callerMirror != null) {
-        $(callerMirror).val(0);
+        return $(callerMirror).val(0);
       } else {
         $('#account-budget-amount').val(0);
-        $('#configuration-budget-amount').val(0);
+        return $('#configuration-budget-amount').val(0);
       }
     }
-    return this.getLastMonthDebitAmount(currentBudget, function(percentage) {
-      if (this.currentChart != null) {
-        return $('#current-budget-chart').data('easyPieChart').update(percentage);
-      } else {
-        return this.currentChart = $('#current-budget-chart').easyPieChart({
-          animate: 1500,
-          barColor: window.rbiColors.blue,
-          trackColor: window.rbiColors.border_color,
-          scaleColor: window.rbiColors.blue,
-          lineWidth: 2
-        });
-      }
-    });
   };
 
   ConfigurationView.prototype.getLastMonthDebitAmount = function(budgetValue, callback) {
@@ -1861,8 +1836,7 @@ module.exports = ConfigurationView = (function(_super) {
   };
 
   ConfigurationView.prototype.setBudget = function(event, view) {
-    var accountNumber, budgetValue, jqBudgetInput,
-      _this = this;
+    var accountNumber, budgetValue, jqBudgetInput;
     budgetValue = 0;
     jqBudgetInput = $(event.currentTarget);
     budgetValue = jqBudgetInput.val();
@@ -1880,15 +1854,17 @@ module.exports = ConfigurationView = (function(_super) {
         return window.rbiActiveData.userConfiguration.save({
           budgetByAccount: window.rbiActiveData.budgetByAccount
         }, {
-          success: function() {
-            var callerId;
-            callerId = jqBudgetInput.attr('id');
-            if (view) {
-              return view.reloadBudget(callerId);
-            } else {
-              return _this.reloadBudget(callerId);
-            }
-          },
+          success: (function(_this) {
+            return function() {
+              var callerId;
+              callerId = jqBudgetInput.attr('id');
+              if (view) {
+                return view.reloadBudget(callerId);
+              } else {
+                return _this.reloadBudget(callerId);
+              }
+            };
+          })(this),
           error: function() {
             return console.log('Error: budget configuration not saved');
           }
@@ -1906,52 +1882,53 @@ module.exports = ConfigurationView = (function(_super) {
   };
 
   ConfigurationView.prototype.render = function() {
-    var _this = this;
     ConfigurationView.__super__.render.call(this);
     window.rbiActiveData.userConfiguration.fetch({
-      success: function(currentConfig) {
-        var accountNumber, budgetByAccount, treatment, view;
-        accountNumber = currentConfig.get('accountNumber') || "";
-        if ((accountNumber != null) && accountNumber !== "") {
-          window.rbiActiveData.accountNumber = accountNumber;
-          budgetByAccount = currentConfig.get('budgetByAccount') || {};
-          window.rbiActiveData.budgetByAccount = budgetByAccount;
-          _this.reloadBudget();
-        } else {
-          if (window.views.appView.isLoading) {
-            window.views.appView.displayInterfaceView();
+      success: (function(_this) {
+        return function(currentConfig) {
+          var accountNumber, budgetByAccount, treatment, view;
+          accountNumber = currentConfig.get('accountNumber') || "";
+          if ((accountNumber != null) && accountNumber !== "") {
+            window.rbiActiveData.accountNumber = accountNumber;
+            budgetByAccount = currentConfig.get('budgetByAccount') || {};
+            window.rbiActiveData.budgetByAccount = budgetByAccount;
+            _this.reloadBudget();
+          } else {
+            if (window.views.appView.isLoading) {
+              window.views.appView.displayInterfaceView();
+            }
           }
-        }
-        view = _this;
-        treatment = function(bank, callback) {
-          var viewBank;
-          viewBank = new ConfigurationBankView(bank);
-          view.subViews.push(viewBank);
-          $(view.elAccounts).append(viewBank.el);
-          return bank.accounts.fetch({
-            success: function(col) {
-              callback(null, col.length);
-              if (col.length > 0) {
-                return viewBank.render();
+          view = _this;
+          treatment = function(bank, callback) {
+            var viewBank;
+            viewBank = new ConfigurationBankView(bank);
+            view.subViews.push(viewBank);
+            $(view.elAccounts).append(viewBank.el);
+            return bank.accounts.fetch({
+              success: function(col) {
+                callback(null, col.length);
+                if (col.length > 0) {
+                  return viewBank.render();
+                }
+              },
+              error: function(col, err, opts) {
+                callback(null, col.length);
+                return viewBank.$el.html("");
               }
-            },
-            error: function(col, err, opts) {
-              callback(null, col.length);
-              return viewBank.$el.html("");
+            });
+          };
+          return async.concat(window.collections.banks.models, treatment, function(err, results) {
+            if (err) {
+              return console.log(err);
+            } else {
+              this.accounts = results.length;
+              if (this.accounts === 0) {
+                return $(view.elAccounts).prepend(require("./templates/configuration_bank_empty"));
+              }
             }
           });
         };
-        return async.concat(window.collections.banks.models, treatment, function(err, results) {
-          if (err) {
-            return console.log(err);
-          } else {
-            this.accounts = results.length;
-            if (this.accounts === 0) {
-              return $(view.elAccounts).prepend(require("./templates/configuration_bank_empty"));
-            }
-          }
-        });
-      },
+      })(this),
       error: function() {
         return console.log('error during user configuration fetching process');
       }
@@ -2159,10 +2136,30 @@ module.exports = BankSubTitleView = (function(_super) {
     if (currentEvent != null) {
       this.saveConfiguration();
     }
+    $.ajax({
+      type: "POST",
+      url: "bankoperations/byDate",
+      data: {
+        accounts: [window.rbiActiveData.accountNumber]
+      },
+      success: function(operations) {
+        var allOperationsById, operation, _i, _len;
+        allOperationsById = {};
+        for (_i = 0, _len = operations.length; _i < _len; _i++) {
+          operation = operations[_i];
+          allOperationsById[operation.id] = operation;
+        }
+        return window.rbiActiveData.allOperationsById = allOperationsById;
+      },
+      error: function() {
+        return window.rbiActiveData.allOperationsById = null;
+      }
+    });
     window.rbiActiveData.bankAccount = this.model;
     today = moment(new Date()).format('L');
     $("#current-amount-date").text(today);
     $("#account-amount-balance").html((this.model.get('amount')).money());
+    window.views.forecastBudgetView.displayRegularOperations();
     return this.loadLastYearAmounts(this.model, function() {
       window.views.appView.isLoading;
       if (window.views.appView.isLoading) {
@@ -2323,7 +2320,7 @@ module.exports = BankSubTitleView = (function(_super) {
 });
 
 ;require.register("views/forecast_budget", function(exports, require, module) {
-var BaseView, ForcastBudgetView, ForecastBudgetEntryView, RegularOpStatementView, _ref,
+var BaseView, ForcastBudgetView, ForecastBudgetEntryView, RegularOpStatementView,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -2337,8 +2334,7 @@ module.exports = ForcastBudgetView = (function(_super) {
   __extends(ForcastBudgetView, _super);
 
   function ForcastBudgetView() {
-    _ref = ForcastBudgetView.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return ForcastBudgetView.__super__.constructor.apply(this, arguments);
   }
 
   ForcastBudgetView.prototype.template = require('./templates/forecast_budget');
@@ -2346,6 +2342,8 @@ module.exports = ForcastBudgetView = (function(_super) {
   ForcastBudgetView.prototype.el = 'div#interface-box';
 
   ForcastBudgetView.prototype.elRegularOperations = '#regular-operations';
+
+  ForcastBudgetView.prototype.currentChart = null;
 
   ForcastBudgetView.prototype.initialize = function() {
     return window.views.regularOpStatementView = new RegularOpStatementView($('#context-box'));
@@ -2357,34 +2355,76 @@ module.exports = ForcastBudgetView = (function(_super) {
     view = this;
     accountNumber = window.rbiActiveData.accountNumber || null;
     if ((accountNumber != null) && (accountNumber !== "")) {
-      this.displayRegularOperation(accountNumber);
+      this.displayRegularOperations(accountNumber);
       window.views.regularOpStatementView.reload();
     }
     return this;
   };
 
-  ForcastBudgetView.prototype.displayRegularOperation = function(accountNumber) {
-    var _this = this;
+  ForcastBudgetView.prototype.reloadBudget = function() {
+    var budgetExpenses, currentBudget, percentage, regularOperation, rest, trToInject, _i, _len, _ref;
+    currentBudget = 0;
+    budgetExpenses = 0;
+    _ref = this.subViews;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      regularOperation = _ref[_i];
+      if ((regularOperation.rules != null) && (regularOperation.rules.queryMid != null)) {
+        if (regularOperation.rules.queryMid > 0) {
+          currentBudget += regularOperation.rules.queryMid;
+        } else if (regularOperation.rules.queryMid < 0) {
+          budgetExpenses += regularOperation.rules.queryMid;
+        }
+      }
+    }
+    budgetExpenses = Math.abs(budgetExpenses);
+    percentage = parseInt((budgetExpenses / currentBudget) * 100);
+    percentage = percentage <= 100 ? percentage : 100;
+    rest = currentBudget - budgetExpenses;
+    $('#current-budget-chart-debit').html(rest.money());
+    $('#current-budget-chart').attr('data-percent', percentage);
+    if (this.currentChart != null) {
+      $('#current-budget-chart').data('easyPieChart').update(percentage);
+    } else {
+      this.currentChart = $('#current-budget-chart').easyPieChart({
+        animate: 1500,
+        barColor: window.rbiColors.blue,
+        trackColor: window.rbiColors.border_color,
+        scaleColor: window.rbiColors.blue,
+        lineWidth: 2
+      });
+    }
+    $("#regular-operations-budget").remove();
+    trToInject = '<tr id="regular-operations-budget">' + "\t" + "<td><strong>Budget</strong></td>" + "\t" + "<td><strong>" + rest.money() + "<strong></td>" + "\t" + "<td>&nbsp;</td>" + "\t" + "<td>&nbsp;</td>" + '</tr>';
+    return $("tbody#regular-operations").append(trToInject);
+  };
+
+  ForcastBudgetView.prototype.displayRegularOperations = function(accountNumber) {
+    if ((accountNumber == null) && (window.rbiActiveData.accountNumber != null)) {
+      accountNumber = window.rbiActiveData.accountNumber;
+    }
     window.collections.regularOperations.reset();
     window.collections.regularOperations.setAccount(accountNumber);
     return window.collections.regularOperations.fetch({
-      success: function(regularOperations, rawData) {
-        var operation, subView, _i, _len, _ref1;
-        _this.subViews = [];
-        $(_this.elRegularOperations).empty();
-        _ref1 = regularOperations.models;
-        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-          operation = _ref1[_i];
-          subView = new ForecastBudgetEntryView(operation);
-          $(_this.elRegularOperations).append(subView.render().el);
-          _this.subViews.push(subView);
-        }
-        return {
-          error: function() {
-            return console.log("error fetching regular operations");
+      success: (function(_this) {
+        return function(regularOperations, rawData) {
+          var operation, subView, _i, _len, _ref;
+          _this.subViews = [];
+          $(_this.elRegularOperations).empty();
+          _ref = regularOperations.models;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            operation = _ref[_i];
+            subView = new ForecastBudgetEntryView(operation);
+            $(_this.elRegularOperations).append(subView.render().el);
+            _this.subViews.push(subView);
           }
+          _this.reloadBudget();
+          return {
+            error: function() {
+              return console.log("error fetching regular operations");
+            }
+          };
         };
-      }
+      })(this)
     });
   };
 
@@ -2423,7 +2463,9 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
 
   ForecastBudgetEntryView.prototype.render = function() {
     if (this.model.get("uniquery") != null) {
-      this.model.set("rules", this.deserializeUniquery(this.model.get("uniquery")));
+      this.rules = this.deserializeUniquery(this.model.get("uniquery"));
+      this.addAverageToRules();
+      this.model.set("rules", this.rules);
     }
     ForecastBudgetEntryView.__super__.render.call(this);
     return this;
@@ -2437,45 +2479,56 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
   };
 
   ForecastBudgetEntryView.prototype.deserializeUniquery = function(uniquery) {
-    var max, mid, min, queryParts;
+    var queryParts, rules;
     queryParts = [];
-    this.rules = {};
+    rules = {};
     if ((uniquery != null) && ((typeof uniquery) === "string")) {
       queryParts = uniquery.split("(#|#)");
     }
-    this.rules.queryAccountNumber = queryParts[0] || "";
-    this.rules.queryPattern = queryParts[1] || "";
-    this.rules.queryMin = (queryParts[2] != null) && (queryParts[2] !== "NEGATIVE_INFINITY") ? Number(queryParts[2]) : null;
-    this.rules.queryMax = (queryParts[3] != null) && (queryParts[3] !== "POSITIVE_INFINITY") ? Number(queryParts[3]) : null;
-    this.rules.textQueryMin = this.rules.queryMin != null ? this.rules.queryMin.money() : "";
-    this.rules.textQueryMax = this.rules.queryMax != null ? this.rules.queryMax.money() : "";
-    this.rules.textQueryMid = "";
-    min = this.rules.queryMin;
-    max = this.rules.queryMax;
-    if ((min != null) && (max != null)) {
-      mid = parseFloat(min) + parseFloat(max);
-      this.rules.textQueryMid = (mid / 2).money();
-    } else if (min != null) {
-      this.rules.textQueryMid = "> à " + min.money();
-    } else if (max != null) {
-      this.rules.textQueryMid = "< à " + max.money();
+    rules.queryAccountNumber = queryParts[0] || "";
+    rules.queryPattern = queryParts[1] || "";
+    rules.queryMin = (queryParts[2] != null) && (queryParts[2] !== "NEGATIVE_INFINITY") ? Number(queryParts[2]) : null;
+    rules.queryMax = (queryParts[3] != null) && (queryParts[3] !== "POSITIVE_INFINITY") ? Number(queryParts[3]) : null;
+    return rules;
+  };
+
+  ForecastBudgetEntryView.prototype.addAverageToRules = function() {
+    var addedAmounts, allOperationsById, count, id, idTable, mid, _i, _len;
+    idTable = this.model.get("idTable");
+    allOperationsById = window.rbiActiveData.allOperationsById;
+    mid = 0;
+    count = 0;
+    addedAmounts = 0;
+    if ((idTable != null) && (allOperationsById != null) && idTable.length > 0) {
+      for (_i = 0, _len = idTable.length; _i < _len; _i++) {
+        id = idTable[_i];
+        if (allOperationsById[id] != null) {
+          console.log(allOperationsById[id]);
+          addedAmounts += allOperationsById[id].amount;
+          count++;
+        }
+      }
     }
-    return this.rules;
+    if (addedAmounts !== 0) {
+      mid = addedAmounts / count;
+    }
+    this.rules.queryMid = mid;
+    return this.rules.textQueryMid = mid.money();
   };
 
   ForecastBudgetEntryView.prototype.removeRegularOperation = function(event) {
-    var regularOperationId,
-      _this = this;
+    var regularOperationId;
     regularOperationId = (this.model.get("id")) || null;
     if (regularOperationId != null) {
       return $.ajax({
         url: '/rbifixedcost/' + regularOperationId,
         type: 'DELETE',
-        success: function(result) {
-          console.log("Delete regular operation success.");
-          _this.destroy();
-          return $('#search-regular-operations').keyup();
-        },
+        success: (function(_this) {
+          return function(result) {
+            window.views.forecastBudgetView.displayRegularOperations();
+            return $('#search-regular-operations').keyup();
+          };
+        })(this),
         error: function() {
           return console.log("Delete fixed cost failed.");
         }
@@ -2490,7 +2543,7 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
 });
 
 ;require.register("views/menu", function(exports, require, module) {
-var BaseView, MenuView, _ref,
+var BaseView, MenuView,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -2500,8 +2553,7 @@ module.exports = MenuView = (function(_super) {
   __extends(MenuView, _super);
 
   function MenuView() {
-    _ref = MenuView.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return MenuView.__super__.constructor.apply(this, arguments);
   }
 
   MenuView.prototype.template = require('./templates/menu');
@@ -2524,12 +2576,12 @@ module.exports = MenuView = (function(_super) {
     this.adjustPadding();
     that = this;
     return window.app.router.bind("route", function(method) {
-      var currentMethod, currentRoute, route, _ref1;
+      var currentMethod, currentRoute, route, _ref;
       route = null;
       if (method != null) {
-        _ref1 = window.app.router.routes;
-        for (currentRoute in _ref1) {
-          currentMethod = _ref1[currentRoute];
+        _ref = window.app.router.routes;
+        for (currentRoute in _ref) {
+          currentMethod = _ref[currentRoute];
           if ((currentRoute !== "") && (currentMethod === method)) {
             route = currentRoute;
             break;
@@ -2591,7 +2643,7 @@ module.exports = MenuView = (function(_super) {
 });
 
 ;require.register("views/monthly_analysis", function(exports, require, module) {
-var BankStatementView, BaseView, MonthlyAnalysisView, _ref,
+var BankStatementView, BaseView, MonthlyAnalysisView,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -2603,8 +2655,7 @@ module.exports = MonthlyAnalysisView = (function(_super) {
   __extends(MonthlyAnalysisView, _super);
 
   function MonthlyAnalysisView() {
-    _ref = MonthlyAnalysisView.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return MonthlyAnalysisView.__super__.constructor.apply(this, arguments);
   }
 
   MonthlyAnalysisView.prototype.template = require('./templates/monthly_analysis');
@@ -2654,8 +2705,7 @@ module.exports = MonthlyAnalysisView = (function(_super) {
   };
 
   MonthlyAnalysisView.prototype.switchMonth = function(event) {
-    var bankStatementParams, currentMonth, firstMonth, jqSwitcher, monthlyAmounts,
-      _this = this;
+    var bankStatementParams, currentMonth, firstMonth, jqSwitcher, monthlyAmounts;
     currentMonth = moment(new Date()).startOf('month').format("YYYY-MM-DD");
     firstMonth = moment(window.rbiActiveData.olderOperationDate).startOf('month').format("YYYY-MM-DD");
     $('#search-text').val("");
@@ -2687,13 +2737,15 @@ module.exports = MonthlyAnalysisView = (function(_super) {
         dateFrom: this.currentMonthStart,
         dateTo: moment(this.currentMonthStart).endOf('month')
       };
-      return this.bankStatementView.reload(bankStatementParams, function(operations) {
-        _this.displayMonthlySums(operations);
-        _this.displayPieChart(operations);
-        return $(window).resize(function() {
-          return _this.displayPieChart(operations);
-        });
-      });
+      return this.bankStatementView.reload(bankStatementParams, (function(_this) {
+        return function(operations) {
+          _this.displayMonthlySums(operations);
+          _this.displayPieChart(operations);
+          return $(window).resize(function() {
+            return _this.displayPieChart(operations);
+          });
+        };
+      })(this));
     }
   };
 
@@ -2750,7 +2802,7 @@ module.exports = MonthlyAnalysisView = (function(_super) {
   };
 
   MonthlyAnalysisView.prototype.displayPieChart = function(operations) {
-    var amount, chartColors, dataTable, finalObj, finalType, id, isKnownType, obj, operation, operationTypes, others, pattern, raw, type, _i, _len, _ref1;
+    var amount, chartColors, dataTable, finalObj, finalType, id, isKnownType, obj, operation, operationTypes, others, pattern, raw, type, _i, _len, _ref;
     $('#pie_chart').empty();
     dataTable = [];
     chartColors = [];
@@ -2824,9 +2876,9 @@ module.exports = MonthlyAnalysisView = (function(_super) {
         for (type in operationTypes) {
           obj = operationTypes[type];
           if (!isKnownType) {
-            _ref1 = obj.patterns;
-            for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-              pattern = _ref1[_i];
+            _ref = obj.patterns;
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              pattern = _ref[_i];
               if (raw.search(pattern) >= 0) {
                 obj.amount += amount;
                 isKnownType = true;
@@ -2939,7 +2991,7 @@ module.exports = MonthlyAnalysisView = (function(_super) {
 });
 
 ;require.register("views/online_shopping", function(exports, require, module) {
-var BaseView, OnlineShoppingView, _ref,
+var BaseView, OnlineShoppingView,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -2949,8 +3001,7 @@ module.exports = OnlineShoppingView = (function(_super) {
   __extends(OnlineShoppingView, _super);
 
   function OnlineShoppingView() {
-    _ref = OnlineShoppingView.__super__.constructor.apply(this, arguments);
-    return _ref;
+    return OnlineShoppingView.__super__.constructor.apply(this, arguments);
   }
 
   OnlineShoppingView.prototype.template = require('./templates/online_shopping');
@@ -2991,14 +3042,11 @@ module.exports = RegularOpStatementView = (function(_super) {
   RegularOpStatementView.prototype.templateHeader = require('./templates/regular_op_statement_header');
 
   RegularOpStatementView.prototype.events = {
-    'click a.recheck-button': "checkAccount",
-    'click th.sort-date': "sortByDate",
-    'click th.sort-title': "sortByTitle",
-    'click th.sort-amount': "sortByAmount",
     'keyup input#search-regular-operations': "reload",
     'keyup input#search-min-amount': "reload",
     'keyup input#search-max-amount': "reload",
-    'click .add-regular-operation': "addToRegularOperation"
+    'click .add-regular-operation': "addToRegularOperation",
+    'click #empty-search-regular-operations': "emptyAllFields"
   };
 
   RegularOpStatementView.prototype.inUse = false;
@@ -3019,6 +3067,13 @@ module.exports = RegularOpStatementView = (function(_super) {
     return this;
   };
 
+  RegularOpStatementView.prototype.emptyAllFields = function() {
+    $("input#search-regular-operations").val("");
+    $("#search-min-amount").val("");
+    $("#search-max-amount").val("");
+    return $("input#search-regular-operations").keyup();
+  };
+
   RegularOpStatementView.prototype.getCurrentRules = function() {
     var rules;
     rules = null;
@@ -3029,6 +3084,12 @@ module.exports = RegularOpStatementView = (function(_super) {
         minAmount: $("#search-min-amount").val() || null,
         maxAmount: $("#search-max-amount").val() || null
       };
+      if (rules.minAmount != null) {
+        rules.minAmount = parseFloat(rules.minAmount).toFixed(2);
+      }
+      if (rules.maxAmount != null) {
+        rules.maxAmount = parseFloat(rules.maxAmount).toFixed(2);
+      }
     }
     return rules;
   };
@@ -3041,8 +3102,8 @@ module.exports = RegularOpStatementView = (function(_super) {
       uniquery = rules.accountNumber;
       if (rules.pattern != null) {
         uniquery += separator + rules.pattern;
-        minAmount = Number(rules.minAmount) || "NEGATIVE_INFINITY";
-        maxAmount = Number(rules.maxAmount) || "POSITIVE_INFINITY";
+        minAmount = rules.minAmount || "NEGATIVE_INFINITY";
+        maxAmount = rules.maxAmount || "POSITIVE_INFINITY";
         uniquery += separator + minAmount;
         uniquery += separator + maxAmount;
       }
@@ -3052,52 +3113,46 @@ module.exports = RegularOpStatementView = (function(_super) {
   };
 
   RegularOpStatementView.prototype.addToRegularOperation = function() {
-    var rules,
-      _this = this;
-    console.log("add");
+    var data, rules;
     rules = this.getCurrentRules() || null;
     if (rules != null) {
-      this.data = {
+      data = {
         accounts: [rules.accountNumber],
         searchText: rules.pattern.toString(),
         exactSearchText: "",
-        dateFrom: null,
-        dateTo: new Date()
+        amountFrom: rules.minAmount,
+        amountTo: rules.maxAmount
       };
-      if (rules.maxAmont < rules.minAmont) {
-        this.data.amountFrom = rules.maxAmont;
-        this.data.amountTo = rules.minAmont;
-      } else {
-        this.data.amountFrom = rules.minAmont;
-        this.data.amountTo = rules.minAmont;
-      }
       return $.ajax({
         type: "POST",
         url: "bankoperations/query",
-        data: this.data,
-        success: function(objects) {
-          var fixedCostToRegister, object, _i, _len;
-          console.log(objects);
-          console.log("get operation linked request sent successfully!");
-          if ((objects != null) && objects.length > 0) {
-            fixedCostToRegister = {
-              type: "standard",
-              accountNumber: rules.accountNumber,
-              idTable: [],
-              uniquery: _this.serializeUniquery(rules)
-            };
-            for (_i = 0, _len = objects.length; _i < _len; _i++) {
-              object = objects[_i];
-              fixedCostToRegister.idTable.push(object.id);
+        data: data,
+        success: (function(_this) {
+          return function(objects) {
+            var fixedCostToRegister, object, _i, _len;
+            console.log(objects);
+            console.log("get operation linked request sent successfully!");
+            if ((objects != null) && objects.length > 0) {
+              fixedCostToRegister = {
+                type: "standard",
+                accountNumber: rules.accountNumber,
+                idTable: [],
+                uniquery: _this.serializeUniquery(rules),
+                isBudgetPart: true
+              };
+              for (_i = 0, _len = objects.length; _i < _len; _i++) {
+                object = objects[_i];
+                fixedCostToRegister.idTable.push(object.id);
+              }
+              return _this.saveFixedCost(fixedCostToRegister, function() {
+                $('#search-regular-operations').keyup();
+                return window.views.forecastBudgetView.displayRegularOperations(rules.accountNumber);
+              });
+            } else {
+              return console.log("Operation(s) not found");
             }
-            return _this.saveFixedCost(fixedCostToRegister, function() {
-              $('#search-regular-operations').keyup();
-              return window.views.forecastBudgetView.displayRegularOperation(rules.accountNumber);
-            });
-          } else {
-            return console.log("Operation(s) not found");
-          }
-        },
+          };
+        })(this),
         error: function(err) {
           return console.log("there was an error");
         }
@@ -3108,16 +3163,17 @@ module.exports = RegularOpStatementView = (function(_super) {
   };
 
   RegularOpStatementView.prototype.saveFixedCost = function(fixedCost, callback) {
-    var _this = this;
     console.log("save !");
     return $.ajax({
       type: "POST",
       url: "rbifixedcost",
       data: fixedCost,
-      success: function(objects) {
-        console.log("saved !");
-        return callback();
-      },
+      success: (function(_this) {
+        return function(objects) {
+          console.log("saved !");
+          return callback();
+        };
+      })(this),
       error: function(err) {
         return console.log("there was an error");
       }
@@ -3161,42 +3217,43 @@ module.exports = RegularOpStatementView = (function(_super) {
         url: "bankoperations/byDate",
         data: this.data,
         success: function(operations) {
-          var _this = this;
           if (operations) {
             return $.ajax({
               type: "GET",
               url: "rbifixedcost",
-              success: function(fixedCosts) {
-                var finalOperations, fixedCost, index, operation, operationRemoved, _i, _j, _len, _len1;
-                window.rbiActiveData.currentOperations = {};
-                finalOperations = [];
-                for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
-                  operation = operations[index];
-                  operation.isFixedCost = false;
-                  if (operation.amount < 0) {
-                    for (_j = 0, _len1 = fixedCosts.length; _j < _len1; _j++) {
-                      fixedCost = fixedCosts[_j];
-                      if ($.inArray(operation.id, fixedCost.idTable) >= 0) {
-                        operation.isFixedCost = true;
-                        operation.fixedCostId = fixedCost.id;
-                        break;
+              success: (function(_this) {
+                return function(fixedCosts) {
+                  var finalOperations, fixedCost, index, operation, operationRemoved, _i, _j, _len, _len1;
+                  window.rbiActiveData.currentOperations = {};
+                  finalOperations = [];
+                  for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
+                    operation = operations[index];
+                    operation.isFixedCost = false;
+                    if (operation.amount < 0) {
+                      for (_j = 0, _len1 = fixedCosts.length; _j < _len1; _j++) {
+                        fixedCost = fixedCosts[_j];
+                        if ($.inArray(operation.id, fixedCost.idTable) >= 0) {
+                          operation.isFixedCost = true;
+                          operation.fixedCostId = fixedCost.id;
+                          break;
+                        }
                       }
                     }
+                    operationRemoved = false;
+                    if (!operationRemoved) {
+                      finalOperations.push(operation);
+                      window.rbiActiveData.currentOperations[operation.id] = operation;
+                    }
                   }
-                  operationRemoved = false;
-                  if (!operationRemoved) {
-                    finalOperations.push(operation);
-                    window.rbiActiveData.currentOperations[operation.id] = operation;
+                  if (callback != null) {
+                    callback(window.rbiActiveData.currentOperations);
                   }
-                }
-                if (callback != null) {
-                  callback(window.rbiActiveData.currentOperations);
-                }
-                window.collections.operations.reset(finalOperations);
-                window.collections.operations.setComparator("date");
-                window.collections.operations.sort();
-                return view.addAll();
-              },
+                  window.collections.operations.reset(finalOperations);
+                  window.collections.operations.setComparator("date");
+                  window.collections.operations.sort();
+                  return view.addAll();
+                };
+              })(this),
               error: function(err) {
                 return console.log("getting fixed cost failed.");
               }
@@ -3219,8 +3276,8 @@ module.exports = RegularOpStatementView = (function(_super) {
     var accountNumber, amountFromVal, amountToVal, dateFrom, dateFromVal, dateTo, dateToVal, jqAmountMax, jqAmountMin, now, searchTextVal;
     jqAmountMin = $("#search-min-amount").length === 1 ? ($("#search-min-amount").val()).replace(",", ".") : null;
     jqAmountMax = $("#search-max-amount").length === 1 ? ($("#search-max-amount").val()).replace(",", ".") : null;
-    amountFromVal = Number(jqAmountMin) || Number.NEGATIVE_INFINITY;
-    amountToVal = Number(jqAmountMax) || Number.POSITIVE_INFINITY;
+    amountFromVal = (parseFloat(jqAmountMin).toFixed(2)) || Number.NEGATIVE_INFINITY;
+    amountToVal = (parseFloat(jqAmountMax).toFixed(2)) || Number.POSITIVE_INFINITY;
     now = new Date();
     dateFrom = moment(moment(now).subtract('y', 1)).format('YYYY-MM-DD');
     dateTo = moment(now).format('YYYY-MM-DD');
@@ -3367,7 +3424,6 @@ module.exports = RegularOpStatementEntryView = (function(_super) {
 
   RegularOpStatementEntryView.prototype.applySearch = function() {
     var currentAmount, maxAmount, minAmount, modifier, title;
-    console.log(this.model);
     currentAmount = parseFloat(this.model.get("amount") || 0);
     modifier = Math.abs(parseFloat(currentAmount * 0.1));
     title = (this.model.get('title') || "").toString();
@@ -3403,30 +3459,31 @@ module.exports = RegularOpStatementEntryView = (function(_super) {
   };
 
   RegularOpStatementEntryView.prototype.removeFixedCost = function(event) {
-    var fixedCostId,
-      _this = this;
+    var fixedCostId;
     fixedCostId = this.model.get("fixedCostId" || null);
     if (fixedCostId != null) {
       return $.ajax({
         url: '/rbifixedcost/' + fixedCostId,
         type: 'DELETE',
-        success: function(result) {
-          var id, operation, _ref;
-          console.log("Delete fixed cost success.");
-          _this.destroyPopupFixedCost(event);
-          $('#search-text').keyup();
-          if (window.rbiActiveData.currentOperations != null) {
-            _ref = window.rbiActiveData.currentOperations;
-            for (id in _ref) {
-              operation = _ref[id];
-              if ((operation.fixedCostId != null) && (operation.fixedCostId = fixedCostId)) {
-                operation.isFixedCost = false;
-                operation.fixedCostId = null;
+        success: (function(_this) {
+          return function(result) {
+            var id, operation, _ref;
+            console.log("Delete fixed cost success.");
+            _this.destroyPopupFixedCost(event);
+            $('#search-text').keyup();
+            if (window.rbiActiveData.currentOperations != null) {
+              _ref = window.rbiActiveData.currentOperations;
+              for (id in _ref) {
+                operation = _ref[id];
+                if ((operation.fixedCostId != null) && (operation.fixedCostId = fixedCostId)) {
+                  operation.isFixedCost = false;
+                  operation.fixedCostId = null;
+                }
               }
+              return window.views.monthlyAnalysisView.displayMonthlySums(window.rbiActiveData.currentOperations);
             }
-            return window.views.monthlyAnalysisView.displayMonthlySums(window.rbiActiveData.currentOperations);
-          }
-        },
+          };
+        })(this),
         error: function() {
           return console.log("Delete fixed cost failed.");
         }
@@ -3435,8 +3492,7 @@ module.exports = RegularOpStatementEntryView = (function(_super) {
   };
 
   RegularOpStatementEntryView.prototype.prepareFixedCost = function(event) {
-    var accountNumber, currentUniquery, fixedCostToRegister, jqPopup, neededRequest, userChoice,
-      _this = this;
+    var accountNumber, currentUniquery, fixedCostToRegister, jqPopup, neededRequest, userChoice;
     jqPopup = $(event.currentTarget).parent();
     userChoice = jqPopup.children('input[type=radio]:checked').val();
     accountNumber = window.rbiActiveData.bankAccount.get('accountNumber');
@@ -3479,30 +3535,34 @@ module.exports = RegularOpStatementEntryView = (function(_super) {
         type: "POST",
         url: "bankoperations/query",
         data: this.data,
-        success: function(objects) {
-          var object, _i, _len;
-          if ((objects != null) && objects.length > 0) {
-            for (_i = 0, _len = objects.length; _i < _len; _i++) {
-              object = objects[_i];
-              fixedCostToRegister.idTable.push(object.id);
+        success: (function(_this) {
+          return function(objects) {
+            var object, _i, _len;
+            if ((objects != null) && objects.length > 0) {
+              for (_i = 0, _len = objects.length; _i < _len; _i++) {
+                object = objects[_i];
+                fixedCostToRegister.idTable.push(object.id);
+              }
+              return _this.saveFixedCost(fixedCostToRegister, function() {
+                _this.destroyPopupFixedCost(event);
+                return $('#search-text').keyup();
+              });
+            } else {
+              return console.log("Operation(s) not found");
             }
-            return _this.saveFixedCost(fixedCostToRegister, function() {
-              _this.destroyPopupFixedCost(event);
-              return $('#search-text').keyup();
-            });
-          } else {
-            return console.log("Operation(s) not found");
-          }
-        },
+          };
+        })(this),
         error: function(err) {
           return console.log("there was an error");
         }
       });
     } else {
-      return this.saveFixedCost(fixedCostToRegister, function() {
-        _this.destroyPopupFixedCost(event);
-        return $('#search-text').keyup();
-      });
+      return this.saveFixedCost(fixedCostToRegister, (function(_this) {
+        return function() {
+          _this.destroyPopupFixedCost(event);
+          return $('#search-text').keyup();
+        };
+      })(this));
     }
   };
 
@@ -3548,26 +3608,27 @@ module.exports = RegularOpStatementEntryView = (function(_super) {
   };
 
   RegularOpStatementEntryView.prototype.saveFixedCost = function(fixedCost, callback) {
-    var _this = this;
     return $.ajax({
       type: "POST",
       url: "rbifixedcost",
       data: fixedCost,
-      success: function(objects) {
-        var id, _i, _len, _ref;
-        _this.model.set("fixedCostId", objects.id);
-        _this.model.set("isFixedCost", true);
-        _ref = fixedCost.idTable;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          id = _ref[_i];
-          if (window.rbiActiveData.currentOperations[id] != null) {
-            window.rbiActiveData.currentOperations[id].isFixedCost = true;
-            window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id;
+      success: (function(_this) {
+        return function(objects) {
+          var id, _i, _len, _ref;
+          _this.model.set("fixedCostId", objects.id);
+          _this.model.set("isFixedCost", true);
+          _ref = fixedCost.idTable;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            id = _ref[_i];
+            if (window.rbiActiveData.currentOperations[id] != null) {
+              window.rbiActiveData.currentOperations[id].isFixedCost = true;
+              window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id;
+            }
           }
-        }
-        window.views.monthlyAnalysisView.displayMonthlySums(window.rbiActiveData.currentOperations);
-        return callback();
-      },
+          window.views.monthlyAnalysisView.displayMonthlySums(window.rbiActiveData.currentOperations);
+          return callback();
+        };
+      })(this),
       error: function(err) {
         return console.log("there was an error");
       }
@@ -3722,7 +3783,18 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<td>' + escape((interp = (model.get("rules")).queryPattern) == null ? '' : interp) + '</td><td>' + escape((interp = (model.get("rules")).textQueryMid) == null ? '' : interp) + '</td><td><input type="checkbox" class="toogle-monthly-budget"/></td><td><span aria-hidden="true" data-icon="&#57512;" class="fs1 remove-regular-operation red-text"></span></td>');
+buf.push('<td>' + escape((interp = (model.get("rules")).queryPattern) == null ? '' : interp) + '</td><td>' + escape((interp = (model.get("rules")).textQueryMid) == null ? '' : interp) + '</td><td>');
+ if (model.get("isBudgetPart")) {
+{
+buf.push('<input type="checkbox" checked="true" class="toogle-monthly-budget"/>');
+}
+ }
+ else {
+{
+buf.push('<input type="checkbox" class="toogle-monthly-budget"/>');
+}
+ }
+buf.push('</td><td><span aria-hidden="true" data-icon="&#57512;" class="fs1 remove-regular-operation red-text"></span></td>');
 }
 return buf.join("");
 };
@@ -3796,7 +3868,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h2>Relevé du ' + escape((interp = model.get('title')) == null ? '' : interp) + ' ' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</h2><div id="search-field-regular-operations"><span>Motif:</span><input id="search-regular-operations"/><span>&nbsp&nbsp;Min:</span><input id="search-min-amount" class="input-small"/><span>&nbsp&nbsp;Max:</span><input id="search-max-amount" class="input-small"/></div><div id="loader-regular-operations" class="text-center loading"><img src="./loader_big_blue.gif"/></div><div><button type="button" disabled="true" class="add-regular-operation">Ajouter aux opérations régulières</button></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-regular-operations"></tbody></table>');
+buf.push('<h2>Relevé du ' + escape((interp = model.get('title')) == null ? '' : interp) + ' ' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</h2><div id="search-field-regular-operations"><span>Motif:</span><input id="search-regular-operations"/><span>&nbsp&nbsp;Min:</span><input id="search-min-amount" class="input-small"/><span>&nbsp&nbsp;Max:</span><input id="search-max-amount" class="input-small"/><span id="empty-search-regular-operations">X</span></div><div id="loader-regular-operations" class="text-center loading"><img src="./loader_big_blue.gif"/></div><div><button type="button" disabled="true" class="add-regular-operation">Ajouter aux opérations régulières</button></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-regular-operations"></tbody></table>');
 }
 return buf.join("");
 };

@@ -119,6 +119,19 @@ module.exports = class BankSubTitleView extends BaseView
             # console.log currentEvent
             @saveConfiguration()
 
+        $.ajax
+            type: "POST"
+            url: "bankoperations/byDate"
+            data:
+                accounts:[window.rbiActiveData.accountNumber]
+            success: (operations) ->
+                allOperationsById = {}
+                for operation in operations
+                    allOperationsById[operation.id] = operation
+                window.rbiActiveData.allOperationsById = allOperationsById
+            error: ->
+                window.rbiActiveData.allOperationsById = null
+
         #save bank account
         window.rbiActiveData.bankAccount = @model
 
@@ -126,6 +139,7 @@ module.exports = class BankSubTitleView extends BaseView
         today = moment(new Date()).format('L');
         $("#current-amount-date").text today
         $("#account-amount-balance").html (@model.get 'amount').money()
+        window.views.forecastBudgetView.displayRegularOperations()
 
         #load calculated amounts to set up the flot chart and render montly analysis view
         # window.rbiDataManager.loadLastYearAmounts @model, ->

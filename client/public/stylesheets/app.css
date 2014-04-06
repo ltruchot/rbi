@@ -10579,6 +10579,9 @@ cursor not-allowed {
 }
 .pie-chart {
   padding: 10px 0;
+  height: 182px;
+  max-height: 182px;
+  min-height: 182px;
 }
 .config-loader {
   text-align: center;

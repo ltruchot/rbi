@@ -33,8 +33,9 @@ module.exports = class ForecastBudgetEntryView extends BaseView
   render: ->
 
     if @model.get("uniquery")?
-      @model.set "rules", (@deserializeUniquery @model.get("uniquery"))
-
+      @rules = @deserializeUniquery @model.get("uniquery")
+      @addAverageToRules()
+      @model.set "rules", @rules
     super()
     @
   #---------------------------- END BACKBONE METHODS ---------------------------
@@ -49,30 +50,50 @@ module.exports = class ForecastBudgetEntryView extends BaseView
 
   deserializeUniquery: (uniquery)->
     queryParts = []
-    @rules = {}
+    rules = {}
 
     if uniquery? and ((typeof uniquery) is "string")
       queryParts = uniquery.split("(#|#)")
 
-    @rules.queryAccountNumber = queryParts[0] or ""
-    @rules.queryPattern = queryParts[1] or ""
-    @rules.queryMin = if (queryParts[2]? and (queryParts[2] isnt "NEGATIVE_INFINITY")) then Number(queryParts[2]) else null
-    @rules.queryMax = if (queryParts[3]? and (queryParts[3] isnt "POSITIVE_INFINITY")) then Number(queryParts[3]) else null
-    @rules.textQueryMin = if @rules.queryMin? then @rules.queryMin.money() else ""
-    @rules.textQueryMax = if @rules.queryMax? then @rules.queryMax.money() else ""
-    @rules.textQueryMid = ""
-    min = @rules.queryMin
-    max = @rules.queryMax
-    if min? and max?
-      mid = parseFloat(min) + parseFloat(max)
-      @rules.textQueryMid = (mid / 2).money()
-    else if min?
-      @rules.textQueryMid = "> à " + min.money()
-    else if max?
-      @rules.textQueryMid = "< à " + max.money()
+    rules.queryAccountNumber = queryParts[0] or ""
+    rules.queryPattern = queryParts[1] or ""
+    rules.queryMin = if (queryParts[2]? and (queryParts[2] isnt "NEGATIVE_INFINITY")) then Number(queryParts[2]) else null
+    rules.queryMax = if (queryParts[3]? and (queryParts[3] isnt "POSITIVE_INFINITY")) then Number(queryParts[3]) else null
+
+    return rules
+
+  addAverageToRules: ->
+    idTable = @model.get "idTable"
+    allOperationsById = window.rbiActiveData.allOperationsById
+    mid = 0
+    count = 0
+    addedAmounts = 0
+    if idTable? and allOperationsById? and idTable.length > 0
+      for id in idTable
+        if allOperationsById[id]?
+          console.log allOperationsById[id]
+          addedAmounts += allOperationsById[id].amount
+          count++
+    if addedAmounts isnt 0
+      mid = addedAmounts / count
+    @rules.queryMid = mid
+    @rules.textQueryMid = mid.money()
 
 
-    return @rules
+
+    # @rules.textQueryMin = if @rules.queryMin? then @rules.queryMin.money() else ""
+    # @rules.textQueryMax = if @rules.queryMax? then @rules.queryMax.money() else ""
+    # @rules.textQueryMid = ""
+    # min = @rules.queryMin
+    # max = @rules.queryMax
+    # if min? and max?
+    #   mid = parseFloat(min) + parseFloat(max)
+    #   @rules.textQueryMid = (mid / 2).money()
+    # else if min?
+    #   @rules.textQueryMid = "> à " + min.money()
+    # else if max?
+    #   @rules.textQueryMid = "< à " + max.money()
+
 
   removeRegularOperation: (event) ->
     regularOperationId = (@model.get "id") or null
@@ -81,8 +102,7 @@ module.exports = class ForecastBudgetEntryView extends BaseView
           url: '/rbifixedcost/' + regularOperationId
           type: 'DELETE'
           success: (result) =>
-            console.log "Delete regular operation success."
-            @destroy()
+            window.views.forecastBudgetView.displayRegularOperations()
             $('#search-regular-operations').keyup()
 
           error: ->

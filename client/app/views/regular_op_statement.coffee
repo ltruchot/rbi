@@ -6,14 +6,15 @@ module.exports = class RegularOpStatementView extends BaseView
   templateHeader: require './templates/regular_op_statement_header'
 
   events:
-    'click a.recheck-button' : "checkAccount"
-    'click th.sort-date' : "sortByDate"
-    'click th.sort-title' : "sortByTitle"
-    'click th.sort-amount' : "sortByAmount"
+    # 'click a.recheck-button' : "checkAccount"
+    # 'click th.sort-date' : "sortByDate"
+    # 'click th.sort-title' : "sortByTitle"
+    # 'click th.sort-amount' : "sortByAmount"
     'keyup input#search-regular-operations' : "reload"
     'keyup input#search-min-amount' : "reload"
     'keyup input#search-max-amount' : "reload"
     'click .add-regular-operation' : "addToRegularOperation"
+    'click #empty-search-regular-operations' : "emptyAllFields"
 
   inUse: false
 
@@ -37,6 +38,12 @@ module.exports = class RegularOpStatementView extends BaseView
       # $("#layout-2col-column-right").getNiceScroll().onResize()
     @
 
+  emptyAllFields: ->
+    $("input#search-regular-operations").val ""
+    $("#search-min-amount").val ""
+    $("#search-max-amount").val ""
+    $("input#search-regular-operations").keyup()
+
   getCurrentRules: ->
     rules = null
     if window.rbiActiveData.bankAccount?
@@ -45,6 +52,10 @@ module.exports = class RegularOpStatementView extends BaseView
         pattern: $("input#search-regular-operations").val() or null
         minAmount: $("#search-min-amount").val() or null
         maxAmount: $("#search-max-amount").val() or null
+      if rules.minAmount?
+        rules.minAmount = parseFloat(rules.minAmount).toFixed 2
+      if rules.maxAmount?
+        rules.maxAmount = parseFloat(rules.maxAmount).toFixed 2
     return rules
 
   serializeUniquery: (rules) ->
@@ -54,37 +65,38 @@ module.exports = class RegularOpStatementView extends BaseView
       uniquery = rules.accountNumber
       if rules.pattern?
         uniquery += separator + rules.pattern
-        minAmount = Number(rules.minAmount) or "NEGATIVE_INFINITY"
-        maxAmount = Number(rules.maxAmount) or "POSITIVE_INFINITY"
+        minAmount = rules.minAmount or "NEGATIVE_INFINITY"
+        maxAmount = rules.maxAmount or "POSITIVE_INFINITY"
         uniquery += separator + minAmount
         uniquery += separator + maxAmount
     console.log uniquery
     return uniquery
 
   addToRegularOperation: ->
-    console.log "add"
     rules = @getCurrentRules() or null
 
     #get or set needed data
     if rules?
-      @data =
+      data =
         accounts: [rules.accountNumber]
         searchText: rules.pattern.toString()
         exactSearchText: "" #rules.pattern.toString()
-        dateFrom: null
-        dateTo: new Date()
-      if rules.maxAmont < rules.minAmont
-        @data.amountFrom = rules.maxAmont
-        @data.amountTo = rules.minAmont
-      else
-        @data.amountFrom = rules.minAmont
-        @data.amountTo = rules.minAmont
+        # dateFrom: null
+        # dateTo: new Date()
+        amountFrom: rules.minAmount
+        amountTo: rules.maxAmount
+      # if rules.maxAmount > rules.minAmount
+      #   data.amountFrom = rules.maxAmount
+      #   data.amountTo = rules.minAmount
+      # else
+      #   data.amountFrom = rules.minAmount
+      #   data.amountTo = rules.maxAmount
 
       #standard get operations request
       $.ajax
         type: "POST"
         url: "bankoperations/query"
-        data: @data
+        data: data
         success: (objects) =>
           console.log objects
           console.log "get operation linked request sent successfully!"
@@ -94,6 +106,7 @@ module.exports = class RegularOpStatementView extends BaseView
               accountNumber: rules.accountNumber
               idTable: []
               uniquery: @serializeUniquery rules
+              isBudgetPart: true
 
             #add operations to id table
             for object in objects
@@ -102,7 +115,7 @@ module.exports = class RegularOpStatementView extends BaseView
             #save fixed cost and close popup on callback
             @saveFixedCost fixedCostToRegister, =>
               $('#search-regular-operations').keyup()
-              window.views.forecastBudgetView.displayRegularOperation rules.accountNumber
+              window.views.forecastBudgetView.displayRegularOperations rules.accountNumber
           else
            console.log "Operation(s) not found"
         error: (err) ->
@@ -235,8 +248,8 @@ module.exports = class RegularOpStatementView extends BaseView
     # get elements
     jqAmountMin = if ($("#search-min-amount").length is 1) then ($("#search-min-amount").val()).replace(",",".") else null
     jqAmountMax = if ($("#search-max-amount").length is 1) then ($("#search-max-amount").val()).replace(",",".") else null
-    amountFromVal = (Number(jqAmountMin) or Number.NEGATIVE_INFINITY)
-    amountToVal = (Number(jqAmountMax)  or Number.POSITIVE_INFINITY)
+    amountFromVal = (parseFloat(jqAmountMin).toFixed 2) or Number.NEGATIVE_INFINITY
+    amountToVal = (parseFloat(jqAmountMax).toFixed 2)  or Number.POSITIVE_INFINITY
     #if @params?
       # dateFrom = if @params.dateFrom then moment(@params.dateFrom).format 'YYYY-MM-DD' else null
       # dateTo = if @params.dateTo then moment(@params.dateTo).format 'YYYY-MM-DD' else null

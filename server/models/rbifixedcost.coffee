@@ -5,6 +5,7 @@ module.exports = RbiFixedCost = americano.getModel 'RbiFixedCost',
     type: String
     accountNumber: String
     uniquery: String
+    isBudgetPart: Boolean
 
 RbiFixedCost.get = (callback) ->
     RbiFixedCost.request 'all', (err, fixedCosts) ->

@@ -4,6 +4,11 @@ td #{(model.get("rules")).queryPattern}
 td #{(model.get("rules")).textQueryMid}
   //- span.fs1.modify-regular-operation.blue-text(aria-hidden="true",data-icon="&#57349;")
 td
-  input.toogle-monthly-budget(type="checkbox")
+  - if (model.get("isBudgetPart")) {
+    input.toogle-monthly-budget(type="checkbox", checked="true")
+  - }
+  - else {
+    input.toogle-monthly-budget(type="checkbox")
+  - }
 td
   span.fs1.remove-regular-operation.red-text(aria-hidden="true",data-icon="&#57512;")
