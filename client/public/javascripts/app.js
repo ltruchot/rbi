@@ -2503,7 +2503,6 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
       for (_i = 0, _len = idTable.length; _i < _len; _i++) {
         id = idTable[_i];
         if (allOperationsById[id] != null) {
-          console.log(allOperationsById[id]);
           addedAmounts += allOperationsById[id].amount;
           count++;
         }
@@ -3108,7 +3107,6 @@ module.exports = RegularOpStatementView = (function(_super) {
         uniquery += separator + maxAmount;
       }
     }
-    console.log(uniquery);
     return uniquery;
   };
 
@@ -3130,8 +3128,6 @@ module.exports = RegularOpStatementView = (function(_super) {
         success: (function(_this) {
           return function(objects) {
             var fixedCostToRegister, object, _i, _len;
-            console.log(objects);
-            console.log("get operation linked request sent successfully!");
             if ((objects != null) && objects.length > 0) {
               fixedCostToRegister = {
                 type: "standard",
@@ -3148,8 +3144,6 @@ module.exports = RegularOpStatementView = (function(_super) {
                 $('#search-regular-operations').keyup();
                 return window.views.forecastBudgetView.displayRegularOperations(rules.accountNumber);
               });
-            } else {
-              return console.log("Operation(s) not found");
             }
           };
         })(this),
@@ -3157,21 +3151,19 @@ module.exports = RegularOpStatementView = (function(_super) {
           return console.log("there was an error");
         }
       });
-    } else {
-      return console.log("no rules.");
     }
   };
 
   RegularOpStatementView.prototype.saveFixedCost = function(fixedCost, callback) {
-    console.log("save !");
     return $.ajax({
       type: "POST",
       url: "rbifixedcost",
       data: fixedCost,
       success: (function(_this) {
         return function(objects) {
-          console.log("saved !");
-          return callback();
+          if (callback != null) {
+            return callback();
+          }
         };
       })(this),
       error: function(err) {
@@ -3468,7 +3460,6 @@ module.exports = RegularOpStatementEntryView = (function(_super) {
         success: (function(_this) {
           return function(result) {
             var id, operation, _ref;
-            console.log("Delete fixed cost success.");
             _this.destroyPopupFixedCost(event);
             $('#search-text').keyup();
             if (window.rbiActiveData.currentOperations != null) {
@@ -3547,8 +3538,6 @@ module.exports = RegularOpStatementEntryView = (function(_super) {
                 _this.destroyPopupFixedCost(event);
                 return $('#search-text').keyup();
               });
-            } else {
-              return console.log("Operation(s) not found");
             }
           };
         })(this),
@@ -3868,7 +3857,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h2>Relevé du ' + escape((interp = model.get('title')) == null ? '' : interp) + ' ' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</h2><div id="search-field-regular-operations"><span>Motif:</span><input id="search-regular-operations"/><span>&nbsp&nbsp;Min:</span><input id="search-min-amount" class="input-small"/><span>&nbsp&nbsp;Max:</span><input id="search-max-amount" class="input-small"/><span id="empty-search-regular-operations">X</span></div><div id="loader-regular-operations" class="text-center loading"><img src="./loader_big_blue.gif"/></div><div><button type="button" disabled="true" class="add-regular-operation">Ajouter aux opérations régulières</button></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-regular-operations"></tbody></table>');
+buf.push('<h2>Gestion des opérations régulières</h2><div id="search-field-regular-operations"><div class="input-group input-group-sm input-simple pull-left"><span aria-hidden="true" data-icon&#57471;="data-icon&#57471;" class="input-group-addon icon-search fs1"></span><input id="search-regular-operations" type="text" class="form-control"/></div><div class="input-group input-group-sm input-small pull-left"><span class="input-group-addon">Min.</span><input id="search-min-amount" type="text" class="form-control"/></div><div class="input-group input-group-sm input-small pull-left"><span class="input-group-addon">Max.</span><input id="search-max-amount" type="text" class="form-control"/></div><div class="input-group input-group-sm"><div class="input-group-btn"><button id="empty-search-regular-operations" data-original-title="" type="button" class="btn btn-default">Vider</button></div></div></div><div id="loader-regular-operations" class="text-center loading"><img src="./loader_big_blue.gif"/></div><div class="add-regular-operation-container"><button type="button" disabled="true" class="btn btn-sm btn-primary add-regular-operation"><span aria-hidden="true" data-icon="" class="fs1 iconCostType fixed-cost"></span>Ajouter aux opérations régulières</button></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-regular-operations"></tbody></table>');
 }
 return buf.join("");
 };

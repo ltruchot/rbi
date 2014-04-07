@@ -10886,8 +10886,23 @@ cursor not-allowed {
 .remove-regular-operation {
   cursor: pointer;
 }
+.input-small,
+.input-simple {
+  margin-right: 5px;
+}
 .input-small {
-  width: 65px;
+  width: 110px;
+}
+.input-simple {
+  width: 200px;
+}
+.add-regular-operation-container {
+  text-align: center;
+  padding: 10px;
+}
+.btn-orange {
+  background-color: #f08c56;
+  color: #fff;
 }
 .little-text {
   font-size: 0.8em;

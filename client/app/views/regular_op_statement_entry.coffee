@@ -86,7 +86,7 @@ module.exports = class RegularOpStatementEntryView extends BaseView
           url: '/rbifixedcost/' + fixedCostId
           type: 'DELETE'
           success: (result) =>
-            console.log "Delete fixed cost success."
+            #console.log "Delete fixed cost success."
             @destroyPopupFixedCost event
             $('#search-text').keyup()
 
@@ -166,8 +166,8 @@ module.exports = class RegularOpStatementEntryView extends BaseView
             @saveFixedCost fixedCostToRegister, =>
               @destroyPopupFixedCost event
               $('#search-text').keyup()
-          else
-            console.log "Operation(s) not found"
+          # else
+          #   console.log "Operation(s) not found"
         error: (err) ->
           console.log "there was an error"
     else

@@ -69,7 +69,6 @@ module.exports = class RegularOpStatementView extends BaseView
         maxAmount = rules.maxAmount or "POSITIVE_INFINITY"
         uniquery += separator + minAmount
         uniquery += separator + maxAmount
-    console.log uniquery
     return uniquery
 
   addToRegularOperation: ->
@@ -98,8 +97,7 @@ module.exports = class RegularOpStatementView extends BaseView
         url: "bankoperations/query"
         data: data
         success: (objects) =>
-          console.log objects
-          console.log "get operation linked request sent successfully!"
+          #console.log "get operation linked request sent successfully!"
           if objects? and objects.length > 0
             fixedCostToRegister =
               type: "standard"
@@ -116,17 +114,17 @@ module.exports = class RegularOpStatementView extends BaseView
             @saveFixedCost fixedCostToRegister, =>
               $('#search-regular-operations').keyup()
               window.views.forecastBudgetView.displayRegularOperations rules.accountNumber
-          else
-           console.log "Operation(s) not found"
+          # else
+          #  console.log "Operation(s) not found"
         error: (err) ->
           console.log "there was an error"
-    else
-      console.log "no rules."
+    # else
+    #   console.log "no rules."
 
 
   #------------------- BEGIN SERVER COMMUNICATION METHODS ----------------------
   saveFixedCost: (fixedCost, callback) ->
-    console.log "save !"
+    #console.log "save !"
 
     #post new fixed cost object
     $.ajax
@@ -135,7 +133,7 @@ module.exports = class RegularOpStatementView extends BaseView
       data: fixedCost
 
       success: (objects) =>
-        console.log "saved !"
+        #console.log "saved !"
         # console.log fixedCosts
         #console.log "fixed cost sent successfully!"
 
@@ -149,8 +147,8 @@ module.exports = class RegularOpStatementView extends BaseView
         #     window.rbiActiveData.currentOperations[id].isFixedCost = true
         #     window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id
         # window.views.monthlyAnalysisView.displayMonthlySums window.rbiActiveData.currentOperations
-
-        callback()
+        if callback?
+          callback()
 
       error: (err) ->
         console.log "there was an error"

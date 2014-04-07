@@ -71,7 +71,6 @@ module.exports = class ForecastBudgetEntryView extends BaseView
     if idTable? and allOperationsById? and idTable.length > 0
       for id in idTable
         if allOperationsById[id]?
-          console.log allOperationsById[id]
           addedAmounts += allOperationsById[id].amount
           count++
     if addedAmounts isnt 0
