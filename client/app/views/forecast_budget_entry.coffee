@@ -44,6 +44,21 @@ module.exports = class ForecastBudgetEntryView extends BaseView
 
 
   #---------------------------- BEGIN EVENTS METHODS ---------------------------
+  toogleMonthlyBudget: (event) ->
+    isBudgetPart = $(event.currentTarget).is ":checked"
+    #post new fixed cost object
+    $.ajax
+      type: "PUT"
+      url: "rbifixedcost/" + @model.get "id"
+      data:
+        isBudgetPart: isBudgetPart
+
+      success: (objects) =>
+        window.views.forecastBudgetView.displayRegularOperations()
+        console.log "saved !"
+      error: (err) ->
+        console.log "There was an error during saving regular operation process"
+
   showHighlighting: (event) ->
     jqTr = $(event.currentTarget).closest "tr"
     jqTr.addClass "highlighted-rule"

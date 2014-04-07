@@ -2368,7 +2368,7 @@ module.exports = ForcastBudgetView = (function(_super) {
     _ref = this.subViews;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       regularOperation = _ref[_i];
-      if ((regularOperation.rules != null) && (regularOperation.rules.queryMid != null)) {
+      if ((regularOperation.rules != null) && (regularOperation.rules.queryMid != null) && regularOperation.model.get("isBudgetPart")) {
         if (regularOperation.rules.queryMid > 0) {
           currentBudget += regularOperation.rules.queryMid;
         } else if (regularOperation.rules.queryMid < 0) {
@@ -2471,6 +2471,27 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
     }
     ForecastBudgetEntryView.__super__.render.call(this);
     return this;
+  };
+
+  ForecastBudgetEntryView.prototype.toogleMonthlyBudget = function(event) {
+    var isBudgetPart;
+    isBudgetPart = $(event.currentTarget).is(":checked");
+    return $.ajax({
+      type: "PUT",
+      url: "rbifixedcost/" + this.model.get("id"),
+      data: {
+        isBudgetPart: isBudgetPart
+      },
+      success: (function(_this) {
+        return function(objects) {
+          window.views.forecastBudgetView.displayRegularOperations();
+          return console.log("saved !");
+        };
+      })(this),
+      error: function(err) {
+        return console.log("There was an error during saving regular operation process");
+      }
+    });
   };
 
   ForecastBudgetEntryView.prototype.showHighlighting = function(event) {

@@ -47,7 +47,7 @@ module.exports = class ForcastBudgetView extends BaseView
     currentBudget = 0
     budgetExpenses = 0
     for regularOperation in @subViews
-      if regularOperation.rules? and regularOperation.rules.queryMid?
+      if regularOperation.rules? and regularOperation.rules.queryMid? and regularOperation.model.get "isBudgetPart"
         if regularOperation.rules.queryMid > 0
           currentBudget += regularOperation.rules.queryMid
         else if regularOperation.rules.queryMid < 0
