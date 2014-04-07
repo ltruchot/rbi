@@ -1239,21 +1239,21 @@ module.exports = BankStatementView = (function(_super) {
                   finalOperations = [];
                   for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
                     operation = operations[index];
-                    operation.isFixedCost = false;
+                    operation.isRegularOperation = false;
                     if (operation.amount < 0) {
                       for (_j = 0, _len1 = fixedCosts.length; _j < _len1; _j++) {
                         fixedCost = fixedCosts[_j];
                         if ($.inArray(operation.id, fixedCost.idTable) >= 0) {
-                          operation.isFixedCost = true;
+                          operation.isRegularOperation = true;
                           operation.fixedCostId = fixedCost.id;
                           break;
                         }
                       }
                     }
                     operationRemoved = false;
-                    if (displayFixedCosts && (!operation.isFixedCost)) {
+                    if (displayFixedCosts && (!operation.isRegularOperation)) {
                       operationRemoved = true;
-                    } else if (displayVariableCosts && (operation.isFixedCost || (operation.amount > 0))) {
+                    } else if (displayVariableCosts && (operation.isRegularOperation || (operation.amount > 0))) {
                       operationRemoved = true;
                     }
                     if (!operationRemoved) {
@@ -1420,7 +1420,7 @@ module.exports = EntryView = (function(_super) {
     } else {
       this.model.costClass = "variable-cost";
       this.model.costIcon = "&#57482;";
-      if (this.model.get('isFixedCost')) {
+      if (this.model.get('isRegularOperation')) {
         this.model.costClass = "fixed-cost";
         this.model.costIcon = "&#57481;";
       }
@@ -1473,7 +1473,7 @@ module.exports = EntryView = (function(_super) {
               for (id in _ref) {
                 operation = _ref[id];
                 if ((operation.fixedCostId != null) && (operation.fixedCostId = fixedCostId)) {
-                  operation.isFixedCost = false;
+                  operation.isRegularOperation = false;
                   operation.fixedCostId = null;
                 }
               }
@@ -1613,12 +1613,12 @@ module.exports = EntryView = (function(_super) {
         return function(objects) {
           var id, _i, _len, _ref;
           _this.model.set("fixedCostId", objects.id);
-          _this.model.set("isFixedCost", true);
+          _this.model.set("isRegularOperation", true);
           _ref = fixedCost.idTable;
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             id = _ref[_i];
             if (window.rbiActiveData.currentOperations[id] != null) {
-              window.rbiActiveData.currentOperations[id].isFixedCost = true;
+              window.rbiActiveData.currentOperations[id].isRegularOperation = true;
               window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id;
             }
           }
@@ -2394,7 +2394,7 @@ module.exports = ForcastBudgetView = (function(_super) {
       });
     }
     $("#regular-operations-budget").remove();
-    trToInject = '<tr id="regular-operations-budget">' + "\t" + "<td><strong>Budget</strong></td>" + "\t" + "<td><strong>" + rest.money() + "<strong></td>" + "\t" + "<td>&nbsp;</td>" + "\t" + "<td>&nbsp;</td>" + '</tr>';
+    trToInject = '<tr id="regular-operations-budget">' + "\t" + "<td><strong>Budget total</strong></td>" + "\t" + "<td><strong>" + rest.money() + "<strong></td>" + "\t" + "<td>&nbsp;</td>" + "\t" + "<td>&nbsp;</td>" + '</tr>';
     return $("tbody#regular-operations").append(trToInject);
   };
 
@@ -2451,7 +2451,9 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
   ForecastBudgetEntryView.prototype.events = {
     "click .toogle-monthly-budget": "toogleMonthlyBudget",
     "click .remove-regular-operation": "removeRegularOperation",
-    "click td:eq(0),td:eq(1),td:eq(2)": "modifyRegularOperation"
+    "click td:eq(0),td:eq(1)": "modifyRegularOperation",
+    'mouseenter td:eq(0), td:eq(1) ': "showHighlighting",
+    'mouseleave td:eq(0), td:eq(1) ': "hideHighlighting"
   };
 
   ForecastBudgetEntryView.prototype.rules = {};
@@ -2469,6 +2471,18 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
     }
     ForecastBudgetEntryView.__super__.render.call(this);
     return this;
+  };
+
+  ForecastBudgetEntryView.prototype.showHighlighting = function(event) {
+    var jqTr;
+    jqTr = $(event.currentTarget).closest("tr");
+    return jqTr.addClass("highlighted-rule");
+  };
+
+  ForecastBudgetEntryView.prototype.hideHighlighting = function(event) {
+    var jqTr;
+    jqTr = $(event.currentTarget).closest("tr");
+    return jqTr.removeClass("highlighted-rule");
   };
 
   ForecastBudgetEntryView.prototype.modifyRegularOperation = function(currentEvent) {
@@ -2787,9 +2801,9 @@ module.exports = MonthlyAnalysisView = (function(_super) {
         } else {
           debits += operation.amount;
         }
-        if (operation.isFixedCost && operation.amount < 0) {
+        if (operation.isRegularOperation && operation.amount < 0) {
           fixedCost += operation.amount;
-        } else if ((!operation.isFixedCost) && operation.amount < 0) {
+        } else if ((!operation.isRegularOperation) && operation.amount < 0) {
           variableCost += operation.amount;
         }
       }
@@ -3034,8 +3048,6 @@ BaseView = require('../lib/base_view');
 RegularOpStatementEntryView = require("./regular_op_statement_entry");
 
 module.exports = RegularOpStatementView = (function(_super) {
-  var params, subViewLastDate;
-
   __extends(RegularOpStatementView, _super);
 
   RegularOpStatementView.prototype.templateHeader = require('./templates/regular_op_statement_header');
@@ -3052,9 +3064,11 @@ module.exports = RegularOpStatementView = (function(_super) {
 
   RegularOpStatementView.prototype.subViews = [];
 
-  subViewLastDate = '';
+  RegularOpStatementView.prototype.subViewLastDate = '';
 
-  params = null;
+  RegularOpStatementView.prototype.params = null;
+
+  RegularOpStatementView.prototype.alreadyRegular = false;
 
   function RegularOpStatementView(el) {
     this.el = el;
@@ -3215,20 +3229,18 @@ module.exports = RegularOpStatementView = (function(_super) {
               url: "rbifixedcost",
               success: (function(_this) {
                 return function(fixedCosts) {
-                  var finalOperations, fixedCost, index, operation, operationRemoved, _i, _j, _len, _len1;
+                  var finalOperations, fixedCost, index, isSearchFieldEmpty, operation, operationRemoved, _i, _j, _len, _len1;
                   window.rbiActiveData.currentOperations = {};
                   finalOperations = [];
                   for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
                     operation = operations[index];
-                    operation.isFixedCost = false;
-                    if (operation.amount < 0) {
-                      for (_j = 0, _len1 = fixedCosts.length; _j < _len1; _j++) {
-                        fixedCost = fixedCosts[_j];
-                        if ($.inArray(operation.id, fixedCost.idTable) >= 0) {
-                          operation.isFixedCost = true;
-                          operation.fixedCostId = fixedCost.id;
-                          break;
-                        }
+                    operation.isRegularOperation = false;
+                    for (_j = 0, _len1 = fixedCosts.length; _j < _len1; _j++) {
+                      fixedCost = fixedCosts[_j];
+                      if ($.inArray(operation.id, fixedCost.idTable) >= 0) {
+                        operation.isRegularOperation = true;
+                        operation.fixedCostId = fixedCost.id;
+                        break;
                       }
                     }
                     operationRemoved = false;
@@ -3243,7 +3255,14 @@ module.exports = RegularOpStatementView = (function(_super) {
                   window.collections.operations.reset(finalOperations);
                   window.collections.operations.setComparator("date");
                   window.collections.operations.sort();
-                  return view.addAll();
+                  view.addAll();
+                  isSearchFieldEmpty = $("#search-regular-operations").val() === "";
+                  console.log(isSearchFieldEmpty);
+                  if (view.alreadyRegular && (!isSearchFieldEmpty)) {
+                    return $("#regular-op-exists").show();
+                  } else {
+                    return $("#regular-op-exists").hide();
+                  }
                 };
               })(this),
               error: function(err) {
@@ -3312,6 +3331,7 @@ module.exports = RegularOpStatementView = (function(_super) {
 
   RegularOpStatementView.prototype.addAll = function() {
     var index, operation, subView, subViewDate, view, _i, _j, _len, _len1, _ref, _ref1, _results;
+    this.alreadyRegular = false;
     this.$("#table-regular-operations").html("");
     this.$(".loading").remove();
     _ref = this.subViews;
@@ -3329,11 +3349,15 @@ module.exports = RegularOpStatementView = (function(_super) {
     for (index = _j = 0, _len1 = _ref1.length; _j < _len1; index = ++_j) {
       operation = _ref1[index];
       subView = new RegularOpStatementEntryView(operation, this.model);
-      subViewDate = subView.render().model.get('date');
+      subView.render();
+      subViewDate = subView.model.get('date');
+      if (subView.model.get('isRegularOperation')) {
+        this.alreadyRegular = true;
+      }
       if ((this.subViewLastDate !== subViewDate) || (index === 0)) {
         this.subViewLastDate = subViewDate;
         this.$("#table-regular-operations").append($('<tr class="special"><td colspan="4">' + moment(this.subViewLastDate).format("DD/MM/YYYY" + '</td></tr>')));
-        _results.push(this.$("#table-regular-operations").append(subView.render().el));
+        _results.push(this.$("#table-regular-operations").append(subView.el));
       } else {
         _results.push(void 0);
       }
@@ -3394,15 +3418,11 @@ module.exports = RegularOpStatementEntryView = (function(_super) {
     }
     this.model.account = this.account;
     this.model.formattedDate = moment(this.model.get('date')).format("DD/MM/YYYY");
-    if ((this.model.get('amount')) > 0) {
-      this.model.costClass = 'not-displayed-cost';
-    } else {
-      this.model.costClass = "variable-cost";
-      this.model.costIcon = "&#57482;";
-      if (this.model.get('isFixedCost')) {
-        this.model.costClass = "fixed-cost";
-        this.model.costIcon = "&#57481;";
-      }
+    this.model.costClass = "variable-cost";
+    this.model.costIcon = "&#57482;";
+    if (this.model.get('isRegularOperation')) {
+      this.model.costClass = "fixed-cost";
+      this.model.costIcon = "&#57481;";
     }
     if (this.showAccountNum) {
       hint = ("" + (this.model.account.get('title')) + ", ") + ("n°" + (this.model.account.get('accountNumber')));
@@ -3467,7 +3487,7 @@ module.exports = RegularOpStatementEntryView = (function(_super) {
               for (id in _ref) {
                 operation = _ref[id];
                 if ((operation.fixedCostId != null) && (operation.fixedCostId = fixedCostId)) {
-                  operation.isFixedCost = false;
+                  operation.isRegularOperation = false;
                   operation.fixedCostId = null;
                 }
               }
@@ -3605,12 +3625,12 @@ module.exports = RegularOpStatementEntryView = (function(_super) {
         return function(objects) {
           var id, _i, _len, _ref;
           _this.model.set("fixedCostId", objects.id);
-          _this.model.set("isFixedCost", true);
+          _this.model.set("isRegularOperation", true);
           _ref = fixedCost.idTable;
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             id = _ref[_i];
             if (window.rbiActiveData.currentOperations[id] != null) {
-              window.rbiActiveData.currentOperations[id].isFixedCost = true;
+              window.rbiActiveData.currentOperations[id].isRegularOperation = true;
               window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id;
             }
           }
@@ -3760,7 +3780,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1>Budget prévisionnel</h1><div id="forecast-budget-content"><span>Mes opérations régulières</span><table class="col-md-12"><thead><tr><th>Motif</th><th>Montant moyen</th><th>&nbsp;</th><th>&nbsp;</th></tr></thead><tbody id="regular-operations"></tbody></table></div>');
+buf.push('<h1>Budget prévisionnel</h1><div id="forecast-budget-content"><span>Mes opérations régulières</span><table class="col-md-12"><thead><tr><th>Motif</th><th>Montant moyen</th><th>Budget</th><th>&nbsp;</th></tr></thead><tbody id="regular-operations"></tbody></table></div>');
 }
 return buf.join("");
 };
@@ -3857,7 +3877,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h2>Gestion des opérations régulières</h2><div id="search-field-regular-operations"><div class="input-group input-group-sm input-simple pull-left"><span aria-hidden="true" data-icon&#57471;="data-icon&#57471;" class="input-group-addon icon-search fs1"></span><input id="search-regular-operations" type="text" class="form-control"/></div><div class="input-group input-group-sm input-small pull-left"><span class="input-group-addon">Min.</span><input id="search-min-amount" type="text" class="form-control"/></div><div class="input-group input-group-sm input-small pull-left"><span class="input-group-addon">Max.</span><input id="search-max-amount" type="text" class="form-control"/></div><div class="input-group input-group-sm"><div class="input-group-btn"><button id="empty-search-regular-operations" data-original-title="" type="button" class="btn btn-default">Vider</button></div></div></div><div id="loader-regular-operations" class="text-center loading"><img src="./loader_big_blue.gif"/></div><div class="add-regular-operation-container"><button type="button" disabled="true" class="btn btn-sm btn-primary add-regular-operation"><span aria-hidden="true" data-icon="" class="fs1 iconCostType fixed-cost"></span>Ajouter aux opérations régulières</button></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-regular-operations"></tbody></table>');
+buf.push('<h2>Gestion des opérations régulières</h2><div id="search-field-regular-operations"><div class="input-group input-group-sm input-simple pull-left"><span aria-hidden="true" data-icon&#57471;="data-icon&#57471;" class="input-group-addon icon-search fs1"></span><input id="search-regular-operations" type="text" class="form-control"/></div><div class="input-group input-group-sm input-small pull-left"><span class="input-group-addon">Min.</span><input id="search-min-amount" type="text" class="form-control"/></div><div class="input-group input-group-sm input-small pull-left"><span class="input-group-addon">Max.</span><input id="search-max-amount" type="text" class="form-control"/></div><div class="input-group input-group-sm"><div class="input-group-btn"><button id="empty-search-regular-operations" data-original-title="" type="button" class="btn btn-default">Vider</button></div></div></div><div id="loader-regular-operations" class="text-center loading"><img src="./loader_big_blue.gif"/></div><div class="add-regular-operation-container"><button type="button" disabled="true" class="btn btn-sm btn-primary add-regular-operation"><span aria-hidden="true" data-icon="" class="fs1 iconCostType fixed-cost"></span>Ajouter aux opérations régulières</button><br/><p id="regular-op-exists" class="text-navy">Attention : certaines opérations qui correspondent à cette règle sont déjà régulières.</p></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-regular-operations"></tbody></table>');
 }
 return buf.join("");
 };

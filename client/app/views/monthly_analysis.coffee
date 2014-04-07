@@ -118,9 +118,9 @@ module.exports = class MonthlyAnalysisView extends BaseView
           credits += operation.amount
         else
           debits += operation.amount
-        if operation.isFixedCost and operation.amount < 0
+        if operation.isRegularOperation and operation.amount < 0
           fixedCost += operation.amount
-        else if (not operation.isFixedCost) and operation.amount < 0
+        else if (not operation.isRegularOperation) and operation.amount < 0
           variableCost += operation.amount
     $('#credits-sum').html credits.money()
     $('#debits-sum').html (Math.abs(debits)).money()

@@ -74,19 +74,19 @@ module.exports = class BankStatementView extends BaseView
                                 window.rbiActiveData.currentOperations = {}
                                 finalOperations = []
                                 for operation, index in operations
-                                    operation.isFixedCost = false
+                                    operation.isRegularOperation = false
                                     if operation.amount < 0
                                         for fixedCost in fixedCosts
                                             if $.inArray(operation.id, fixedCost.idTable) >= 0
-                                                operation.isFixedCost = true
+                                                operation.isRegularOperation = true
                                                 operation.fixedCostId = fixedCost.id
                                                 break
 
                                     #adjustement for fixed/variable cost search
                                     operationRemoved = false
-                                    if (displayFixedCosts and (not operation.isFixedCost))
+                                    if (displayFixedCosts and (not operation.isRegularOperation))
                                         operationRemoved = true
-                                    else if (displayVariableCosts and (operation.isFixedCost or (operation.amount > 0)))
+                                    else if (displayVariableCosts and (operation.isRegularOperation or (operation.amount > 0)))
                                         operationRemoved = true
                                     if not operationRemoved
                                         finalOperations.push operation

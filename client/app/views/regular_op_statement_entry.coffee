@@ -20,14 +20,14 @@ module.exports = class RegularOpStatementEntryView extends BaseView
     @model.account = @account
     @model.formattedDate = moment(@model.get('date')).format "DD/MM/YYYY"
 
-    if (@model.get 'amount') > 0
-      @model.costClass = 'not-displayed-cost'
-    else
-      @model.costClass = "variable-cost"
-      @model.costIcon = "&#57482;"
-      if @model.get 'isFixedCost'
-        @model.costClass = "fixed-cost"
-        @model.costIcon = "&#57481;"
+    # if (@model.get 'amount') > 0
+    #   @model.costClass = 'not-displayed-cost'
+    # else
+    @model.costClass = "variable-cost"
+    @model.costIcon = "&#57482;"
+    if @model.get 'isRegularOperation'
+      @model.costClass = "fixed-cost"
+      @model.costIcon = "&#57481;"
 
     if @showAccountNum
       hint = "#{@model.account.get('title')}, " + \
@@ -43,6 +43,7 @@ module.exports = class RegularOpStatementEntryView extends BaseView
 
 
   #---------------------------- BEGIN EVENTS METHODS ---------------------------
+
   applySearch: ->
     currentAmount = parseFloat(@model.get("amount") or 0)
     modifier = Math.abs parseFloat(currentAmount * 0.1)
@@ -94,7 +95,7 @@ module.exports = class RegularOpStatementEntryView extends BaseView
             if window.rbiActiveData.currentOperations?
               for id, operation of window.rbiActiveData.currentOperations
                 if operation.fixedCostId? and (operation.fixedCostId = fixedCostId)
-                  operation.isFixedCost = false
+                  operation.isRegularOperation = false
                   operation.fixedCostId = null
               window.views.monthlyAnalysisView.displayMonthlySums window.rbiActiveData.currentOperations
           error: ->
@@ -241,12 +242,12 @@ module.exports = class RegularOpStatementEntryView extends BaseView
 
           #set fixed cost status to model
           @model.set "fixedCostId", objects.id
-          @model.set "isFixedCost", true
+          @model.set "isRegularOperation", true
 
           #refresh monthly analysis
           for id in fixedCost.idTable
             if window.rbiActiveData.currentOperations[id]?
-              window.rbiActiveData.currentOperations[id].isFixedCost = true
+              window.rbiActiveData.currentOperations[id].isRegularOperation = true
               window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id
           window.views.monthlyAnalysisView.displayMonthlySums window.rbiActiveData.currentOperations
 

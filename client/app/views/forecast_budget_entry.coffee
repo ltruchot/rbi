@@ -8,7 +8,9 @@ module.exports = class ForecastBudgetEntryView extends BaseView
   events:
     "click .toogle-monthly-budget" : "toogleMonthlyBudget"
     "click .remove-regular-operation" : "removeRegularOperation"
-    "click td:eq(0),td:eq(1),td:eq(2)" : "modifyRegularOperation"
+    "click td:eq(0),td:eq(1)" : "modifyRegularOperation"
+    'mouseenter td:eq(0), td:eq(1) ' : "showHighlighting"
+    'mouseleave td:eq(0), td:eq(1) ' : "hideHighlighting"
 
   rules: {}
 
@@ -42,6 +44,14 @@ module.exports = class ForecastBudgetEntryView extends BaseView
 
 
   #---------------------------- BEGIN EVENTS METHODS ---------------------------
+  showHighlighting: (event) ->
+    jqTr = $(event.currentTarget).closest "tr"
+    jqTr.addClass "highlighted-rule"
+
+  hideHighlighting: (event) ->
+    jqTr = $(event.currentTarget).closest "tr"
+    jqTr.removeClass "highlighted-rule"
+
   modifyRegularOperation: (currentEvent) ->
     $("#search-regular-operations").val @rules.queryPattern
     $("#search-min-amount").val @rules.queryMin
@@ -147,7 +157,7 @@ module.exports = class ForecastBudgetEntryView extends BaseView
 #             if window.rbiActiveData.currentOperations?
 #               for id, operation of window.rbiActiveData.currentOperations
 #                 if operation.fixedCostId? and (operation.fixedCostId = fixedCostId)
-#                   operation.isFixedCost = false
+#                   operation.isRegularOperation = false
 #                   operation.fixedCostId = null
 #               window.views.monthlyAnalysisView.displayMonthlySums window.rbiActiveData.currentOperations
 #           error: ->
@@ -294,12 +304,12 @@ module.exports = class ForecastBudgetEntryView extends BaseView
 
 #           #set fixed cost status to model
 #           @model.set "fixedCostId", objects.id
-#           @model.set "isFixedCost", true
+#           @model.set "isRegularOperation", true
 
 #           #refresh monthly analysis
 #           for id in fixedCost.idTable
 #             if window.rbiActiveData.currentOperations[id]?
-#               window.rbiActiveData.currentOperations[id].isFixedCost = true
+#               window.rbiActiveData.currentOperations[id].isRegularOperation = true
 #               window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id
 #           window.views.monthlyAnalysisView.displayMonthlySums window.rbiActiveData.currentOperations
 

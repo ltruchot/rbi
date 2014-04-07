@@ -20,9 +20,11 @@ module.exports = class RegularOpStatementView extends BaseView
 
   subViews: []
 
-  subViewLastDate = ''
+  subViewLastDate: ''
 
-  params = null
+  params: null
+
+  alreadyRegular: false
 
   # INIT
   constructor: (@el) ->
@@ -139,12 +141,12 @@ module.exports = class RegularOpStatementView extends BaseView
 
         # #set fixed cost status to model
         # @model.set "fixedCostId", objects.id
-        # @model.set "isFixedCost", true
+        # @model.set "isRegularOperation", true
 
         # #refresh monthly analysis
         # for id in fixedCost.idTable
         #   if window.rbiActiveData.currentOperations[id]?
-        #     window.rbiActiveData.currentOperations[id].isFixedCost = true
+        #     window.rbiActiveData.currentOperations[id].isRegularOperation = true
         #     window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id
         # window.views.monthlyAnalysisView.displayMonthlySums window.rbiActiveData.currentOperations
         if callback?
@@ -204,19 +206,18 @@ module.exports = class RegularOpStatementView extends BaseView
                 window.rbiActiveData.currentOperations = {}
                 finalOperations = []
                 for operation, index in operations
-                  operation.isFixedCost = false
-                  if operation.amount < 0
-                    for fixedCost in fixedCosts
-                      if $.inArray(operation.id, fixedCost.idTable) >= 0
-                        operation.isFixedCost = true
-                        operation.fixedCostId = fixedCost.id
-                        break
+                  operation.isRegularOperation = false
+                  for fixedCost in fixedCosts
+                    if $.inArray(operation.id, fixedCost.idTable) >= 0
+                      operation.isRegularOperation = true
+                      operation.fixedCostId = fixedCost.id
+                      break
 
                   #adjustement for fixed/variable cost search
                   operationRemoved = false
-                  # if (displayFixedCosts and (not operation.isFixedCost))
+                  # if (displayFixedCosts and (not operation.isRegularOperation))
                   #   operationRemoved = true
-                  # else if (displayVariableCosts and (operation.isFixedCost or (operation.amount > 0)))
+                  # else if (displayVariableCosts and (operation.isRegularOperation or (operation.amount > 0)))
                   #   operationRemoved = true
                   if not operationRemoved
                     finalOperations.push operation
@@ -228,6 +229,15 @@ module.exports = class RegularOpStatementView extends BaseView
                 window.collections.operations.setComparator "date"
                 window.collections.operations.sort()
                 view.addAll()
+
+                #display alert about already existing regular operation
+                isSearchFieldEmpty = $("#search-regular-operations").val() is ""
+                console.log isSearchFieldEmpty
+                if view.alreadyRegular and (not isSearchFieldEmpty)
+                  $("#regular-op-exists").show()
+                else
+                  $("#regular-op-exists").hide()
+
               error: (err) ->
                 console.log "getting fixed cost failed."
           else
@@ -299,6 +309,9 @@ module.exports = class RegularOpStatementView extends BaseView
 
 
   addAll: ->
+
+    @alreadyRegular = false
+
     # remove the previous ones
     @$("#table-regular-operations").html ""
     @$(".loading").remove()
@@ -316,13 +329,20 @@ module.exports = class RegularOpStatementView extends BaseView
 
       # add the operation to the table
       subView = new RegularOpStatementEntryView operation, @model
-      subViewDate = subView.render().model.get 'date'
+      subView.render()
+      subViewDate = subView.model.get 'date'
+
+
+      if subView.model.get 'isRegularOperation'
+        @alreadyRegular = true
 
       #insert day row in table
       if (@subViewLastDate isnt subViewDate) or (index is 0)
         @subViewLastDate = subViewDate
         @$("#table-regular-operations").append $('<tr class="special"><td colspan="4">' + moment(@subViewLastDate).format "DD/MM/YYYY" + '</td></tr>')
-        @$("#table-regular-operations").append subView.render().el
+        @$("#table-regular-operations").append subView.el
+
+
 
   destroy: ->
     @viewTitle?.destroy()

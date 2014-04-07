@@ -36,7 +36,7 @@ module.exports = class EntryView extends BaseView
     else
       @model.costClass = "variable-cost"
       @model.costIcon = "&#57482;"
-      if @model.get 'isFixedCost'
+      if @model.get 'isRegularOperation'
         @model.costClass = "fixed-cost"
         @model.costIcon = "&#57481;"
 
@@ -95,7 +95,7 @@ module.exports = class EntryView extends BaseView
             if window.rbiActiveData.currentOperations?
               for id, operation of window.rbiActiveData.currentOperations
                 if operation.fixedCostId? and (operation.fixedCostId = fixedCostId)
-                  operation.isFixedCost = false
+                  operation.isRegularOperation = false
                   operation.fixedCostId = null
               window.views.monthlyAnalysisView.displayMonthlySums window.rbiActiveData.currentOperations
           error: ->
@@ -242,12 +242,12 @@ module.exports = class EntryView extends BaseView
 
           #set fixed cost status to model
           @model.set "fixedCostId", objects.id
-          @model.set "isFixedCost", true
+          @model.set "isRegularOperation", true
 
           #refresh monthly analysis
           for id in fixedCost.idTable
             if window.rbiActiveData.currentOperations[id]?
-              window.rbiActiveData.currentOperations[id].isFixedCost = true
+              window.rbiActiveData.currentOperations[id].isRegularOperation = true
               window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id
           window.views.monthlyAnalysisView.displayMonthlySums window.rbiActiveData.currentOperations
 
