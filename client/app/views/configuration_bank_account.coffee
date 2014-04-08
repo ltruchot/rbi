@@ -37,10 +37,7 @@ module.exports = class BankSubTitleView extends BaseView
                 jqBtnDeposit.removeClass("btn-default").addClass "btn-warning"
                 jqBtnOff.removeClass("btn-danger").addClass "btn-default"
 
-        # console.log ("registered account number : " + currentAccountNumber)
-        # console.log ("that account number : " + thatAccountNumber)
         if thatAccountNumber? and (thatAccountNumber isnt "") and (thatAccountNumber is currentAccountNumber)
-            # console.log ("Auto chose this account : " + thatAccountNumber)
             @chooseAccount()
         #console.log "------- end afterRender -------"
 
@@ -79,7 +76,6 @@ module.exports = class BankSubTitleView extends BaseView
         # else
         #     console.log "not an event !"
         #     accountChosen = window.rbiActiveData.accountNumber
-        console.log "chosen : " + accountChosen
         window.rbiActiveData.userConfiguration.save
             accountNumber: accountChosen
             depositList: depositAccountList
@@ -89,6 +85,7 @@ module.exports = class BankSubTitleView extends BaseView
 
 
     chooseAccount: (currentEvent) ->
+
         #console.log "------ begin chooseAccount ------"
         $(".btn-courant").each ->
             if $(@).hasClass "btn-info"
@@ -138,7 +135,8 @@ module.exports = class BankSubTitleView extends BaseView
         #set date & amount to widgets
         today = moment(new Date()).format('L');
         $("#current-amount-date").text today
-        $("#account-amount-balance").html (@model.get 'amount').money()
+        if @model.get('amount')?
+            $("#account-amount-balance").html (@model.get 'amount').money()
         window.views.forecastBudgetView.displayRegularOperations()
 
         #load calculated amounts to set up the flot chart and render montly analysis view

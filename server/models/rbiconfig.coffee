@@ -4,6 +4,7 @@ module.exports = RbiConfig = americano.getModel 'RbiConfig',
     accountNumber: String
     depositList: Object
     budgetByAccount: Object
+    mostRecentOperationDate: String
 
 RbiConfig.get = (callback) ->
     RbiConfig.request 'all', (err, configs) ->

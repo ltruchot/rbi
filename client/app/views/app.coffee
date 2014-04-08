@@ -67,8 +67,8 @@ module.exports = class AppView extends BaseView
         #alert window.i18n "fatal_error"
 
     #index events (should be in app template)
-    $('#account-budget-icon').click ->
-      $('#account-budget-amount').focus()
+    # $('#account-budget-icon').click ->
+    #   $('#account-budget-amount').focus()
 
   displayLoadingView: ->
     @isLoading = true

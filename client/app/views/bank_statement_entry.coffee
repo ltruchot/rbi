@@ -47,7 +47,6 @@ module.exports = class EntryView extends BaseView
                     "n°#{@model.account.get('accountNumber')}"
     else
       @model.hint = "#{@model.get('raw')}"
-    console.log @model
     super()
     @
   #---------------------------- END BACKBONE METHODS ---------------------------
@@ -87,7 +86,6 @@ module.exports = class EntryView extends BaseView
           url: '/rbifixedcost/' + fixedCostId
           type: 'DELETE'
           success: (result) =>
-            console.log "Delete fixed cost success."
             @destroyPopupFixedCost event
             $('#search-text').keyup()
 
@@ -238,7 +236,6 @@ module.exports = class EntryView extends BaseView
         data: fixedCost
 
         success: (objects) =>
-          #console.log "fixed cost sent successfully!"
 
           #set fixed cost status to model
           @model.set "fixedCostId", objects.id

@@ -22,14 +22,13 @@ module.exports = class ConfigurationBankView extends BaseView
         #console.log 'add one bank view'
         viewAccount = new BankSubTitleView account
         @subViews.push viewAccount
-        account.view = viewAccount
-        @$el.after viewAccount.render().el
+        viewAccount.render()
+        @$el.after viewAccount.el
         accountNumber = viewAccount.model.get "accountNumber"
-        amount = viewAccount.model.get "amount"
-        $(viewAccount.render().el).after '<tr class="bottom-margin"><td class="bottom-sep">N° ' + accountNumber + '</td><td class="bottom-sep" colspan="3" style="text-align:right;">' + amount.money() +  '</td></tr>'
+        amount = viewAccount.model.get("amount") or 0
+        $(viewAccount.el).after '<tr class="bottom-margin"><td class="bottom-sep">N° ' + accountNumber + '</td><td class="bottom-sep" colspan="3" style="text-align:right;">' + amount.money() +  '</td></tr>'
 
     render: ->
-        #console.log 'render bank view'
         # generate the title
         @viewTitle = new BankTitleView @bank
         @$el.html @viewTitle.render().el

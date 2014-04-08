@@ -953,7 +953,8 @@ module.exports = Config = (function(_super) {
   Config.prototype.defaults = {
     accountNumber: '',
     depositList: [],
-    budgetByAcount: {}
+    budgetByAcount: {},
+    mostRecentOperationDate: ''
   };
 
   return Config;
@@ -1092,7 +1093,7 @@ module.exports = AppView = (function(_super) {
   AppView.prototype.isLoading = true;
 
   AppView.prototype.afterRender = function() {
-    window.collections.banks.fetch({
+    return window.collections.banks.fetch({
       data: {
         withAccountOnly: true
       },
@@ -1132,9 +1133,6 @@ module.exports = AppView = (function(_super) {
       error: function() {
         return console.log("Fatal error: could not get the banks list");
       }
-    });
-    return $('#account-budget-icon').click(function() {
-      return $('#account-budget-amount').focus();
     });
   };
 
@@ -1431,7 +1429,6 @@ module.exports = EntryView = (function(_super) {
     } else {
       this.model.hint = "" + (this.model.get('raw'));
     }
-    console.log(this.model);
     EntryView.__super__.render.call(this);
     return this;
   };
@@ -1465,7 +1462,6 @@ module.exports = EntryView = (function(_super) {
         success: (function(_this) {
           return function(result) {
             var id, operation, _ref;
-            console.log("Delete fixed cost success.");
             _this.destroyPopupFixedCost(event);
             $('#search-text').keyup();
             if (window.rbiActiveData.currentOperations != null) {
@@ -1761,44 +1757,6 @@ module.exports = ConfigurationView = (function(_super) {
 
   ConfigurationView.prototype.subViews = [];
 
-  ConfigurationView.prototype.events = {
-    'change select#account-choice': 'reloadBudget',
-    'keyup #configuration-budget-amount': 'setBudget'
-  };
-
-  ConfigurationView.prototype.reloadBudget = function(callerId) {
-    var accountNumber, budgetByAccount, callerMirror, currentBudget;
-    if (callerId == null) {
-      callerId = null;
-    }
-    callerMirror = null;
-    if (callerId != null) {
-      if (callerId === 'account-budget-amount') {
-        callerMirror = '#configuration-budget-amount';
-      } else if (callerId === 'configuration-budget-amount') {
-        callerMirror = '#account-budget-amount';
-      }
-    }
-    accountNumber = window.rbiActiveData.accountNumber;
-    budgetByAccount = window.rbiActiveData.budgetByAccount || [];
-    currentBudget = budgetByAccount[accountNumber] || 0;
-    if (currentBudget > 0) {
-      if (callerMirror != null) {
-        return $(callerMirror).val(budgetByAccount[accountNumber]);
-      } else {
-        $('#account-budget-amount').val(budgetByAccount[accountNumber]);
-        return $('#configuration-budget-amount').val(budgetByAccount[accountNumber]);
-      }
-    } else {
-      if (callerMirror != null) {
-        return $(callerMirror).val(0);
-      } else {
-        $('#account-budget-amount').val(0);
-        return $('#configuration-budget-amount').val(0);
-      }
-    }
-  };
-
   ConfigurationView.prototype.getLastMonthDebitAmount = function(budgetValue, callback) {
     var criteria, now;
     now = moment(new Date());
@@ -1835,64 +1793,15 @@ module.exports = ConfigurationView = (function(_super) {
     });
   };
 
-  ConfigurationView.prototype.setBudget = function(event, view) {
-    var accountNumber, budgetValue, jqBudgetInput;
-    budgetValue = 0;
-    jqBudgetInput = $(event.currentTarget);
-    budgetValue = jqBudgetInput.val();
-    if (!/^(\d+(?:[\.\,]\d{2})?)$/.test(budgetValue)) {
-      return $('.info-user').css('color', window.rbiColors.red).html('La valeur du budget semble incomplète ou érronée&nbsp;');
-    } else {
-      $('.info-user').css('color', 'inherit').html('Les modifications sont prises en compte instantanément&nbsp;');
-      budgetValue = parseFloat(budgetValue.replace(" ", "").replace(",", "."));
-      if (isNaN(budgetValue)) {
-        budgetValue = 0;
-      }
-      if (budgetValue > 0) {
-        accountNumber = window.rbiActiveData.accountNumber;
-        window.rbiActiveData.budgetByAccount[accountNumber] = budgetValue;
-        return window.rbiActiveData.userConfiguration.save({
-          budgetByAccount: window.rbiActiveData.budgetByAccount
-        }, {
-          success: (function(_this) {
-            return function() {
-              var callerId;
-              callerId = jqBudgetInput.attr('id');
-              if (view) {
-                return view.reloadBudget(callerId);
-              } else {
-                return _this.reloadBudget(callerId);
-              }
-            };
-          })(this),
-          error: function() {
-            return console.log('Error: budget configuration not saved');
-          }
-        });
-      }
-    }
-  };
-
-  ConfigurationView.prototype.afterRender = function() {
-    var view;
-    view = this;
-    return $('#account-budget-amount').keyup(function(event) {
-      return view.setBudget(event, view);
-    });
-  };
-
   ConfigurationView.prototype.render = function() {
     ConfigurationView.__super__.render.call(this);
     window.rbiActiveData.userConfiguration.fetch({
       success: (function(_this) {
         return function(currentConfig) {
-          var accountNumber, budgetByAccount, treatment, view;
+          var accountNumber, treatment, view;
           accountNumber = currentConfig.get('accountNumber') || "";
           if ((accountNumber != null) && accountNumber !== "") {
             window.rbiActiveData.accountNumber = accountNumber;
-            budgetByAccount = currentConfig.get('budgetByAccount') || {};
-            window.rbiActiveData.budgetByAccount = budgetByAccount;
-            _this.reloadBudget();
           } else {
             if (window.views.appView.isLoading) {
               window.views.appView.displayInterfaceView();
@@ -1977,11 +1886,11 @@ module.exports = ConfigurationBankView = (function(_super) {
     var accountNumber, amount, viewAccount;
     viewAccount = new BankSubTitleView(account);
     this.subViews.push(viewAccount);
-    account.view = viewAccount;
-    this.$el.after(viewAccount.render().el);
+    viewAccount.render();
+    this.$el.after(viewAccount.el);
     accountNumber = viewAccount.model.get("accountNumber");
-    amount = viewAccount.model.get("amount");
-    return $(viewAccount.render().el).after('<tr class="bottom-margin"><td class="bottom-sep">N° ' + accountNumber + '</td><td class="bottom-sep" colspan="3" style="text-align:right;">' + amount.money() + '</td></tr>');
+    amount = viewAccount.model.get("amount") || 0;
+    return $(viewAccount.el).after('<tr class="bottom-margin"><td class="bottom-sep">N° ' + accountNumber + '</td><td class="bottom-sep" colspan="3" style="text-align:right;">' + amount.money() + '</td></tr>');
   };
 
   ConfigurationBankView.prototype.render = function() {
@@ -2107,7 +2016,6 @@ module.exports = BankSubTitleView = (function(_super) {
         return accountChosen = $(this).attr("account-number");
       }
     });
-    console.log("chosen : " + accountChosen);
     return window.rbiActiveData.userConfiguration.save({
       accountNumber: accountChosen,
       depositList: depositAccountList,
@@ -2158,7 +2066,9 @@ module.exports = BankSubTitleView = (function(_super) {
     window.rbiActiveData.bankAccount = this.model;
     today = moment(new Date()).format('L');
     $("#current-amount-date").text(today);
-    $("#account-amount-balance").html((this.model.get('amount')).money());
+    if (this.model.get('amount') != null) {
+      $("#account-amount-balance").html((this.model.get('amount')).money());
+    }
     window.views.forecastBudgetView.displayRegularOperations();
     return this.loadLastYearAmounts(this.model, function() {
       window.views.appView.isLoading;
@@ -2343,7 +2253,17 @@ module.exports = ForcastBudgetView = (function(_super) {
 
   ForcastBudgetView.prototype.elRegularOperations = '#regular-operations';
 
+  ForcastBudgetView.prototype.subViews = [];
+
   ForcastBudgetView.prototype.currentChart = null;
+
+  ForcastBudgetView.prototype.monthlyVariableOperations = [];
+
+  ForcastBudgetView.prototype.monthlyRegularOperations = [];
+
+  ForcastBudgetView.prototype.variableOperationsTotal = 0;
+
+  ForcastBudgetView.prototype.newRegularOperationsChecked = false;
 
   ForcastBudgetView.prototype.initialize = function() {
     return window.views.regularOpStatementView = new RegularOpStatementView($('#context-box'));
@@ -2355,50 +2275,17 @@ module.exports = ForcastBudgetView = (function(_super) {
     view = this;
     accountNumber = window.rbiActiveData.accountNumber || null;
     if ((accountNumber != null) && (accountNumber !== "")) {
-      this.displayRegularOperations(accountNumber);
+      this.getOperationByRegularType(function() {
+        return view.displayRegularOperations(accountNumber);
+      });
       window.views.regularOpStatementView.reload();
     }
     return this;
   };
 
-  ForcastBudgetView.prototype.reloadBudget = function() {
-    var budgetExpenses, currentBudget, percentage, regularOperation, rest, trToInject, _i, _len, _ref;
-    currentBudget = 0;
-    budgetExpenses = 0;
-    _ref = this.subViews;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      regularOperation = _ref[_i];
-      if ((regularOperation.rules != null) && (regularOperation.rules.queryMid != null) && regularOperation.model.get("isBudgetPart")) {
-        if (regularOperation.rules.queryMid > 0) {
-          currentBudget += regularOperation.rules.queryMid;
-        } else if (regularOperation.rules.queryMid < 0) {
-          budgetExpenses += regularOperation.rules.queryMid;
-        }
-      }
-    }
-    budgetExpenses = Math.abs(budgetExpenses);
-    percentage = parseInt((budgetExpenses / currentBudget) * 100);
-    percentage = percentage <= 100 ? percentage : 100;
-    rest = currentBudget - budgetExpenses;
-    $('#current-budget-chart-debit').html(rest.money());
-    $('#current-budget-chart').attr('data-percent', percentage);
-    if (this.currentChart != null) {
-      $('#current-budget-chart').data('easyPieChart').update(percentage);
-    } else {
-      this.currentChart = $('#current-budget-chart').easyPieChart({
-        animate: 1500,
-        barColor: window.rbiColors.blue,
-        trackColor: window.rbiColors.border_color,
-        scaleColor: window.rbiColors.blue,
-        lineWidth: 2
-      });
-    }
-    $("#regular-operations-budget").remove();
-    trToInject = '<tr id="regular-operations-budget">' + "\t" + "<td><strong>Budget total</strong></td>" + "\t" + "<td><strong>" + rest.money() + "<strong></td>" + "\t" + "<td>&nbsp;</td>" + "\t" + "<td>&nbsp;</td>" + '</tr>';
-    return $("tbody#regular-operations").append(trToInject);
-  };
-
   ForcastBudgetView.prototype.displayRegularOperations = function(accountNumber) {
+    var view;
+    view = this;
     if ((accountNumber == null) && (window.rbiActiveData.accountNumber != null)) {
       accountNumber = window.rbiActiveData.accountNumber;
     }
@@ -2417,7 +2304,13 @@ module.exports = ForcastBudgetView = (function(_super) {
             $(_this.elRegularOperations).append(subView.render().el);
             _this.subViews.push(subView);
           }
-          _this.reloadBudget();
+          if (_this.newRegularOperationsChecked) {
+            _this.reloadBudget();
+          } else {
+            _this.getOperationByRegularType(function() {
+              return view.reloadBudget();
+            });
+          }
           return {
             error: function() {
               return console.log("error fetching regular operations");
@@ -2426,6 +2319,106 @@ module.exports = ForcastBudgetView = (function(_super) {
         };
       })(this)
     });
+  };
+
+  ForcastBudgetView.prototype.getOperationByRegularType = function(callback) {
+    var accountNumber, currentMonthStart, monthlyOperationsParams, view;
+    view = this;
+    accountNumber = window.rbiActiveData.accountNumber;
+    this.monthlyRegularOperations = [];
+    this.monthlyVariableOperations = [];
+    this.variableOperationsTotal = 0;
+    currentMonthStart = moment(new Date()).startOf('month');
+    monthlyOperationsParams = {
+      dateFrom: currentMonthStart.format("YYYY-MM-DD"),
+      dateTo: moment(currentMonthStart).endOf('month').format("YYYY-MM-DD"),
+      accounts: [accountNumber],
+      amountFrom: Number.NEGATIVE_INFINITY,
+      amountTo: Number.POSITIVE_INFINITY
+    };
+    return $.ajax({
+      type: "POST",
+      url: "bankoperations/byDate",
+      data: monthlyOperationsParams,
+      success: (function(_this) {
+        return function(operations) {
+          if (operations != null) {
+            return $.ajax({
+              type: "GET",
+              url: "rbifixedcost",
+              success: function(fixedCosts) {
+                var fixedCost, index, operation, varOperation, _i, _j, _k, _len, _len1, _len2, _ref;
+                for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
+                  operation = operations[index];
+                  operation.isRegularOperation = false;
+                  for (_j = 0, _len1 = fixedCosts.length; _j < _len1; _j++) {
+                    fixedCost = fixedCosts[_j];
+                    if ($.inArray(operation.id, fixedCost.idTable) >= 0) {
+                      operation.isRegularOperation = true;
+                      break;
+                    }
+                  }
+                  if (operation.isRegularOperation) {
+                    _this.monthlyRegularOperations.push(operation);
+                  } else {
+                    _this.monthlyVariableOperations.push(operation);
+                  }
+                }
+                _ref = _this.monthlyVariableOperations;
+                for (_k = 0, _len2 = _ref.length; _k < _len2; _k++) {
+                  varOperation = _ref[_k];
+                  _this.variableOperationsTotal += varOperation.amount;
+                }
+                view.newRegularOperationsChecked = true;
+                if (callback != null) {
+                  return callback();
+                }
+              }
+            });
+          }
+        };
+      })(this)
+    });
+  };
+
+  ForcastBudgetView.prototype.reloadBudget = function() {
+    var currentBudget, monthlyBudget, percentage, realBudget, regularExpenses, regularOperation, trToInject, variableExpenses, _i, _len, _ref;
+    currentBudget = 0;
+    variableExpenses = this.monthlyVariableExpenses;
+    regularExpenses = 0;
+    _ref = this.subViews;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      regularOperation = _ref[_i];
+      if ((regularOperation.rules != null) && (regularOperation.rules.queryMid != null) && regularOperation.model.get("isBudgetPart")) {
+        if (regularOperation.rules.queryMid > 0) {
+          currentBudget += regularOperation.rules.queryMid;
+        } else if (regularOperation.rules.queryMid < 0) {
+          regularExpenses += regularOperation.rules.queryMid;
+        }
+      }
+    }
+    regularExpenses = Math.abs(regularExpenses);
+    percentage = parseInt((regularExpenses / currentBudget) * 100);
+    percentage = percentage <= 100 ? percentage : 100;
+    monthlyBudget = currentBudget - regularExpenses;
+    realBudget = monthlyBudget + this.variableOperationsTotal;
+    $("#account-budget-amount").html(monthlyBudget.money());
+    $('#current-budget-chart-debit').html(realBudget.money());
+    $('#current-budget-chart').attr('data-percent', percentage);
+    if (this.currentChart != null) {
+      $('#current-budget-chart').data('easyPieChart').update(percentage);
+    } else {
+      this.currentChart = $('#current-budget-chart').easyPieChart({
+        animate: 1500,
+        barColor: window.rbiColors.blue,
+        trackColor: window.rbiColors.border_color,
+        scaleColor: window.rbiColors.blue,
+        lineWidth: 2
+      });
+    }
+    $("#regular-operations-budget").remove();
+    trToInject = '<tr id="regular-operations-budget">' + "\t" + "<td><strong>Budget total</strong></td>" + "\t" + "<td><strong>" + monthlyBudget.money() + "<strong></td>" + "\t" + "<td>&nbsp;</td>" + "\t" + "<td>&nbsp;</td>" + '</tr>';
+    return $("tbody#regular-operations").append(trToInject);
   };
 
   return ForcastBudgetView;
@@ -2484,8 +2477,7 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
       },
       success: (function(_this) {
         return function(objects) {
-          window.views.forecastBudgetView.displayRegularOperations();
-          return console.log("saved !");
+          return window.views.forecastBudgetView.displayRegularOperations();
         };
       })(this),
       error: function(err) {
@@ -2559,6 +2551,7 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
         type: 'DELETE',
         success: (function(_this) {
           return function(result) {
+            window.views.forecastBudgetView.newRegularOperationsChecked = false;
             window.views.forecastBudgetView.displayRegularOperations();
             return $('#search-regular-operations').keyup();
           };
@@ -3177,6 +3170,7 @@ module.exports = RegularOpStatementView = (function(_super) {
               }
               return _this.saveFixedCost(fixedCostToRegister, function() {
                 $('#search-regular-operations').keyup();
+                window.views.forecastBudgetView.newRegularOperationsChecked = false;
                 return window.views.forecastBudgetView.displayRegularOperations(rules.accountNumber);
               });
             }
@@ -3244,7 +3238,7 @@ module.exports = RegularOpStatementView = (function(_super) {
         url: "bankoperations/byDate",
         data: this.data,
         success: function(operations) {
-          if (operations) {
+          if (operations != null) {
             return $.ajax({
               type: "GET",
               url: "rbifixedcost",
@@ -3278,7 +3272,6 @@ module.exports = RegularOpStatementView = (function(_super) {
                   window.collections.operations.sort();
                   view.addAll();
                   isSearchFieldEmpty = $("#search-regular-operations").val() === "";
-                  console.log(isSearchFieldEmpty);
                   if (view.alreadyRegular && (!isSearchFieldEmpty)) {
                     return $("#regular-op-exists").show();
                   } else {

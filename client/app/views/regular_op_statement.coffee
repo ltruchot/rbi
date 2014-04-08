@@ -115,6 +115,7 @@ module.exports = class RegularOpStatementView extends BaseView
             #save fixed cost and close popup on callback
             @saveFixedCost fixedCostToRegister, =>
               $('#search-regular-operations').keyup()
+              window.views.forecastBudgetView.newRegularOperationsChecked = false
               window.views.forecastBudgetView.displayRegularOperations rules.accountNumber
           # else
           #  console.log "Operation(s) not found"
@@ -197,7 +198,7 @@ module.exports = class RegularOpStatementView extends BaseView
         data: @data
         success: (operations) ->
 
-          if operations
+          if operations?
             $.ajax
               type: "GET"
               url: "rbifixedcost"
@@ -232,7 +233,6 @@ module.exports = class RegularOpStatementView extends BaseView
 
                 #display alert about already existing regular operation
                 isSearchFieldEmpty = $("#search-regular-operations").val() is ""
-                console.log isSearchFieldEmpty
                 if view.alreadyRegular and (not isSearchFieldEmpty)
                   $("#regular-op-exists").show()
                 else

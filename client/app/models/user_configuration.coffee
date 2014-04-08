@@ -6,4 +6,5 @@ module.exports = class Config extends Backbone.Model
       accountNumber:''
       depositList: []
       budgetByAcount: {}
+      mostRecentOperationDate: ''
 
