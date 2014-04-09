@@ -68,6 +68,9 @@ module.exports =
             deleteItem:
                 encoded: "&#57512;"
                 decoded: ""
+            map:
+                encoded: "&#57538;"
+                decoded: ""
 
 
         #instantiate collections: banks, operations, amounts

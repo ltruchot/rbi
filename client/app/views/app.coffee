@@ -1,13 +1,14 @@
 BaseView = require '../lib/base_view'
-
-#AccountsView = require 'views/accounts'
-ConfigurationView = require 'views/configuration'
+MenuView = require 'views/menu'
 MonthlyAnalysisView = require 'views/monthly_analysis'
 ForecastBudgetView = require 'views/forecast_budget'
-ComparedAnalysisView = require 'views/compared_analysis'
-OnlineShoppingView = require 'views/online_shopping'
-AlertsView = require 'views/alerts'
-MenuView = require 'views/menu'
+# ComparedAnalysisView = require 'views/compared_analysis'
+# OnlineShoppingView = require 'views/online_shopping'
+# AlertsView = require 'views/alerts'
+EnhancedReportView = require 'views/enhanced_report'
+GeolocatedReportView = require 'views/geolocated_report'
+ConfigurationView = require 'views/configuration'
+
 
 
 module.exports = class AppView extends BaseView
@@ -28,18 +29,23 @@ module.exports = class AppView extends BaseView
       success: =>
         if not @menuView
           @menuView =  new MenuView()
-        if not window.views.configurationView
-          window.views.configurationView = new ConfigurationView()
         if not window.views.monthlyAnalysisView
           window.views.monthlyAnalysisView = new MonthlyAnalysisView()
         if not window.views.forecastBudgetView
           window.views.forecastBudgetView = new ForecastBudgetView()
-        if not window.views.comparedAnalysisView
-          window.views.comparedAnalysisView = new ComparedAnalysisView()
-        if not window.views.onlineShoppingView
-          window.views.onlineShoppingView = new OnlineShoppingView()
-        if not window.views.alertsView
-          window.views.alertsView =  new AlertsView()
+        # if not window.views.comparedAnalysisView
+        #   window.views.comparedAnalysisView = new ComparedAnalysisView()
+        # if not window.views.onlineShoppingView
+        #   window.views.onlineShoppingView = new OnlineShoppingView()
+        # if not window.views.alertsView
+        #   window.views.alertsView =  new AlertsView()
+        if not window.views.enhancedReportView
+          window.views.enhancedReportView = new EnhancedReportView()
+        if not window.views.geolocatedReportView
+          window.views.geolocatedReportView = new GeolocatedReportView()
+        if not window.views.configurationView
+          window.views.configurationView = new ConfigurationView()
+
 
         @menuView.render()
 

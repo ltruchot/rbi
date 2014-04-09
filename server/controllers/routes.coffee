@@ -6,6 +6,7 @@ bankoperations = require './bankoperations'
 bankalerts = require './bankalerts'
 rbiconfig = require './rbiconfig'
 rbifixedcost = require './rbifixedcost'
+geolocationlog = require './geolocationlog'
 
 module.exports =
     'foo':
@@ -65,3 +66,7 @@ module.exports =
         del: rbifixedcost.destroy
     'rbifixedcost/getRegularOperationsByAccountNumber/:accountNumber' :
         get: rbifixedcost.getRegularOperationsByAccountNumber
+    'geolocationlog/byDate':
+        post: geolocationlog.byDate
+    'geolocationlog/allByDate':
+        post: geolocationlog.allByDate
