@@ -12,6 +12,8 @@ module.exports = class GeolocatedReportView extends BaseView
 
 
   render: ->
+    # lay down the template
+    super()
 
     $.ajax
       type: "POST"
@@ -20,10 +22,22 @@ module.exports = class GeolocatedReportView extends BaseView
         dateFrom: new Date("2013-09-01")
         dateTo: new Date("2013-09-02")
       success: (geolocationLogs) ->
-        console.log geolocationLogs
+        polygonTable = []
+        lastLocation = null
+        for log in geolocationLogs
+          if log.longitude? and log.latitude?
+            lastLocation = [log.latitude, log.longitude]
+            polygonTable.push lastLocation
+        if lastLocation?
+          @map = L.map('msisdn-geolocation-map').setView lastLocation, 15
+          @layer = L.tileLayer 'http://{s}.tile.cloudmade.com/8ee2a50541944fb9bcedded5165f09d9/997/256/{z}/{x}/{y}.png',
+            attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
+            maxZoom: 18
+          @layer.addTo @map
+          @polygon = L.polygon polygonTable
+          @polygon.addTo @map
 
-    # lay down the template
-    super()
+
 
     # #needed variables
     # view = @

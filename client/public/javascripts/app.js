@@ -2633,6 +2633,7 @@ module.exports = GeolocatedReportView = (function(_super) {
   };
 
   GeolocatedReportView.prototype.render = function() {
+    GeolocatedReportView.__super__.render.call(this);
     $.ajax({
       type: "POST",
       url: "geolocationlog/allByDate",
@@ -2641,10 +2642,28 @@ module.exports = GeolocatedReportView = (function(_super) {
         dateTo: new Date("2013-09-02")
       },
       success: function(geolocationLogs) {
-        return console.log(geolocationLogs);
+        var lastLocation, log, polygonTable, _i, _len;
+        polygonTable = [];
+        lastLocation = null;
+        for (_i = 0, _len = geolocationLogs.length; _i < _len; _i++) {
+          log = geolocationLogs[_i];
+          if ((log.longitude != null) && (log.latitude != null)) {
+            lastLocation = [log.latitude, log.longitude];
+            polygonTable.push(lastLocation);
+          }
+        }
+        if (lastLocation != null) {
+          this.map = L.map('msisdn-geolocation-map').setView(lastLocation, 15);
+          this.layer = L.tileLayer('http://{s}.tile.cloudmade.com/8ee2a50541944fb9bcedded5165f09d9/997/256/{z}/{x}/{y}.png', {
+            attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
+            maxZoom: 18
+          });
+          this.layer.addTo(this.map);
+          this.polygon = L.polygon(polygonTable);
+          return this.polygon.addTo(this.map);
+        }
       }
     });
-    GeolocatedReportView.__super__.render.call(this);
     return this;
   };
 
@@ -3920,7 +3939,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1>Relevé géolocalisé</h1><div></div>');
+buf.push('<h1>Relevé géolocalisé</h1><div id="msisdn-geolocation-map"></div>');
 }
 return buf.join("");
 };
