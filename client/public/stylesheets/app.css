@@ -11479,6 +11479,12 @@ cursor not-allowed {
   width: 100%;
   height: 370px;
 }
+.day-switcher {
+  cursor: pointer;
+}
+#current-day {
+  text-transform: none;
+}
 
 .chromeframe { margin: 0.2em 0; background: #ccc; color: #000; padding: 0.2em 0; }
 .ir { display: block; border: 0; text-indent: -999em; overflow: hidden; background-color: transparent; background-repeat: no-repeat; text-align: left; direction: ltr; *line-height: 0; }

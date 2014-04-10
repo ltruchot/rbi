@@ -7,35 +7,84 @@ module.exports = class GeolocatedReportView extends BaseView
 
   el: 'div#interface-box'
 
+  events:
+    'click .day-switcher' : 'switchDay'
+
+  bounds: null
+
+  constructor: (@model) ->
+    super()
+
   initialize: ->
     window.views.regularOpStatementView = new RegularOpStatementView $('#context-box')
 
 
   render: ->
     # lay down the template
+
     super()
+    @switchDay()
+
+
+  switchDay: (event, date)->
+    today = moment(new Date()).startOf "day"
+    firstDay = moment(window.rbiActiveData.olderOperationDate).startOf 'day'
+    if event? and event.currentTarget?
+      jqSwitcher = $(event.currentTarget)
+      if jqSwitcher.hasClass 'previous-day'
+        @currentDate.subtract('day', 1).startOf 'day'
+      else if jqSwitcher.hasClass 'next-day'
+        @currentDate.add('day', 1).startOf('day')
+    else
+      @currentDate = moment(date or today).startOf "day"
+
+    #show/hide previous/next month button
+    if moment(@currentDate).format("YYYY-MM-DD") is today.format("YYYY-MM-DD")
+      $('.next-day').hide()
+    else
+      $('.next-day').show()
+    if (firstDay.format("YYYY-MM-DD") isnt today.format("YYYY-MM-DD")) and (@currentDate.format("YYYY-MM-DD") is firstDay.format("YYYY-MM-DD"))
+      $('.previous-month').hide()
+    else
+      $('.previous-month').show()
+
+    @$("#current-day").html "Le " + (@currentDate.format "dddd DD MMMM YYYY")
 
     $.ajax
       type: "POST"
       url: "geolocationlog/allByDate"
       data:
-        dateFrom: new Date("2013-09-01")
-        dateTo: new Date("2013-09-02")
-      success: (geolocationLogs) ->
-        polygonTable = []
+        dateFrom: @currentDate.format "YYYY-MM-DD HH:mm"
+        dateTo: moment(@currentDate.endOf("day")).format "YYYY-MM-DD HH:mm"
+      success: (geolocationLogs) =>
+        polylineTable = []
         lastLocation = null
         for log in geolocationLogs
           if log.longitude? and log.latitude?
             lastLocation = [log.latitude, log.longitude]
-            polygonTable.push lastLocation
+            polylineTable.push lastLocation
+
+        #set new polygon
+        if polylineTable.length > 0
+          if @map? and @polyline?
+            @map.removeLayer @polyline
+          @polyline = L.polyline polylineTable
+          @bounds = @polyline.getBounds()
+          @center = @bounds.getCenter()
+          console.log @center
+
         if lastLocation?
-          @map = L.map('msisdn-geolocation-map').setView lastLocation, 15
-          @layer = L.tileLayer 'http://{s}.tile.cloudmade.com/8ee2a50541944fb9bcedded5165f09d9/997/256/{z}/{x}/{y}.png',
-            attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
-            maxZoom: 18
-          @layer.addTo @map
-          @polygon = L.polygon polygonTable
-          @polygon.addTo @map
+          if not @map?
+            @map = L.map('msisdn-geolocation-map').setView lastLocation, 1
+            @layer = L.tileLayer 'http://{s}.tile.cloudmade.com/8ee2a50541944fb9bcedded5165f09d9/997/256/{z}/{x}/{y}.png',
+              attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
+            @layer.addTo @map
+
+      #clean old polygon
+        if @polyline? and @map?
+          @polyline.addTo @map
+          if @bounds
+            @map.fitBounds @bounds
 
 
 

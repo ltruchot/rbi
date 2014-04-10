@@ -2608,7 +2608,7 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
 });
 
 ;require.register("views/geolocated_report", function(exports, require, module) {
-var BaseView, GeolocatedReportView, RegularOpStatementView, _ref,
+var BaseView, GeolocatedReportView, RegularOpStatementView,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -2619,14 +2619,20 @@ RegularOpStatementView = require("./regular_op_statement");
 module.exports = GeolocatedReportView = (function(_super) {
   __extends(GeolocatedReportView, _super);
 
-  function GeolocatedReportView() {
-    _ref = GeolocatedReportView.__super__.constructor.apply(this, arguments);
-    return _ref;
-  }
-
   GeolocatedReportView.prototype.template = require('./templates/geolocated_report');
 
   GeolocatedReportView.prototype.el = 'div#interface-box';
+
+  GeolocatedReportView.prototype.events = {
+    'click .day-switcher': 'switchDay'
+  };
+
+  GeolocatedReportView.prototype.bounds = null;
+
+  function GeolocatedReportView(model) {
+    this.model = model;
+    GeolocatedReportView.__super__.constructor.call(this);
+  }
 
   GeolocatedReportView.prototype.initialize = function() {
     return window.views.regularOpStatementView = new RegularOpStatementView($('#context-box'));
@@ -2634,33 +2640,76 @@ module.exports = GeolocatedReportView = (function(_super) {
 
   GeolocatedReportView.prototype.render = function() {
     GeolocatedReportView.__super__.render.call(this);
+    return this.switchDay();
+  };
+
+  GeolocatedReportView.prototype.switchDay = function(event, date) {
+    var firstDay, jqSwitcher, today,
+      _this = this;
+    today = moment(new Date()).startOf("day");
+    firstDay = moment(window.rbiActiveData.olderOperationDate).startOf('day');
+    if ((event != null) && (event.currentTarget != null)) {
+      jqSwitcher = $(event.currentTarget);
+      if (jqSwitcher.hasClass('previous-day')) {
+        this.currentDate.subtract('day', 1).startOf('day');
+      } else if (jqSwitcher.hasClass('next-day')) {
+        this.currentDate.add('day', 1).startOf('day');
+      }
+    } else {
+      this.currentDate = moment(date || today).startOf("day");
+    }
+    if (moment(this.currentDate).format("YYYY-MM-DD") === today.format("YYYY-MM-DD")) {
+      $('.next-day').hide();
+    } else {
+      $('.next-day').show();
+    }
+    if ((firstDay.format("YYYY-MM-DD") !== today.format("YYYY-MM-DD")) && (this.currentDate.format("YYYY-MM-DD") === firstDay.format("YYYY-MM-DD"))) {
+      $('.previous-month').hide();
+    } else {
+      $('.previous-month').show();
+    }
+    this.$("#current-day").html("Le " + (this.currentDate.format("dddd DD MMMM YYYY")));
     $.ajax({
       type: "POST",
       url: "geolocationlog/allByDate",
       data: {
-        dateFrom: new Date("2013-09-01"),
-        dateTo: new Date("2013-09-02")
+        dateFrom: this.currentDate.format("YYYY-MM-DD HH:mm"),
+        dateTo: moment(this.currentDate.endOf("day")).format("YYYY-MM-DD HH:mm")
       },
       success: function(geolocationLogs) {
-        var lastLocation, log, polygonTable, _i, _len;
-        polygonTable = [];
+        var lastLocation, log, polylineTable, _i, _len;
+        polylineTable = [];
         lastLocation = null;
         for (_i = 0, _len = geolocationLogs.length; _i < _len; _i++) {
           log = geolocationLogs[_i];
           if ((log.longitude != null) && (log.latitude != null)) {
             lastLocation = [log.latitude, log.longitude];
-            polygonTable.push(lastLocation);
+            polylineTable.push(lastLocation);
           }
         }
+        if (polylineTable.length > 0) {
+          if ((_this.map != null) && (_this.polyline != null)) {
+            _this.map.removeLayer(_this.polyline);
+          }
+          _this.polyline = L.polyline(polylineTable);
+          _this.bounds = _this.polyline.getBounds();
+          _this.center = _this.bounds.getCenter();
+          console.log(_this.center);
+        }
         if (lastLocation != null) {
-          this.map = L.map('msisdn-geolocation-map').setView(lastLocation, 15);
-          this.layer = L.tileLayer('http://{s}.tile.cloudmade.com/8ee2a50541944fb9bcedded5165f09d9/997/256/{z}/{x}/{y}.png', {
-            attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
-            maxZoom: 18
-          });
-          this.layer.addTo(this.map);
-          this.polygon = L.polygon(polygonTable);
-          return this.polygon.addTo(this.map);
+          if (_this.map == null) {
+            _this.map = L.map('msisdn-geolocation-map').setView(lastLocation, 1);
+            _this.layer = L.tileLayer('http://{s}.tile.cloudmade.com/8ee2a50541944fb9bcedded5165f09d9/997/256/{z}/{x}/{y}.png', {
+              attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>'
+            });
+            _this.layer.addTo(_this.map);
+          }
+        }
+        if ((_this.polyline != null) && (_this.map != null)) {
+          _this.polyline.addTo(_this.map);
+          if (_this.bounds) {
+            return _this.map.fitBounds(_this.bounds);
+          }
         }
       }
     });
@@ -3939,7 +3988,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1>Relevé géolocalisé</h1><div id="msisdn-geolocation-map"></div>');
+buf.push('<h1><span aria-hidden="true" data-icon="&#57613;" class="day-switcher previous-day pull-left fs1"></span><span id="current-day">Relevé géolocalisé</span><span aria-hidden="true" data-icon="&#57614;" class="day-switcher next-day pull-right fs1"></span></h1><div id="msisdn-geolocation-map"></div>');
 }
 return buf.join("");
 };
