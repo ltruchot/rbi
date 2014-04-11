@@ -11,14 +11,17 @@ module.exports = class BankStatementView extends BaseView
         'click th.sort-title' : "sortByTitle"
         'click th.sort-amount' : "sortByAmount"
         'keyup input#search-text' : "reload"
+        'click .special' : "reloadMap"
 
     inUse: false
 
     subViews: []
 
-    subViewLastDate = ''
+    subViewLastDate: ''
 
-    params = null
+    params: null
+
+    mapLinked: false
 
     # INIT
     constructor: (@el) ->
@@ -35,6 +38,7 @@ module.exports = class BankStatementView extends BaseView
         @
 
     reload: (params, callback) ->
+
         view = @
 
         #client or server search ?
@@ -170,7 +174,7 @@ module.exports = class BankStatementView extends BaseView
         for operation, index in window.collections.operations.models
 
             # add the operation to the table
-            subView = new BalanceOperationView operation, @model
+            subView = new BalanceOperationView operation, @model, false, @mapLinked
             subViewDate = subView.render().model.get 'date'
 
             #insert day row in table
@@ -179,6 +183,12 @@ module.exports = class BankStatementView extends BaseView
                 @$("#table-operations").append $('<tr class="special"><td colspan="4">' + moment(@subViewLastDate).format "DD/MM/YYYY" + '</td></tr>')
             @$("#table-operations").append subView.render().el
 
+
+    reloadMap: (event) ->
+        if @mapLinked
+            date = moment($(event.currentTarget).children("td").text(), "DD/MM/YYYY").format "YYYY-MM-DD"
+            console.log date
+            window.views.geolocatedReportView.switchDay null, new Date(date)
     destroy: ->
         @viewTitle?.destroy()
         for view in @subViews

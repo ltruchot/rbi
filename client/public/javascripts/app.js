@@ -1177,8 +1177,6 @@ BaseView = require('../lib/base_view');
 BalanceOperationView = require("./bank_statement_entry");
 
 module.exports = BankStatementView = (function(_super) {
-  var params, subViewLastDate;
-
   __extends(BankStatementView, _super);
 
   BankStatementView.prototype.templateHeader = require('./templates/bank_statement_header');
@@ -1188,16 +1186,19 @@ module.exports = BankStatementView = (function(_super) {
     'click th.sort-date': "sortByDate",
     'click th.sort-title': "sortByTitle",
     'click th.sort-amount': "sortByAmount",
-    'keyup input#search-text': "reload"
+    'keyup input#search-text': "reload",
+    'click .special': "reloadMap"
   };
 
   BankStatementView.prototype.inUse = false;
 
   BankStatementView.prototype.subViews = [];
 
-  subViewLastDate = '';
+  BankStatementView.prototype.subViewLastDate = '';
 
-  params = null;
+  BankStatementView.prototype.params = null;
+
+  BankStatementView.prototype.mapLinked = false;
 
   function BankStatementView(el) {
     this.el = el;
@@ -1352,7 +1353,7 @@ module.exports = BankStatementView = (function(_super) {
     _results = [];
     for (index = _j = 0, _len1 = _ref1.length; _j < _len1; index = ++_j) {
       operation = _ref1[index];
-      subView = new BalanceOperationView(operation, this.model);
+      subView = new BalanceOperationView(operation, this.model, false, this.mapLinked);
       subViewDate = subView.render().model.get('date');
       if ((this.subViewLastDate !== subViewDate) || (index === 0)) {
         this.subViewLastDate = subViewDate;
@@ -1361,6 +1362,15 @@ module.exports = BankStatementView = (function(_super) {
       _results.push(this.$("#table-operations").append(subView.render().el));
     }
     return _results;
+  };
+
+  BankStatementView.prototype.reloadMap = function(event) {
+    var date;
+    if (this.mapLinked) {
+      date = moment($(event.currentTarget).children("td").text(), "DD/MM/YYYY").format("YYYY-MM-DD");
+      console.log(date);
+      return window.views.geolocatedReportView.switchDay(null, new Date(date));
+    }
   };
 
   BankStatementView.prototype.destroy = function() {
@@ -1397,21 +1407,17 @@ module.exports = EntryView = (function(_super) {
   EntryView.prototype.tagName = 'tr';
 
   EntryView.prototype.events = {
-    'mouseenter .popup-container > .variable-cost': 'switchFixedCostIcon',
-    'mouseleave .popup-container > .variable-cost': 'switchFixedCostIcon',
-    'mouseenter .popup-container > .fixed-cost': 'switchFixedCostIcon',
-    'mouseleave .popup-container > .fixed-cost': 'switchFixedCostIcon',
-    'click .popup-container > .variable-cost': 'popupFixedCost',
-    'click .popup-container > .fixed-cost': 'popupFixedCost',
+    'click': 'reloadMap',
     'click #cancel-fixed-cost': 'destroyPopupFixedCost',
     'click #save-fixed-cost': 'prepareFixedCost',
     'click #remove-fixed-cost': 'removeFixedCost'
   };
 
-  function EntryView(model, account, showAccountNum) {
+  function EntryView(model, account, showAccountNum, mapLinked) {
     this.model = model;
     this.account = account;
     this.showAccountNum = showAccountNum != null ? showAccountNum : false;
+    this.mapLinked = mapLinked;
     EntryView.__super__.constructor.call(this);
   }
 
@@ -1422,16 +1428,6 @@ module.exports = EntryView = (function(_super) {
     }
     this.model.account = this.account;
     this.model.formattedDate = moment(this.model.get('date')).format("DD/MM/YYYY");
-    if ((this.model.get('amount')) > 0) {
-      this.model.costClass = 'not-displayed-cost';
-    } else {
-      this.model.costClass = "variable-cost";
-      this.model.costIcon = "&#57482;";
-      if (this.model.get('isRegularOperation')) {
-        this.model.costClass = "fixed-cost";
-        this.model.costIcon = "&#57481;";
-      }
-    }
     if (this.showAccountNum) {
       hint = ("" + (this.model.account.get('title')) + ", ") + ("n°" + (this.model.account.get('accountNumber')));
       this.model.hint = ("" + (this.model.account.get('title')) + ", ") + ("n°" + (this.model.account.get('accountNumber')));
@@ -1439,170 +1435,18 @@ module.exports = EntryView = (function(_super) {
       this.model.hint = "" + (this.model.get('raw'));
     }
     EntryView.__super__.render.call(this);
+    if (this.mapLinked) {
+      this.$el.find("td").css({
+        "cursor": "pointer"
+      });
+    }
     return this;
   };
 
-  EntryView.prototype.destroyPopupFixedCost = function(event) {
-    var jqCaller, jqFixedCostIcon, jqParent, jqPopup;
-    jqCaller = $(event.currentTarget);
-    jqPopup = jqCaller.parent();
-    jqParent = jqPopup.parent();
-    jqFixedCostIcon = jqPopup.children('.iconCostType');
-    jqFixedCostIcon.appendTo(jqParent);
-    jqPopup.remove();
-    if (jqCaller.attr('id') === 'cancel-fixed-cost') {
-      return jqFixedCostIcon.mouseleave();
-    } else {
-      if (jqFixedCostIcon.hasClass('variable-cost')) {
-        return jqFixedCostIcon.removeClass('variable-cost').addClass('fixed-cost');
-      } else {
-        return jqFixedCostIcon.removeClass('fixed-cost').addClass('variable-cost');
-      }
+  EntryView.prototype.reloadMap = function() {
+    if (this.mapLinked) {
+      return window.views.geolocatedReportView.switchDay(null, new Date(this.model.get('date')));
     }
-  };
-
-  EntryView.prototype.removeFixedCost = function(event) {
-    var fixedCostId,
-      _this = this;
-    fixedCostId = this.model.get("fixedCostId" || null);
-    if (fixedCostId != null) {
-      return $.ajax({
-        url: '/rbifixedcost/' + fixedCostId,
-        type: 'DELETE',
-        success: function(result) {
-          var id, operation, _ref;
-          _this.destroyPopupFixedCost(event);
-          $('#search-text').keyup();
-          if (window.rbiActiveData.currentOperations != null) {
-            _ref = window.rbiActiveData.currentOperations;
-            for (id in _ref) {
-              operation = _ref[id];
-              if ((operation.fixedCostId != null) && (operation.fixedCostId = fixedCostId)) {
-                operation.isRegularOperation = false;
-                operation.fixedCostId = null;
-              }
-            }
-            return window.views.monthlyAnalysisView.displayMonthlySums(window.rbiActiveData.currentOperations);
-          }
-        },
-        error: function() {
-          return console.log("Delete fixed cost failed.");
-        }
-      });
-    }
-  };
-
-  EntryView.prototype.prepareFixedCost = function(event) {
-    var accountNumber, currentUniquery, fixedCostToRegister, jqPopup, neededRequest, userChoice,
-      _this = this;
-    jqPopup = $(event.currentTarget).parent();
-    userChoice = jqPopup.children('input[type=radio]:checked').val();
-    accountNumber = window.rbiActiveData.bankAccount.get('accountNumber');
-    neededRequest = false;
-    fixedCostToRegister = {
-      type: userChoice,
-      accountNumber: accountNumber,
-      idTable: []
-    };
-    switch (userChoice) {
-      case 'standard':
-        this.data = {
-          accounts: [accountNumber],
-          searchText: "",
-          exactSearchText: this.operationTitle,
-          dateFrom: null,
-          dateTo: new Date()
-        };
-        if (this.operationMax < this.operationMin) {
-          this.data.amountFrom = this.operationMax;
-          this.data.amountTo = this.operationMin;
-        } else {
-          this.data.amountFrom = this.operationMin;
-          this.data.amountTo = this.operationMax;
-        }
-        currentUniquery = accountNumber + '(#|#)' + this.operationTitle;
-        currentUniquery += '(#|#)' + this.data.amountFrom + '(#|#)' + this.data.amountTo;
-        fixedCostToRegister.uniquery = currentUniquery;
-        neededRequest = true;
-        break;
-      case 'onetime':
-        fixedCostToRegister.uniquery = "";
-        fixedCostToRegister.idTable.push(this.model.get('id'));
-        break;
-      case 'custom':
-        console.log('custom not ready ');
-    }
-    if (neededRequest) {
-      return $.ajax({
-        type: "POST",
-        url: "bankoperations/query",
-        data: this.data,
-        success: function(objects) {
-          var object, _i, _len;
-          if ((objects != null) && objects.length > 0) {
-            for (_i = 0, _len = objects.length; _i < _len; _i++) {
-              object = objects[_i];
-              fixedCostToRegister.idTable.push(object.id);
-            }
-            return _this.saveFixedCost(fixedCostToRegister, function() {
-              _this.destroyPopupFixedCost(event);
-              return $('#search-text').keyup();
-            });
-          } else {
-            return console.log("Operation(s) not found");
-          }
-        },
-        error: function(err) {
-          return console.log("there was an error");
-        }
-      });
-    } else {
-      return this.saveFixedCost(fixedCostToRegister, function() {
-        _this.destroyPopupFixedCost(event);
-        return $('#search-text').keyup();
-      });
-    }
-  };
-
-  EntryView.prototype.switchFixedCostIcon = function(event) {
-    var jqFixedCostIcon;
-    jqFixedCostIcon = $(event.currentTarget);
-    if ((jqFixedCostIcon.attr('data-icon')) === '') {
-      return jqFixedCostIcon.attr('data-icon', '');
-    } else {
-      return jqFixedCostIcon.attr('data-icon', '');
-    }
-  };
-
-  EntryView.prototype.popupFixedCost = function(event) {
-    var idValidationBtn, jqFixedCostIcon, jqIconParent, jqPopup, newFixedCost, popupTitle;
-    jqFixedCostIcon = $(event.currentTarget);
-    jqIconParent = jqFixedCostIcon.parent();
-    newFixedCost = jqFixedCostIcon.hasClass('variable-cost');
-    popupTitle = "Ajouter aux frais fixes";
-    idValidationBtn = "save-fixed-cost";
-    if (newFixedCost) {
-      jqFixedCostIcon.attr('data-icon', '');
-    } else {
-      jqFixedCostIcon.attr('data-icon', '');
-      popupTitle = "Retirer des frais fixes";
-      idValidationBtn = "remove-fixed-cost";
-    }
-    jqPopup = $('<div class="popup-fixed-cost"></div>');
-    jqFixedCostIcon.appendTo(jqPopup);
-    jqPopup.append('<span class="fixed-cost-title">' + popupTitle + '</span>');
-    jqPopup.append('<button type="button" id="' + idValidationBtn + '" class="btn btn-xs btn-primary">Valider</button>');
-    jqPopup.append('<button type="button" id="cancel-fixed-cost" class="btn btn-xs btn-danger" >Annuler</button>');
-    this.operationTitle = this.model.get('title');
-    if (newFixedCost) {
-      this.operationMax = parseFloat((this.model.get('amount')) * 1.1);
-      this.operationMin = parseFloat((this.model.get('amount')) * 0.9);
-      jqPopup.append('<input type="radio" name="fixed-cost-option" value="standard" checked="true" /> <label>Toutes les opérations intitulées "' + this.operationTitle + '" d\'un montant entre  ' + this.operationMin.money() + ' et ' + this.operationMax.money() + '</label><br />');
-      jqPopup.append('<input type="radio" name="fixed-cost-option" value="onetime" /> <label>Seulement cette opération</label><br />');
-    } else {
-      jqPopup.append('<p>Cette action enlevera l\'opération des frais fixes, ainsi que <strong>les autres opérations précédemment associées</strong>.</p>');
-    }
-    return jqPopup.appendTo(jqIconParent);
   };
 
   EntryView.prototype.saveFixedCost = function(fixedCost, callback) {
@@ -2608,13 +2452,13 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
 });
 
 ;require.register("views/geolocated_report", function(exports, require, module) {
-var BaseView, GeolocatedReportView, RegularOpStatementView,
+var BankStatementView, BaseView, GeolocatedReportView,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
-RegularOpStatementView = require("./regular_op_statement");
+BankStatementView = require("./bank_statement");
 
 module.exports = GeolocatedReportView = (function(_super) {
   __extends(GeolocatedReportView, _super);
@@ -2635,12 +2479,23 @@ module.exports = GeolocatedReportView = (function(_super) {
   }
 
   GeolocatedReportView.prototype.initialize = function() {
-    return window.views.regularOpStatementView = new RegularOpStatementView($('#context-box'));
+    return this.bankStatementView = new BankStatementView($('#context-box'));
   };
 
   GeolocatedReportView.prototype.render = function() {
+    var bankStatementParams, now;
     GeolocatedReportView.__super__.render.call(this);
-    return this.switchDay();
+    this.switchDay();
+    now = new Date();
+    bankStatementParams = {
+      accounts: [window.rbiActiveData.accountNumber],
+      amountFrom: Number.NEGATIVE_INFINITY,
+      amountTo: Number.POSITIVE_INFINITY,
+      dateFrom: moment(moment(now).subtract('y', 1)).format('YYYY-MM-DD'),
+      dateTo: moment(now).format('YYYY-MM-DD')
+    };
+    this.bankStatementView.mapLinked = true;
+    return this.bankStatementView.reload(bankStatementParams, function() {});
   };
 
   GeolocatedReportView.prototype.switchDay = function(event, date) {
@@ -2697,7 +2552,7 @@ module.exports = GeolocatedReportView = (function(_super) {
           console.log(_this.center);
         }
         if (lastLocation != null) {
-          if (_this.map == null) {
+          if ((_this.map == null) || $("#msisdn-geolocation-map").html() === "") {
             _this.map = L.map('msisdn-geolocation-map').setView(lastLocation, 1);
             _this.layer = L.tileLayer('http://{s}.tile.cloudmade.com/8ee2a50541944fb9bcedded5165f09d9/997/256/{z}/{x}/{y}.png', {
               attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>'
@@ -3852,9 +3707,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<td class="operation-title">' + escape((interp = model.get('title')) == null ? '' : interp) + '</td><td class="operation-amount text-right">' + escape((interp = Number(model.get('amount')).money()) == null ? '' : interp) + '</td><td class="text-right"><div class="popup-container"><span');
-buf.push(attrs({ 'aria-hidden':("true"), 'data-icon':("" + (model.costIcon) + ""), "class": ('fs1') + ' ' + ('iconCostType') + ' ' + ("" + (model.costClass) + "") }, {"class":true,"aria-hidden":true,"data-icon":true}));
-buf.push('></span></div></td>');
+buf.push('<td class="operation-title">' + escape((interp = model.get('title')) == null ? '' : interp) + '</td><td class="operation-amount text-right">' + escape((interp = Number(model.get('amount')).money()) == null ? '' : interp) + '</td><td class="text-right"></td>');
 }
 return buf.join("");
 };

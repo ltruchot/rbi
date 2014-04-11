@@ -1,5 +1,5 @@
 BaseView = require '../lib/base_view'
-RegularOpStatementView = require "./regular_op_statement"
+BankStatementView = require "./bank_statement"
 
 module.exports = class GeolocatedReportView extends BaseView
 
@@ -16,14 +16,24 @@ module.exports = class GeolocatedReportView extends BaseView
     super()
 
   initialize: ->
-    window.views.regularOpStatementView = new RegularOpStatementView $('#context-box')
+    @bankStatementView = new BankStatementView $('#context-box')
 
 
   render: ->
-    # lay down the template
 
+    # lay down the template
     super()
     @switchDay()
+    now = new Date()
+    bankStatementParams =
+      accounts: [window.rbiActiveData.accountNumber]
+      amountFrom: Number.NEGATIVE_INFINITY
+      amountTo: Number.POSITIVE_INFINITY
+      dateFrom: moment(moment(now).subtract('y', 1)).format 'YYYY-MM-DD'
+      dateTo: moment(now).format 'YYYY-MM-DD'
+    @bankStatementView.mapLinked = true
+    @bankStatementView.reload bankStatementParams, ->
+
 
 
   switchDay: (event, date)->
@@ -74,7 +84,7 @@ module.exports = class GeolocatedReportView extends BaseView
           console.log @center
 
         if lastLocation?
-          if not @map?
+          if (not @map?) or $("#msisdn-geolocation-map").html() is ""
             @map = L.map('msisdn-geolocation-map').setView lastLocation, 1
             @layer = L.tileLayer 'http://{s}.tile.cloudmade.com/8ee2a50541944fb9bcedded5165f09d9/997/256/{z}/{x}/{y}.png',
               attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
