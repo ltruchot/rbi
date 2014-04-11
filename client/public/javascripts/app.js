@@ -406,6 +406,31 @@ module.exports = Banks = (function(_super) {
 
 });
 
+;require.register("collections/receipts", function(exports, require, module) {
+var Receipt, Receipts, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Receipt = require('../models/receipt');
+
+module.exports = Receipts = (function(_super) {
+  __extends(Receipts, _super);
+
+  function Receipts() {
+    _ref = Receipts.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  Receipts.prototype.model = Receipt;
+
+  Receipts.prototype.url = 'receipts';
+
+  return Receipts;
+
+})(Backbone.Collection);
+
+});
+
 ;require.register("collections/regular_operations", function(exports, require, module) {
 var RegularOperation, RegularOperations, _ref,
   __hasProp = {}.hasOwnProperty,
@@ -431,6 +456,37 @@ module.exports = RegularOperations = (function(_super) {
   };
 
   return RegularOperations;
+
+})(Backbone.Collection);
+
+});
+
+;require.register("collections/sections", function(exports, require, module) {
+var Section, Sections, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Section = require("../models/section");
+
+module.exports = Sections = (function(_super) {
+  __extends(Sections, _super);
+
+  function Sections() {
+    _ref = Sections.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  Sections.prototype.initialize = function(models, options) {
+    this.receiptId = options.receiptId;
+  };
+
+  Sections.prototype.url = function() {
+    return "receipts/" + this.receiptId + "/sections";
+  };
+
+  Sections.prototype.model = Section;
+
+  return Sections;
 
 })(Backbone.Collection);
 
@@ -931,6 +987,37 @@ module.exports = BankOperation = (function(_super) {
 
 });
 
+;require.register("models/receipt--mesconsos", function(exports, require, module) {
+var Receipt, Receipts;
+
+Receipt = require('../models/receipt');
+
+module.exports = Receipts = Backbone.Collection.extend({
+  model: Receipt,
+  url: 'receipts'
+});
+
+});
+
+;require.register("models/receipt", function(exports, require, module) {
+var Receipt, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+module.exports = Receipt = (function(_super) {
+  __extends(Receipt, _super);
+
+  function Receipt() {
+    _ref = Receipt.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  return Receipt;
+
+})(Backbone.Model);
+
+});
+
 ;require.register("models/regular_operation", function(exports, require, module) {
 var RegularOperation, _ref,
   __hasProp = {}.hasOwnProperty,
@@ -947,6 +1034,11 @@ module.exports = RegularOperation = (function(_super) {
   return RegularOperation;
 
 })(Backbone.Model);
+
+});
+
+;require.register("models/section", function(exports, require, module) {
+
 
 });
 
@@ -2079,11 +2171,13 @@ module.exports = BankSubTitleView = (function(_super) {
 });
 
 ;require.register("views/enhanced_report", function(exports, require, module) {
-var BaseView, EnhancedReportView, _ref,
+var BaseView, EnhancedReportView, ReceiptCollection, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
+
+ReceiptCollection = require("../collections/receipts");
 
 module.exports = EnhancedReportView = (function(_super) {
   __extends(EnhancedReportView, _super);
@@ -2099,13 +2193,37 @@ module.exports = EnhancedReportView = (function(_super) {
 
   EnhancedReportView.prototype.subViews = [];
 
-  EnhancedReportView.prototype.initialize = function() {};
+  EnhancedReportView.prototype.initialize = function() {
+    return this.allReceipts = new ReceiptCollection();
+  };
 
   EnhancedReportView.prototype.render = function() {
-    var view;
+    var view,
+      _this = this;
+    this.allReceipts.fetch({
+      success: function(receipts) {
+        return _this.displayReceipt();
+      }
+    });
     EnhancedReportView.__super__.render.call(this);
     view = this;
     return this;
+  };
+
+  EnhancedReportView.prototype.displayReceipt = function(receiptId) {
+    var attr, foundModel, value, _ref1, _results;
+    foundModel = this.allReceipts.where({
+      id: "da9d63cdfbd38a0fbd77ab2414003508"
+    });
+    if (foundModel[0] != null) {
+      _ref1 = foundModel[0].attributes;
+      _results = [];
+      for (attr in _ref1) {
+        value = _ref1[attr];
+        _results.push(this.$el.append(attr + " : " + value + '<br />'));
+      }
+      return _results;
+    }
   };
 
   return EnhancedReportView;
@@ -2574,6 +2692,115 @@ module.exports = GeolocatedReportView = (function(_super) {
   return GeolocatedReportView;
 
 })(BaseView);
+
+});
+
+;require.register("views/intermarche-mesconsos", function(exports, require, module) {
+var IntermarcheView, ReceiptCollection, ReceiptTotalView, ReceiptTotalsCollection, ReceiptView;
+
+ReceiptView = require("./receipt");
+
+ReceiptCollection = require("collections/receipts");
+
+ReceiptTotalView = require("./receiptmonth");
+
+ReceiptTotalsCollection = require("collections/receipttotals");
+
+module.exports = IntermarcheView = Backbone.View.extend({
+  template: require("../templates/intermarche"),
+  initialize: function() {
+    this.getDays();
+  },
+  events: {
+    "click #day": "getDays",
+    "click #month": "getMonths"
+  },
+  render: function() {
+    this.$el.html(this.template({
+      title: "Mes Courses"
+    }));
+  },
+  showLoader: function(show) {
+    if (show) {
+      this.$el.find("#loader").show();
+    } else {
+      this.$el.find("#loader").hide();
+    }
+  },
+  toggleList: function(period) {
+    var other_map;
+    other_map = {
+      "#month": "#day",
+      "#day": "#month"
+    };
+    this.$el.find(period).toggleClass("period_button period_button-selected");
+    this.$el.find(other_map[period]).toggleClass("period_button-selected period_button");
+    this.stopListening(this.collection);
+    this.$el.find("#list").empty();
+    this.showLoader(true);
+  },
+  collectionFetch: function() {
+    var that;
+    that = this;
+    that.$el.find(".nodata").hide();
+    this.collection.fetch({
+      success: function(collection, response, options) {
+        that.showLoader(false);
+        if (collection.length === 0) {
+          that.$el.find(".nodata").show();
+        }
+      },
+      error: function(collection, response, options) {
+        that.stopLoader();
+      }
+    });
+  },
+  getDays: function() {
+    if (this.state === "#day") {
+      return;
+    }
+    this.state = "#day";
+    this.toggleList("#day");
+    this.collection = new ReceiptCollection();
+    this.listenTo(this.collection, "add", this.onReceiptAdded);
+    this.collectionFetch();
+  },
+  onReceiptAdded: function(receipt) {
+    var receiptView;
+    this.showLoader(false);
+    receiptView = new ReceiptView({
+      model: receipt
+    });
+    receiptView.render();
+    this.$el.find("#list").append(receiptView.$el);
+  },
+  getMonths: function() {
+    if (this.state === "#month") {
+      return;
+    }
+    this.state = "#month";
+    this.toggleList("#month");
+    this.collection = new ReceiptTotalsCollection();
+    this.listenTo(this.collection, "add", this.onReceiptTotalAdded);
+    this.collectionFetch();
+  },
+  onReceiptAdded: function(receipt) {
+    var receiptView;
+    receiptView = new ReceiptView({
+      model: receipt
+    });
+    receiptView.render();
+    this.$el.find("#list").append(receiptView.$el);
+  },
+  onReceiptTotalAdded: function(data) {
+    var rtView;
+    rtView = new ReceiptTotalView({
+      model: data
+    });
+    rtView.render();
+    this.$el.find("#list").append(rtView.$el);
+  }
+});
 
 });
 
@@ -3059,6 +3286,64 @@ module.exports = OnlineShoppingView = (function(_super) {
   return OnlineShoppingView;
 
 })(BaseView);
+
+});
+
+;require.register("views/receipt--mesconsos", function(exports, require, module) {
+var Receipt, SectionCollection, SectionView;
+
+SectionView = require("./section");
+
+SectionCollection = require("../collections/sections");
+
+module.exports = Receipt = Backbone.View.extend({
+  tagName: "div",
+  template: require("../templates/receipt"),
+  events: {
+    "click .receipt": "toggleSections"
+  },
+  initialize: function() {
+    this.collection = new SectionCollection([], {
+      receiptId: this.model.attributes.receiptId
+    });
+  },
+  render: function() {
+    this.$el.html(this.template({
+      receipt: this.model.toJSON()
+    }));
+  },
+  btnState: function(state) {
+    var states;
+    states = {
+      opened: "img/moins.png",
+      closed: "img/plus.png",
+      loading: "img/ajax-loader_b.gif"
+    };
+    this.$el.find(".toggle-btn").attr("src", states[state]);
+  },
+  toggleSections: function(event) {
+    if (!this.open) {
+      this.open = true;
+      this.btnState("loading");
+      this.listenTo(this.collection, "add", this.onSectionAdded);
+      this.collection.fetch();
+    } else {
+      this.stopListening(this.collection);
+      this.$el.find(".sections").empty();
+      this.btnState("closed");
+      this.open = false;
+    }
+  },
+  onSectionAdded: function(section) {
+    var sectionView;
+    this.btnState("opened");
+    sectionView = new SectionView({
+      model: section
+    });
+    sectionView.render();
+    this.$el.find(".sections").append(sectionView.$el);
+  }
+});
 
 });
 
@@ -3666,6 +3951,21 @@ module.exports = RegularOpStatementEntryView = (function(_super) {
 
 });
 
+;require.register("views/section--mesconsos", function(exports, require, module) {
+var Section;
+
+module.exports = Section = Backbone.View.extend({
+  tagName: "div",
+  template: require("../templates/section"),
+  render: function() {
+    this.$el.html(this.template({
+      section: this.model.toJSON()
+    }));
+  }
+});
+
+});
+
 ;require.register("views/templates/alerts", function(exports, require, module) {
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
 attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
@@ -3883,6 +4183,33 @@ return buf.join("");
 };
 });
 
+;require.register("views/templates/receipt", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<div class="row item_a receipt"><div class="col-md-6"><div class="row"><div title="Détails sur votre magasin." class="col-xs-2 box map"><a');
+buf.push(attrs({ 'href':("http://fc1.1bis.com/intermarche/map.asp?id=IMARC" + (receipt.intermarcheShopId) + ""), 'target':("_blank") }, {"href":true,"target":true}));
+buf.push('><img src="img/pin.png"/></a></div><div title="Date ou vous avez fait des achats." class="col-xs-5 box">');
+ var dt = new Date(receipt.timestamp)
+var __val__ = dt.toString('d/MM')
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</div><div title="Heure de votre passage en caisse." class="col-xs-5 box">');
+var __val__ = dt.toString('H:mm')
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</div></div></div><div class="col-md-6"><div class="row"><div title="Nombre d\'articles." class="col-xs-5 box">');
+var __val__ = receipt.articlesCount
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('&nbsp; articles</div><div title="Total du ticket de caisse." class="col-xs-5 box price">');
+var __val__ = receipt.total.toFixed(2)
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('€</div><div title="Cliquez pour plus de détails" class="col-xs-2 box toggle"><img src="img/plus.png" class="toggle-btn"/></div></div></div></div><div class="sections"></div>');
+}
+return buf.join("");
+};
+});
+
 ;require.register("views/templates/regular_op_statement_empty", function(exports, require, module) {
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
 attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
@@ -3916,6 +4243,17 @@ var buf = [];
 with (locals || {}) {
 var interp;
 buf.push('<h2>Gestion des opérations régulières</h2><div id="search-field-regular-operations"><div class="input-group input-group-sm input-simple pull-left"><span aria-hidden="true" data-icon&#57471;="data-icon&#57471;" class="input-group-addon icon-search fs1"></span><input id="search-regular-operations" type="text" class="form-control"/></div><div class="input-group input-group-sm input-small pull-left"><span class="input-group-addon">Min.</span><input id="search-min-amount" type="text" class="form-control"/></div><div class="input-group input-group-sm input-small pull-left"><span class="input-group-addon">Max.</span><input id="search-max-amount" type="text" class="form-control"/></div><div class="input-group input-group-sm"><div class="input-group-btn"><button id="empty-search-regular-operations" data-original-title="" type="button" class="btn btn-default">Vider</button></div></div></div><div id="loader-regular-operations" class="text-center loading"><img src="./loader_big_blue.gif"/></div><div class="add-regular-operation-container"><button type="button" disabled="true" class="btn btn-sm btn-primary add-regular-operation"><span aria-hidden="true" data-icon="" class="fs1 iconCostType fixed-cost"></span>Ajouter aux opérations régulières</button><br/><p id="regular-op-exists" class="text-navy">Attention : certaines opérations qui correspondent à cette règle sont déjà régulières.</p></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-regular-operations"></tbody></table>');
+}
+return buf.join("");
+};
+});
+
+;require.register("views/templates/section", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
 }
 return buf.join("");
 };

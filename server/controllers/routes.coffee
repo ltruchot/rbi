@@ -7,6 +7,8 @@ bankalerts = require './bankalerts'
 rbiconfig = require './rbiconfig'
 rbifixedcost = require './rbifixedcost'
 geolocationlog = require './geolocationlog'
+receiptdetails = require './receiptdetails'
+receipts = require './receipts'
 
 module.exports =
     'foo':
@@ -70,3 +72,7 @@ module.exports =
         post: geolocationlog.byDate
     'geolocationlog/allByDate':
         post: geolocationlog.allByDate
+    'receipts':
+        get: receipts.newest
+    'receipts/:receiptid/sections':
+        get: receiptdetails.sections

@@ -1,0 +1,27 @@
+.row.item_a.receipt
+
+    .col-md-6
+      .row
+        .col-xs-2.box.map(title="Détails sur votre magasin.")
+            a(href="http://fc1.1bis.com/intermarche/map.asp?id=IMARC#{receipt.intermarcheShopId}", target="_blank")
+                img(src="img/pin.png")
+        .col-xs-5.box(title="Date ou vous avez fait des achats.")
+          - var dt = new Date(receipt.timestamp)
+          = dt.toString('d/MM')
+
+        .col-xs-5.box(title="Heure de votre passage en caisse.")
+          = dt.toString('H:mm')
+    .col-md-6
+      .row
+        .col-xs-5.box(title="Nombre d'articles.")
+            = receipt.articlesCount
+            |&nbsp; articles
+        .col-xs-5.box.price(title="Total du ticket de caisse.")
+            = receipt.total.toFixed(2)
+            | €
+
+        .col-xs-2.box.toggle(title="Cliquez pour plus de détails")
+            img.toggle-btn(src="img/plus.png")
+
+.sections
+

@@ -1,0 +1,1 @@
+module.exports = class Receipt extends Backbone.Model

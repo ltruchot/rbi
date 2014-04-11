@@ -26,6 +26,8 @@ getBanksWithAccounts =
         return 1
 
 module.exports =
+
+
     # template:
     #     # shortcut for emit doc._id, doc
     #     all: americano.defaultRequests.all
@@ -69,3 +71,23 @@ module.exports =
     geolocationlog:
         all: americano.defaultRequests.all
         allByDate: allByDate
+
+    receiptdetail:
+        byBarcode: (doc) ->
+            emit doc.barcode, doc
+            return
+
+        byReceiptId: (doc) ->
+            unless doc.receiptId
+
+                # Old receiptDetail format.
+                #doc.receiptId = doc.ticketId;
+                emit doc.ticketId, doc
+            else
+                emit doc.receiptId, doc
+            return
+
+    receipt:
+        byTimestamp: (doc) ->
+            emit doc.timestamp, doc
+            return
