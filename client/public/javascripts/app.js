@@ -2213,7 +2213,7 @@ module.exports = EnhancedReportView = (function(_super) {
   EnhancedReportView.prototype.displayReceipt = function(receiptId) {
     var attr, foundModel, value, _ref1, _results;
     foundModel = this.allReceipts.where({
-      id: "da9d63cdfbd38a0fbd77ab2414003508"
+      timestamp: "2013-04-11T15:40:31.000Z"
     });
     if (foundModel[0] != null) {
       _ref1 = foundModel[0].attributes;

@@ -25,7 +25,7 @@ module.exports = class EnhancedReportView extends BaseView
 
   displayReceipt: (receiptId) ->
     foundModel = @allReceipts.where
-      id: "da9d63cdfbd38a0fbd77ab2414003508"
+      timestamp: "2013-04-11T15:40:31.000Z"
     if foundModel[0]?
       for attr, value of foundModel[0].attributes
         @$el.append(attr + " : " + value + '<br />')
