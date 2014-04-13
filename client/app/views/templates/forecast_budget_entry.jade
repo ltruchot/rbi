@@ -11,4 +11,6 @@ td
     input.toogle-monthly-budget(type="checkbox")
   - }
 td
+  em #{(model.get("rules")).textAlreadyPaid}
+td
   span.fs1.remove-regular-operation.red-text(aria-hidden="true",data-icon="&#57512;")

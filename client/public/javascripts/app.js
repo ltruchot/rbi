@@ -2392,10 +2392,11 @@ module.exports = ForcastBudgetView = (function(_super) {
   };
 
   ForcastBudgetView.prototype.reloadBudget = function() {
-    var currentBudget, monthlyBudget, percentage, realBudget, regularExpenses, regularOperation, trToInject, variableExpenses, _i, _len, _ref1;
+    var currentBudget, forecastBudget, forecastTitle, percentage, realBudget, realExpenses, realTitle, regularExpenses, regularOperation, roundedForecastBudget, trToInject, _i, _len, _ref1;
     currentBudget = 0;
-    variableExpenses = this.monthlyVariableExpenses;
+    realBudget = 0;
     regularExpenses = 0;
+    realExpenses = 0;
     _ref1 = this.subViews;
     for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
       regularOperation = _ref1[_i];
@@ -2405,14 +2406,29 @@ module.exports = ForcastBudgetView = (function(_super) {
         } else if (regularOperation.rules.queryMid < 0) {
           regularExpenses += regularOperation.rules.queryMid;
         }
+        if ((regularOperation.rules != null) && regularOperation.rules.alreadyPaid) {
+          if (regularOperation.rules.alreadyPaidSum > 0) {
+            realBudget += regularOperation.rules.alreadyPaidSum;
+          } else if (regularOperation.rules.alreadyPaidSum < 0) {
+            realExpenses += regularOperation.rules.alreadyPaidSum;
+          }
+        } else {
+          if (regularOperation.rules.queryMid > 0) {
+            realBudget += regularOperation.rules.queryMid;
+          } else if (regularOperation.rules.queryMid < 0) {
+            realExpenses += regularOperation.rules.queryMid;
+          }
+        }
       }
     }
     regularExpenses = Math.abs(regularExpenses);
+    realExpenses = Math.abs(realExpenses);
     percentage = parseInt((regularExpenses / currentBudget) * 100);
     percentage = percentage <= 100 ? percentage : 100;
-    monthlyBudget = currentBudget - regularExpenses;
-    realBudget = monthlyBudget + this.variableOperationsTotal;
-    $("#account-budget-amount").html(monthlyBudget.money());
+    forecastBudget = currentBudget - regularExpenses;
+    roundedForecastBudget = Math.floor((forecastBudget + 5) / 10) * 10;
+    realBudget = realBudget - realExpenses;
+    $("#account-budget-amount").html(roundedForecastBudget.money());
     $('#current-budget-chart-debit').html(realBudget.money());
     $('#current-budget-chart').attr('data-percent', percentage);
     if (this.currentChart != null) {
@@ -2427,7 +2443,9 @@ module.exports = ForcastBudgetView = (function(_super) {
       });
     }
     $("#regular-operations-budget").remove();
-    trToInject = '<tr id="regular-operations-budget">' + "\t" + "<td><strong>Budget total</strong></td>" + "\t" + "<td><strong>" + monthlyBudget.money() + "<strong></td>" + "\t" + "<td>&nbsp;</td>" + "\t" + "<td>&nbsp;</td>" + '</tr>';
+    forecastTitle = "La somme des mouvements d'argent attendus sur votre compte ce mois-ci.";
+    realTitle = "La somme des mouvements d'argent réellement survenus ce mois-ci, et de ceux à venir.";
+    trToInject = '<tr id="regular-operations-budget">' + "\t" + "<td><strong title=\"" + forecastTitle + "\">Prévisionnel</strong></td>" + "\t" + "<td>&#8776; " + roundedForecastBudget.money() + "</td>" + "\t" + "<td><strong title=\"" + realTitle + "\">Affiné </strong></td>" + "\t" + "<td>= " + realBudget.money() + "</td>" + '</tr>';
     return $("tbody#regular-operations").append(trToInject);
   };
 
@@ -2470,9 +2488,13 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
     if (this.model.get("uniquery") != null) {
       this.rules = this.deserializeUniquery(this.model.get("uniquery"));
       this.addAverageToRules();
+      this.addAlreadyPaidToRules();
       this.model.set("rules", this.rules);
     }
     ForecastBudgetEntryView.__super__.render.call(this);
+    if (!this.model.get("isBudgetPart")) {
+      this.$el.find("em").hide();
+    }
     return this;
   };
 
@@ -2548,7 +2570,31 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
       mid = addedAmounts / count;
     }
     this.rules.queryMid = mid;
-    return this.rules.textQueryMid = mid.money();
+    return this.rules.textQueryMid = mid > 0 ? "+" + mid.money() : mid.money();
+  };
+
+  ForecastBudgetEntryView.prototype.addAlreadyPaidToRules = function() {
+    var allOperationsById, id, idTable, startOfMonth, sum, _i, _len, _results;
+    idTable = this.model.get("idTable");
+    allOperationsById = window.rbiActiveData.allOperationsById;
+    startOfMonth = moment(moment(new Date()).subtract("month", 3)).startOf("month");
+    this.rules.alreadyPaid = false;
+    this.rules.textAlreadyPaid = "non";
+    if ((idTable != null) && (allOperationsById != null) && idTable.length > 0) {
+      _results = [];
+      for (_i = 0, _len = idTable.length; _i < _len; _i++) {
+        id = idTable[_i];
+        if ((allOperationsById[id] != null) && moment(allOperationsById[id].date) > moment(startOfMonth)) {
+          sum = allOperationsById[id].amount;
+          this.rules.alreadyPaid = true;
+          this.rules.textAlreadyPaid = sum > 0 ? "+" + sum.money() : sum.money();
+          _results.push(this.rules.alreadyPaidSum = sum);
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
+    }
   };
 
   ForecastBudgetEntryView.prototype.removeRegularOperation = function(event) {
@@ -3577,6 +3623,15 @@ module.exports = RegularOpStatementView = (function(_super) {
       url: "rbifixedcost",
       data: fixedCost,
       success: function(objects) {
+        var id, _i, _len, _ref;
+        _ref = fixedCost.idTable;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          id = _ref[_i];
+          if (window.rbiActiveData.currentOperations[id] != null) {
+            window.rbiActiveData.currentOperations[id].isRegularOperation = true;
+            window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id;
+          }
+        }
         if (callback != null) {
           return callback();
         }
@@ -3659,9 +3714,11 @@ module.exports = RegularOpStatementView = (function(_super) {
                 view.addAll();
                 isSearchFieldEmpty = $("#search-regular-operations").val() === "";
                 if (view.alreadyRegular && (!isSearchFieldEmpty)) {
+                  $("#regular-op-light-info").hide();
                   return $("#regular-op-exists").show();
                 } else {
-                  return $("#regular-op-exists").hide();
+                  $("#regular-op-exists").hide();
+                  return $("#regular-op-light-info").show();
                 }
               },
               error: function(err) {
@@ -4199,7 +4256,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1>Budget prévisionnel</h1><div class="interface-box-content"><div id="forecast-budget-content"><span>Mes opérations régulières</span><table class="col-md-12"><thead><tr><th>Motif</th><th>Montant moyen</th><th>Budget</th><th>&nbsp;</th></tr></thead><tbody id="regular-operations"></tbody></table></div></div>');
+buf.push('<h1>Budget prévisionnel</h1><div class="interface-box-content"><div id="forecast-budget-content"><span class="light-info">Définissez votre budget mensuel en désignant vos opérations régulières (salaires, loyers, factures de téléphone, ...).</span><table class="col-md-12"><thead><tr><th title="Le libellé ou le morceau de texte choisi pour retrouver les opérations.">Motif</th><th title="La moyenne des montants de cette opération régulière payés les mois précédents.">Montant moyen</th><th title="Gérer la présence ou non des opérations régulières dans votre budget de ce mois-ci.">Budget</th><th title="Lorsque qu\'une opération régulière est payée ce mois-ci, le budget prévisionnel est affiné.">Déjà payée</th><th>&nbsp;</th></tr></thead><tbody id="regular-operations"></tbody></table><span class="light-info">Survolez quelques instants un label en gras pour en savoir plus.</span></div></div>');
 }
 return buf.join("");
 };
@@ -4222,7 +4279,7 @@ buf.push('<input type="checkbox" checked="true" class="toogle-monthly-budget"/>'
 buf.push('<input type="checkbox" class="toogle-monthly-budget"/>');
 }
  }
-buf.push('</td><td><span aria-hidden="true" data-icon="&#57512;" class="fs1 remove-regular-operation red-text"></span></td>');
+buf.push('</td><td><em>' + escape((interp = (model.get("rules")).textAlreadyPaid) == null ? '' : interp) + '</em></td><td><span aria-hidden="true" data-icon="&#57512;" class="fs1 remove-regular-operation red-text"></span></td>');
 }
 return buf.join("");
 };
@@ -4335,7 +4392,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h2>Gestion des opérations régulières</h2><div id="search-field-regular-operations"><div class="input-group input-group-sm input-simple pull-left"><span aria-hidden="true" data-icon&#57471;="data-icon&#57471;" class="input-group-addon icon-search fs1"></span><input id="search-regular-operations" type="text" class="form-control"/></div><div class="input-group input-group-sm input-small pull-left"><span class="input-group-addon">Min.</span><input id="search-min-amount" type="text" class="form-control"/></div><div class="input-group input-group-sm input-small pull-left"><span class="input-group-addon">Max.</span><input id="search-max-amount" type="text" class="form-control"/></div><div class="input-group input-group-sm"><div class="input-group-btn"><button id="empty-search-regular-operations" data-original-title="" type="button" class="btn btn-default">Vider</button></div></div></div><div id="loader-regular-operations" class="text-center loading"><img src="./loader_big_blue.gif"/></div><div class="add-regular-operation-container"><button type="button" disabled="true" class="btn btn-sm btn-primary add-regular-operation"><span aria-hidden="true" data-icon="" class="fs1 iconCostType fixed-cost"></span>Ajouter aux opérations régulières</button><br/><p id="regular-op-exists" class="text-navy">Attention : certaines opérations qui correspondent à cette règle sont déjà régulières.</p></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-regular-operations"></tbody></table>');
+buf.push('<div class="context-box-header-bigger"><h2>Relevé du ' + escape((interp = model.get('title')) == null ? '' : interp) + ' ' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</h2><div id="search-field-regular-operations"><div class="input-group input-group-sm input-simple pull-left"><span aria-hidden="true" data-icon&#57471;="data-icon&#57471;" class="input-group-addon icon-search fs1"></span><input id="search-regular-operations" type="text" class="form-control"/></div><div class="input-group input-group-sm input-small pull-left"><span class="input-group-addon">Min.</span><input id="search-min-amount" type="text" class="form-control"/></div><div class="input-group input-group-sm input-small pull-left"><span class="input-group-addon">Max.</span><input id="search-max-amount" type="text" class="form-control"/></div><div class="input-group input-group-sm"><div class="input-group-btn"><button id="empty-search-regular-operations" data-original-title="" type="button" class="btn btn-default">Vider</button></div></div></div><div class="add-regular-operation-container"><button type="button" disabled="true" class="btn btn-sm btn-primary add-regular-operation"><span aria-hidden="true" data-icon="" class="fs1 iconCostType fixed-cost"></span>Ajouter aux opérations régulières</button><br/><p id="regular-op-light-info" class="light-info-2">Sélectionnez une opération, puis éditez le filtre (libellé, min., max.) pour retrouver toutes les occurences de cette opération régulière.</p><p id="regular-op-exists" class="text-navy">Attention : certaines opérations qui correspondent à cette règle sont déjà régulières.</p></div></div><div class="context-box-content-smaller"><div id="loader-regular-operations" class="text-center loading"><img src="./loader_big_blue.gif"/></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-regular-operations"></tbody></table></div>');
 }
 return buf.join("");
 };

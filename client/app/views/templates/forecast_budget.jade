@@ -1,14 +1,18 @@
 h1 Budget prévisionnel
 .interface-box-content
   div#forecast-budget-content
-    span Mes opérations régulières
+    //- span Mes opérations régulières
+    span.light-info Définissez votre budget mensuel en désignant vos opérations régulières (salaires, loyers, factures de téléphone, ...).
     table.col-md-12
       thead
         tr
-          th Motif
+          th(title="Le libellé ou le morceau de texte choisi pour retrouver les opérations.") Motif
           //- th Montant Min
           //- th Montant Max
-          th Montant moyen
-          th Budget
+          th(title="La moyenne des montants de cette opération régulière payés les mois précédents.") Montant moyen
+          th(title="Gérer la présence ou non des opérations régulières dans votre budget de ce mois-ci.") Budget
+          th(title="Lorsque qu'une opération régulière est payée ce mois-ci, le budget prévisionnel est affiné.") Déjà payée
           th &nbsp;
       tbody#regular-operations
+
+    span.light-info Survolez quelques instants un label en gras pour en savoir plus.

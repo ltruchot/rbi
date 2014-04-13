@@ -133,31 +133,53 @@ module.exports = class ForcastBudgetView extends BaseView
   reloadBudget: ->
 
     currentBudget = 0
-
-    #already budget applied regular expenses
-
-    #get variable expenses
-    variableExpenses = @monthlyVariableExpenses
-
-
-    #prepare regular expenses
+    realBudget = 0
     regularExpenses = 0
+    realExpenses = 0
+
     for regularOperation in @subViews
       if regularOperation.rules? and regularOperation.rules.queryMid? and regularOperation.model.get "isBudgetPart"
+
+        #forecast
         if regularOperation.rules.queryMid > 0
           currentBudget += regularOperation.rules.queryMid
         else if regularOperation.rules.queryMid < 0
           regularExpenses += regularOperation.rules.queryMid
-    regularExpenses = Math.abs regularExpenses
 
-    #reload widget data
+        #real
+        if regularOperation.rules? and regularOperation.rules.alreadyPaid
+          if regularOperation.rules.alreadyPaidSum > 0
+            realBudget += regularOperation.rules.alreadyPaidSum
+          else if regularOperation.rules.alreadyPaidSum < 0
+            realExpenses += regularOperation.rules.alreadyPaidSum
+        else
+          if regularOperation.rules.queryMid > 0
+            realBudget += regularOperation.rules.queryMid
+          else if regularOperation.rules.queryMid < 0
+            realExpenses += regularOperation.rules.queryMid
+
+
+    regularExpenses = Math.abs regularExpenses
+    realExpenses = Math.abs realExpenses
+
+    #prepare percentage for widget
     percentage = parseInt((regularExpenses / currentBudget) * 100)
     percentage = if percentage <= 100 then percentage else 100
-    monthlyBudget = currentBudget - regularExpenses
-    realBudget = monthlyBudget + @variableOperationsTotal
-    $("#account-budget-amount").html monthlyBudget.money()
+
+    #prepare forecast budget
+    forecastBudget = currentBudget - regularExpenses
+    roundedForecastBudget = Math.floor((forecastBudget + 5) /10) * 10
+
+    #prepare currently modified budget
+    #realBudget = forecastBudget + @variableOperationsTotal
+    realBudget = realBudget - realExpenses
+
+    #display budgets
+    $("#account-budget-amount").html roundedForecastBudget.money()
     $('#current-budget-chart-debit').html realBudget.money()
     $('#current-budget-chart').attr 'data-percent', percentage
+
+    #load or reload widget data
     if @currentChart?
       $('#current-budget-chart').data('easyPieChart').update percentage
     else
@@ -170,10 +192,12 @@ module.exports = class ForcastBudgetView extends BaseView
 
     #reload budget table row
     $("#regular-operations-budget").remove()
+    forecastTitle = "La somme des mouvements d'argent attendus sur votre compte ce mois-ci."
+    realTitle = "La somme des mouvements d'argent réellement survenus ce mois-ci, et de ceux à venir."
     trToInject = '<tr id="regular-operations-budget">' +
-      "\t" + "<td><strong>Budget total</strong></td>" +
-      "\t" + "<td><strong>" + monthlyBudget.money() + "<strong></td>" +
-      "\t" + "<td>&nbsp;</td>" +
-      "\t" + "<td>&nbsp;</td>" +
+      "\t" + "<td><strong title=\"" + forecastTitle + "\">Prévisionnel</strong></td>" +
+      "\t" + "<td>&#8776; " + roundedForecastBudget.money() + "</td>" +
+      "\t" + "<td><strong title=\"" + realTitle + "\">Affiné </strong></td>" +
+      "\t" + "<td>= " + realBudget.money() + "</td>" +
       '</tr>'
     $("tbody#regular-operations").append trToInject

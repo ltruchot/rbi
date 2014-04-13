@@ -11253,19 +11253,27 @@ cursor not-allowed {
   padding: 0;
   margin: 0;
 }
-.context-box-header {
+.context-box-header,
+.context-box-header-bigger {
   padding: 0 15px 10px 15px;
   margin: 0;
   height: 90px;
   border-bottom: 1px #999 solid;
 }
-.context-box-content {
+.context-box-header-bigger {
+  height: 140px;
+}
+.context-box-content,
+.context-box-content-smaller {
   height: 500px;
   padding: 15px 15px 0 15px;
   margin: 0;
   overflow: auto;
   -webkit-box-shadow: inset 3px 3px 7px 1px rgba(0,0,0,0.1);
   box-shadow: inset 3px 3px 7px 1px rgba(0,0,0,0.1);
+}
+.context-box-content-smaller {
+  height: 450px;
 }
 #context-box h2 {
   margin: 5px;
@@ -11424,6 +11432,7 @@ cursor not-allowed {
 }
 #regular-op-exists {
   display: none;
+  font-size: 0.8em;
 }
 .highlighted-rule td {
   background-color: #f5f5f5;
@@ -11431,6 +11440,24 @@ cursor not-allowed {
 #regular-operations tr td:nth-child(1),
 #regular-operations tr td:nth-child(2) {
   cursor: pointer;
+}
+#regular-operations-budget td {
+  border-top: 1px solid #f1f1f1;
+}
+.light-info,
+#regular-op-light-info {
+  color: #999;
+  font-style: italic;
+  font-size: 0.8em;
+  display: block;
+  padding: 10px 0;
+}
+#regular-op-light-info {
+  padding: 5px 0;
+  line-height: 15px;
+}
+#forecast-budget-content table {
+  margin-bottom: 20px;
 }
 .little-text {
   font-size: 0.8em;

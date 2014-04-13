@@ -37,8 +37,11 @@ module.exports = class ForecastBudgetEntryView extends BaseView
     if @model.get("uniquery")?
       @rules = @deserializeUniquery @model.get("uniquery")
       @addAverageToRules()
+      @addAlreadyPaidToRules()
       @model.set "rules", @rules
     super()
+    if not @model.get("isBudgetPart")
+         @$el.find("em").hide()
     @
   #---------------------------- END BACKBONE METHODS ---------------------------
 
@@ -100,7 +103,23 @@ module.exports = class ForecastBudgetEntryView extends BaseView
     if addedAmounts isnt 0
       mid = addedAmounts / count
     @rules.queryMid = mid
-    @rules.textQueryMid = mid.money()
+    @rules.textQueryMid = if mid > 0 then "+" + mid.money() else mid.money()
+
+  addAlreadyPaidToRules: ->
+    idTable = @model.get "idTable"
+    allOperationsById = window.rbiActiveData.allOperationsById
+    startOfMonth = moment(moment(new Date()).subtract("month", 3)).startOf "month"
+    @rules.alreadyPaid = false
+    @rules.textAlreadyPaid = "non"
+    if idTable? and allOperationsById? and idTable.length > 0
+      for id in idTable
+        if allOperationsById[id]? and moment(allOperationsById[id].date) > moment(startOfMonth)
+          sum = allOperationsById[id].amount
+          @rules.alreadyPaid = true
+          @rules.textAlreadyPaid = if sum > 0 then "+" + sum.money() else sum.money()
+          @rules.alreadyPaidSum = sum
+
+
 
   removeRegularOperation: (event) ->
     regularOperationId = (@model.get "id") or null

@@ -140,16 +140,11 @@ module.exports = class RegularOpStatementView extends BaseView
         # console.log fixedCosts
         #console.log "fixed cost sent successfully!"
 
-        # #set fixed cost status to model
-        # @model.set "fixedCostId", objects.id
-        # @model.set "isRegularOperation", true
-
-        # #refresh monthly analysis
-        # for id in fixedCost.idTable
-        #   if window.rbiActiveData.currentOperations[id]?
-        #     window.rbiActiveData.currentOperations[id].isRegularOperation = true
-        #     window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id
-        # window.views.monthlyAnalysisView.displayMonthlySums window.rbiActiveData.currentOperations
+        #refresh monthly analysis
+        for id in fixedCost.idTable
+          if window.rbiActiveData.currentOperations[id]?
+            window.rbiActiveData.currentOperations[id].isRegularOperation = true
+            window.rbiActiveData.currentOperations[id].fixedCostId = fixedCost.id
         if callback?
           callback()
 
@@ -234,9 +229,11 @@ module.exports = class RegularOpStatementView extends BaseView
                 #display alert about already existing regular operation
                 isSearchFieldEmpty = $("#search-regular-operations").val() is ""
                 if view.alreadyRegular and (not isSearchFieldEmpty)
+                  $("#regular-op-light-info").hide()
                   $("#regular-op-exists").show()
                 else
                   $("#regular-op-exists").hide()
+                  $("#regular-op-light-info").show()
 
               error: (err) ->
                 console.log "getting fixed cost failed."
