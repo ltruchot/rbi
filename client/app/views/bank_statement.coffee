@@ -7,9 +7,6 @@ module.exports = class BankStatementView extends BaseView
 
     events:
         'click a.recheck-button' : "checkAccount"
-        'click th.sort-date' : "sortByDate"
-        'click th.sort-title' : "sortByTitle"
-        'click th.sort-amount' : "sortByAmount"
         'keyup input#search-text' : "reload"
         'click .special' : "reloadMap"
 
@@ -33,12 +30,10 @@ module.exports = class BankStatementView extends BaseView
 
     render: ->
         @$el.html require "./templates/bank_statement_empty"
-        # $("#layout-2col-column-right").niceScroll()
-        # $("#layout-2col-column-right").getNiceScroll().onResize()
         @
 
     reload: (params, callback) ->
-
+        console.log "reload"
         view = @
 
         #client or server search ?
@@ -88,16 +83,18 @@ module.exports = class BankStatementView extends BaseView
 
                                     #adjustement for fixed/variable cost search
                                     operationRemoved = false
-                                    if (displayFixedCosts and (not operation.isRegularOperation))
-                                        operationRemoved = true
-                                    else if (displayVariableCosts and (operation.isRegularOperation or (operation.amount > 0)))
-                                        operationRemoved = true
+                                    # if (displayFixedCosts and (not operation.isRegularOperation))
+                                    #     operationRemoved = true
+                                    # else if (displayVariableCosts and (operation.isRegularOperation or (operation.amount > 0)))
+                                    #     operationRemoved = true
                                     if not operationRemoved
                                         finalOperations.push operation
                                         window.rbiActiveData.currentOperations[operation.id] = operation
                                 if callback?
                                     callback window.rbiActiveData.currentOperations
                                 window.collections.operations.reset finalOperations
+                                window.collections.operations.setComparator "date"
+                                window.collections.operations.sort()
                                 view.addAll()
                             error: (err) ->
                                 console.log "getting fixed cost failed."
@@ -158,6 +155,7 @@ module.exports = class BankStatementView extends BaseView
 
 
     addAll: ->
+        console.log "addAll"
         # remove the previous ones
         @$("#table-operations").html ""
         @$(".loading").remove()

@@ -28,5 +28,5 @@ module.exports = class EnhancedReportView extends BaseView
       timestamp: "2013-04-11T15:40:31.000Z"
     if foundModel[0]?
       for attr, value of foundModel[0].attributes
-        @$el.append(attr + " : " + value + '<br />')
+        @$el.find(".interface-box-content").append(attr + " : " + value + '<br />')
 

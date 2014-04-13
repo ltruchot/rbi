@@ -309,7 +309,6 @@ module.exports = class RegularOpStatementView extends BaseView
 
 
   addAll: ->
-
     @alreadyRegular = false
 
     # remove the previous ones

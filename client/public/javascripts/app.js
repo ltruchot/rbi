@@ -110,6 +110,7 @@ DataManager = require('lib/data_manager');
 module.exports = {
   initialize: function() {
     var Router;
+    L.Icon.Default.imagePath = 'images/leaflet';
     window.app = this;
     window.collections = {};
     window.views = {};
@@ -170,7 +171,18 @@ module.exports = {
       map: {
         encoded: "&#57538;",
         decoded: ""
-      }
+      },
+      marker: L.icon({
+        iconUrl: 'images/leaflet/marker-icon-mini.png',
+        iconRetinaUrl: 'images/leaflet/marker-icon-mini.png',
+        iconSize: [12, 20],
+        iconAnchor: [6, 20],
+        popupAnchor: [0, -10],
+        shadowUrl: 'images/leaflet/marker-shadow-mini.png',
+        shadowRetinaUrl: 'images/leaflet/marker-shadow-mini.png',
+        shadowSize: [20, 20],
+        shadowAnchor: [10, 20]
+      })
     };
     window.collections.banks = new BanksCollection();
     window.collections.operations = new BankOperationsCollection();
@@ -1275,9 +1287,6 @@ module.exports = BankStatementView = (function(_super) {
 
   BankStatementView.prototype.events = {
     'click a.recheck-button': "checkAccount",
-    'click th.sort-date': "sortByDate",
-    'click th.sort-title': "sortByTitle",
-    'click th.sort-amount': "sortByAmount",
     'keyup input#search-text': "reload",
     'click .special': "reloadMap"
   };
@@ -1308,6 +1317,7 @@ module.exports = BankStatementView = (function(_super) {
 
   BankStatementView.prototype.reload = function(params, callback) {
     var displayFixedCosts, displayVariableCosts, view;
+    console.log("reload");
     view = this;
     this.model = window.rbiActiveData.bankAccount;
     if ((params != null) && (params.dateFrom != null)) {
@@ -1352,11 +1362,6 @@ module.exports = BankStatementView = (function(_super) {
                     }
                   }
                   operationRemoved = false;
-                  if (displayFixedCosts && (!operation.isRegularOperation)) {
-                    operationRemoved = true;
-                  } else if (displayVariableCosts && (operation.isRegularOperation || (operation.amount > 0))) {
-                    operationRemoved = true;
-                  }
                   if (!operationRemoved) {
                     finalOperations.push(operation);
                     window.rbiActiveData.currentOperations[operation.id] = operation;
@@ -1366,6 +1371,8 @@ module.exports = BankStatementView = (function(_super) {
                   callback(window.rbiActiveData.currentOperations);
                 }
                 window.collections.operations.reset(finalOperations);
+                window.collections.operations.setComparator("date");
+                window.collections.operations.sort();
                 return view.addAll();
               },
               error: function(err) {
@@ -1429,6 +1436,7 @@ module.exports = BankStatementView = (function(_super) {
 
   BankStatementView.prototype.addAll = function() {
     var index, operation, subView, subViewDate, view, _i, _j, _len, _len1, _ref, _ref1, _results;
+    console.log("addAll");
     this.$("#table-operations").html("");
     this.$(".loading").remove();
     _ref = this.subViews;
@@ -2220,7 +2228,7 @@ module.exports = EnhancedReportView = (function(_super) {
       _results = [];
       for (attr in _ref1) {
         value = _ref1[attr];
-        _results.push(this.$el.append(attr + " : " + value + '<br />'));
+        _results.push(this.$el.find(".interface-box-content").append(attr + " : " + value + '<br />'));
       }
       return _results;
     }
@@ -2596,14 +2604,11 @@ module.exports = GeolocatedReportView = (function(_super) {
     GeolocatedReportView.__super__.constructor.call(this);
   }
 
-  GeolocatedReportView.prototype.initialize = function() {
-    return this.bankStatementView = new BankStatementView($('#context-box'));
-  };
-
   GeolocatedReportView.prototype.render = function() {
     var bankStatementParams, now;
+    this.bankStatementView = new BankStatementView($('#context-box'));
     GeolocatedReportView.__super__.render.call(this);
-    this.switchDay();
+    this.loadFirstDayMap();
     now = new Date();
     bankStatementParams = {
       accounts: [window.rbiActiveData.accountNumber],
@@ -2613,12 +2618,44 @@ module.exports = GeolocatedReportView = (function(_super) {
       dateTo: moment(now).format('YYYY-MM-DD')
     };
     this.bankStatementView.mapLinked = true;
-    return this.bankStatementView.reload(bankStatementParams, function() {});
+    return this.bankStatementView.reload(bankStatementParams);
+  };
+
+  GeolocatedReportView.prototype.loadFirstDayMap = function() {
+    var _this = this;
+    this.$el.find(".geolocated-report-error").hide();
+    this.$el.find(".geolocated-report-loader").show();
+    return $.ajax({
+      type: "GET",
+      url: "geolocationlog/getMostRecent",
+      success: function(geolocationLog) {
+        if ((geolocationLog != null) && (typeof geolocationLog === "object") && (geolocationLog.timestamp != null)) {
+          console.log(geolocationLog);
+          return _this.switchDay(null, geolocationLog.timestamp);
+        } else {
+          _this.$el.find(".geolocated-report-title").html('Relevé Géolocalisé');
+          return _this.$el.find(".geolocated-report-error").html("Ce service nécessite les données de l'opérateur Orange.<br /><br /> Aucune donnée de géolocalisation trouvée.").show();
+        }
+      },
+      error: function() {
+        _this.$el.find(".geolocated-report-title").html('Relevé Géolocalisé');
+        return _this.$el.find(".geolocated-report-error").html('Une erreur est survenue lors du chargement des données.<br /<br />Veuillez réessayer ultérieurement.'.show());
+      },
+      complete: function() {
+        return _this.$el.find(".geolocated-report-loader").hide();
+      }
+    });
   };
 
   GeolocatedReportView.prototype.switchDay = function(event, date) {
     var firstDay, jqSwitcher, today,
       _this = this;
+    this.$el.find(".geolocated-report-error").hide();
+    this.$el.find("#msisdn-geolocation-map").css("visibility", "hidden");
+    this.$el.find(".geolocated-report-loader").show();
+    if (this.map != null) {
+      this.map.closePopup();
+    }
     today = moment(new Date()).startOf("day");
     firstDay = moment(window.rbiActiveData.olderOperationDate).startOf('day');
     if ((event != null) && (event.currentTarget != null)) {
@@ -2650,15 +2687,44 @@ module.exports = GeolocatedReportView = (function(_super) {
         dateTo: moment(this.currentDate.endOf("day")).format("YYYY-MM-DD HH:mm")
       },
       success: function(geolocationLogs) {
-        var lastLocation, log, polylineTable, _i, _len;
+        var addTag, alreadyRegistered, lastLocation, log, marker, markerTable, message, newTime, point, polylineTable, _i, _j, _k, _len, _len1, _len2;
+        _this.$el.find("#msisdn-geolocation-map").css("visibility", "visible");
         polylineTable = [];
+        markerTable = [];
         lastLocation = null;
         for (_i = 0, _len = geolocationLogs.length; _i < _len; _i++) {
           log = geolocationLogs[_i];
           if ((log.longitude != null) && (log.latitude != null)) {
+            alreadyRegistered = false;
             lastLocation = [log.latitude, log.longitude];
             polylineTable.push(lastLocation);
+            newTime = (moment(log.timestamp).format("HH")) + "h" + (moment(log.timestamp).format("mm"));
+            for (_j = 0, _len1 = markerTable.length; _j < _len1; _j++) {
+              marker = markerTable[_j];
+              if ((marker.location[0] === lastLocation[0]) && (marker.location[1] === lastLocation[1])) {
+                alreadyRegistered = true;
+                addTag = (marker.time.match(/\h/g).length % 5) === 0 ? ",<br />" : ", ";
+                if (marker.time.match(/\.\.\./) == null) {
+                  if (marker.time.length < 300) {
+                    marker.time += addTag + newTime;
+                    marker.plural = true;
+                  } else {
+                    marker.time += "...";
+                  }
+                }
+                break;
+              }
+            }
+            if (!alreadyRegistered) {
+              markerTable.push({
+                location: lastLocation,
+                time: newTime
+              });
+            }
           }
+        }
+        if (markerTable.length === 1) {
+          markerTable[0].time = "Toute la journée à cette adresse.";
         }
         if (polylineTable.length > 0) {
           if ((_this.map != null) && (_this.polyline != null)) {
@@ -2666,24 +2732,53 @@ module.exports = GeolocatedReportView = (function(_super) {
           }
           _this.polyline = L.polyline(polylineTable);
           _this.bounds = _this.polyline.getBounds();
-          _this.center = _this.bounds.getCenter();
-          console.log(_this.center);
         }
         if (lastLocation != null) {
           if ((_this.map == null) || $("#msisdn-geolocation-map").html() === "") {
-            _this.map = L.map('msisdn-geolocation-map').setView(lastLocation, 1);
-            _this.layer = L.tileLayer('http://{s}.tile.cloudmade.com/8ee2a50541944fb9bcedded5165f09d9/997/256/{z}/{x}/{y}.png', {
-              attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>'
-            });
-            _this.layer.addTo(_this.map);
+            if ($("#msisdn-geolocation-map").length === 1) {
+              _this.map = L.map('msisdn-geolocation-map').setView(lastLocation, 1);
+              _this.layer = L.tileLayer('http://{s}.tile.cloudmade.com/8ee2a50541944fb9bcedded5165f09d9/997/256/{z}/{x}/{y}.png', {
+                attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>'
+              });
+              _this.layer.addTo(_this.map);
+            }
           }
+        } else {
+          if (_this.map != null) {
+            _this.map.remove();
+            _this.map = null;
+          }
+          $("#msisdn-geolocation-map").html("");
+          $("#msisdn-geolocation-map").attr('class', "");
+          _this.$el.find(".geolocated-report-error").html("Aucune donnée de géolocalisation trouvée ce jour.").show();
         }
         if ((_this.polyline != null) && (_this.map != null)) {
           _this.polyline.addTo(_this.map);
+          for (_k = 0, _len2 = markerTable.length; _k < _len2; _k++) {
+            point = markerTable[_k];
+            message = "";
+            if (markerTable.length > 1) {
+              if (point.plural) {
+                message = "&Agrave cette adresse aux heures suivantes : <br /><br /><em>" + point.time + "</em>";
+              } else {
+                message = "&Agrave cette adresse à <em>" + point.time + "</em>";
+              }
+            } else {
+              message = point.time;
+            }
+            L.marker(point.location).setIcon(window.rbiIcons.marker).bindPopup(message).addTo(_this.map);
+          }
           if (_this.bounds) {
             return _this.map.fitBounds(_this.bounds);
           }
         }
+      },
+      error: function() {
+        _this.$el.find(".geolocated-report-title").html('Relevé Géolocalisé');
+        return _this.$el.find(".geolocated-report-error").html('Une erreur est survenue lors du chargement des données.<br /<br />Veuillez réessayer ultérieurement.'.show());
+      },
+      complete: function() {
+        return _this.$el.find(".geolocated-report-loader").hide();
       }
     });
     return this;
@@ -2938,11 +3033,8 @@ module.exports = MonthlyAnalysisView = (function(_super) {
     'click #variable-cost-search-btn': 'searchAllVariableCost'
   };
 
-  MonthlyAnalysisView.prototype.initialize = function() {
-    return this.bankStatementView = new BankStatementView($('#context-box'));
-  };
-
   MonthlyAnalysisView.prototype.render = function() {
+    this.bankStatementView = new BankStatementView($('#context-box'));
     MonthlyAnalysisView.__super__.render.call(this);
     this.switchMonth();
     return this;
@@ -3002,6 +3094,7 @@ module.exports = MonthlyAnalysisView = (function(_super) {
         dateFrom: this.currentMonthStart,
         dateTo: moment(this.currentMonthStart).endOf('month')
       };
+      console.log("monthly launch reload");
       return this.bankStatementView.reload(bankStatementParams, function(operations) {
         _this.displayMonthlySums(operations);
         _this.displayPieChart(operations);
@@ -4019,7 +4112,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h2>Relevé du ' + escape((interp = model.get('title')) == null ? '' : interp) + ' ' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</h2><div class="search-field"><span aria-hidden="true" data-icon&#57471;="data-icon&#57471;" class="icon-search fs1"></span><input id="search-text"/></div><div class="text-center loading loader-operations"><img src="./loader_big_blue.gif"/></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-operations"></tbody></table>');
+buf.push('<div class="context-box-header"><h2>Relevé du ' + escape((interp = model.get('title')) == null ? '' : interp) + ' ' + escape((interp = model.get("accountNumber")) == null ? '' : interp) + '</h2><div class="search-field"><span aria-hidden="true" data-icon&#57471;="data-icon&#57471;" class="icon-search fs1"></span><input id="search-text"/></div></div><div class="context-box-content"><div class="text-center loading loader-operations"><img src="./loader_big_blue.gif"/></div><table class="table table-bordered table-condensed table-striped table-hover table-bordered dataTable"><tbody id="table-operations"></tbody></table></div>');
 }
 return buf.join("");
 };
@@ -4043,7 +4136,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1>Paramètres</h1><div class="configuration-interface"><p>Veuillez selectionner le compte courant lié à votre relevé malin.</p><table id="account-choice" class="col-md-12"></table><br/><br/><p>Si vos comptes n\'apparaissent pas ici, veuillez les ajouter dans l\'application "MesComptes".</p></div>');
+buf.push('<h1>Paramètres</h1><div class="interface-box-content"><div class="configuration-interface"><p>Veuillez sélectionner le compte courant lié à votre relevé malin.</p><table id="account-choice" class="col-md-12"></table><br/><br/><p>Si vos comptes n\'apparaissent pas ici, veuillez les ajouter dans l\'application "MesComptes".</p></div></div>');
 }
 return buf.join("");
 };
@@ -4094,7 +4187,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1>Relevé augmenté</h1><div></div>');
+buf.push('<h1>Relevé augmenté</h1><div class="interface-box-content"></div>');
 }
 return buf.join("");
 };
@@ -4106,7 +4199,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1>Budget prévisionnel</h1><div id="forecast-budget-content"><span>Mes opérations régulières</span><table class="col-md-12"><thead><tr><th>Motif</th><th>Montant moyen</th><th>Budget</th><th>&nbsp;</th></tr></thead><tbody id="regular-operations"></tbody></table></div>');
+buf.push('<h1>Budget prévisionnel</h1><div class="interface-box-content"><div id="forecast-budget-content"><span>Mes opérations régulières</span><table class="col-md-12"><thead><tr><th>Motif</th><th>Montant moyen</th><th>Budget</th><th>&nbsp;</th></tr></thead><tbody id="regular-operations"></tbody></table></div></div>');
 }
 return buf.join("");
 };
@@ -4141,7 +4234,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1><span aria-hidden="true" data-icon="&#57613;" class="day-switcher previous-day pull-left fs1"></span><span id="current-day">Relevé géolocalisé</span><span aria-hidden="true" data-icon="&#57614;" class="day-switcher next-day pull-right fs1"></span></h1><div id="msisdn-geolocation-map"></div>');
+buf.push('<h1 class="geolocated-report-title"><span aria-hidden="true" data-icon="&#57613;" class="day-switcher previous-day pull-left fs1"></span><span id="current-day">Relevé géolocalisé</span><span aria-hidden="true" data-icon="&#57614;" class="day-switcher next-day pull-right fs1"></span></h1><div class="interface-box-content"><div class="geolocated-report-content"><div class="text-center geolocated-report-loader"><img src="./loader_big_blue.gif"/></div><div class="geolocated-report-error"></div><div id="msisdn-geolocation-map"></div></div></div>');
 }
 return buf.join("");
 };
@@ -4165,7 +4258,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><table id="monthly-report"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2" class="search-panel-td1"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="credits-search-btn" class="search-btn grey1"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1 big-size-icon"></span><span id="credits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Crédits</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="debits-search-btn" class="search-btn grey2"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1 big-size-icon"></span><span id="debits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Débits</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="search-panel-td2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="fixed-cost-search-btn" class="search-btn grey3"><span aria-hidden="true" data-icon="&#57481;" class="pull-left fs1 big-size-icon"></span><span id="fixed-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Frais fixes</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="variable-cost-search-btn" class="search-btn grey4"><span aria-hidden="true" data-icon="&#57393;" class="pull-left fs1 big-size-icon"></span><span id="variable-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Dépenses</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="google-pie-chart"><div id="pie_chart" style="min-height:180px;margin:auto;">&nbsp;</div><br/><br/></td></tr></table>');
+buf.push('<h1><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><div class="interface-box-content"><table id="monthly-report"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2" class="search-panel-td1"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="credits-search-btn" class="search-btn grey1"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1 big-size-icon"></span><span id="credits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Crédits</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="debits-search-btn" class="search-btn grey2"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1 big-size-icon"></span><span id="debits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Débits</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="search-panel-td2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="fixed-cost-search-btn" class="search-btn grey3"><span aria-hidden="true" data-icon="&#57481;" class="pull-left fs1 big-size-icon"></span><span id="fixed-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Frais fixes</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="variable-cost-search-btn" class="search-btn grey4"><span aria-hidden="true" data-icon="&#57393;" class="pull-left fs1 big-size-icon"></span><span id="variable-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Dépenses</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="google-pie-chart"><div id="pie_chart" style="min-height:180px;margin:auto;">&nbsp;</div><br/><br/></td></tr></table></div>');
 }
 return buf.join("");
 };

@@ -10821,9 +10821,9 @@ body {
 }
 body,
 input {
-  color: #444;
-  font: 300 16px Geneva, Verdana, "Lucida Sans", "Lucida Grande", "Lucida Sans Unicode", sans-serif;
-  line-height: 1.2;
+  font: 15px 'Open Sans', arial, sans-serif;
+  color: #222;
+  line-height: 20px;
 }
 a,
 a:visited {
@@ -10964,6 +10964,7 @@ cursor not-allowed {
 }
 #mainnav {
   margin-top: 25px;
+  height: 600px;
 }
 #mainnav * {
   padding-right: 0;
@@ -10972,6 +10973,9 @@ cursor not-allowed {
 #mainnav ul li .current-arrow {
   right: -15px;
   top: 32px;
+}
+#mainnav ul li a {
+  min-height: 120px;
 }
 .view-container {
   margin-top: 25px;
@@ -11020,7 +11024,8 @@ cursor not-allowed {
 #account-budget-amount {
   border: none;
   display: inline-block;
-  width: 60px;
+  padding-right: 10px;
+  padding-left: 10px;
   text-align: right;
 }
 .margin2 {
@@ -11070,8 +11075,9 @@ cursor not-allowed {
   padding-left: 0;
 }
 #interface-box h1 {
+  border-right: 1px solid #f1f1f1;
   background-color: #f1f1f1;
-  min-height: 30px;
+  height: 30px;
   color: #2b2b2b;
   text-align: center;
   text-transform: uppercase;
@@ -11079,6 +11085,16 @@ cursor not-allowed {
   padding: 3px 0;
   margin: 0;
   width: 100%;
+}
+.interface-box-content {
+  border: none;
+  border-right: 1px solid #f1f1f1;
+  border-bottom: 1px solid #f1f1f1;
+  width: 100%;
+  height: 570px;
+  overflow: auto;
+  padding: 0;
+  margin: 0;
 }
 .plain-icon-blue {
   color: #fff;
@@ -11199,7 +11215,10 @@ cursor not-allowed {
   border-left: 0;
 }
 #monthly-report > tbody > tr:last-child > td {
-  border-bottom: 0;
+  border-bottom: none;
+}
+#monthly-report > tbody > tr > td:last-child {
+  border-right: none;
 }
 #monthly-report .amount-month {
   width: 50%;
@@ -11228,9 +11247,25 @@ cursor not-allowed {
 }
 #context-box {
   border: 1px solid #2b2b2b;
-  max-height: 535px;
-  overflow: auto;
+  height: 600px;
   display: none;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+}
+.context-box-header {
+  padding: 0 15px 10px 15px;
+  margin: 0;
+  height: 90px;
+  border-bottom: 1px #999 solid;
+}
+.context-box-content {
+  height: 500px;
+  padding: 15px 15px 0 15px;
+  margin: 0;
+  overflow: auto;
+  -webkit-box-shadow: inset 3px 3px 7px 1px rgba(0,0,0,0.1);
+  box-shadow: inset 3px 3px 7px 1px rgba(0,0,0,0.1);
 }
 #context-box h2 {
   margin: 5px;
@@ -11244,7 +11279,6 @@ cursor not-allowed {
   text-align: center;
 }
 #context-box .dataTable {
-  margin-top: 15px;
   font-size: 0.9em;
 }
 #context-box .table > tbody > tr > td {
@@ -11259,9 +11293,11 @@ cursor not-allowed {
   border-right: 1px solid #ddd;
 }
 #context-box .table > tbody > tr.special > td {
-  background-color: #2b2b2b;
+  background-color: #999;
+  line-height: 0.6;
+  font-weight: bold;
   color: #fff;
-  border: 1px solid #ddd;
+  border: 1px solid #999;
 }
 #context-box .table > tbody > tr.success > td {
   background-color: #dff0d8;
@@ -11431,6 +11467,9 @@ cursor not-allowed {
   }
 }
 @media (max-width: 767px) {
+  #mainnav {
+    height: auto;
+  }
   #mainnav ul li a {
     min-height: 30px;
   }
@@ -11477,13 +11516,21 @@ cursor not-allowed {
 }
 #msisdn-geolocation-map {
   width: 100%;
-  height: 370px;
+  height: 569px;
 }
 .day-switcher {
   cursor: pointer;
 }
 #current-day {
   text-transform: none;
+}
+.geolocated-report-error {
+  display: none;
+  padding: 15px;
+}
+.geolocated-report-loader {
+  display: none;
+  margin-top: 150px;
 }
 
 .chromeframe { margin: 0.2em 0; background: #ccc; color: #000; padding: 0.2em 0; }

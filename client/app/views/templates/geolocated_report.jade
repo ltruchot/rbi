@@ -1,5 +1,11 @@
-h1
+h1.geolocated-report-title
   span.day-switcher.previous-day.pull-left.fs1(aria-hidden="true", data-icon="&#57613;")
   span#current-day Relevé géolocalisé
   span.day-switcher.next-day.pull-right.fs1(aria-hidden="true", data-icon="&#57614;")
-div#msisdn-geolocation-map
+
+.interface-box-content
+  .geolocated-report-content
+    .text-center.geolocated-report-loader
+      img(src="./loader_big_blue.gif")
+    .geolocated-report-error
+    #msisdn-geolocation-map

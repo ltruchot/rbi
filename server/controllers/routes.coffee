@@ -72,6 +72,8 @@ module.exports =
         post: geolocationlog.byDate
     'geolocationlog/allByDate':
         post: geolocationlog.allByDate
+    'geolocationlog/getMostRecent':
+        get: geolocationlog.getMostRecent
     'receipts':
         get: receipts.newest
     'receipts/:receiptid/sections':

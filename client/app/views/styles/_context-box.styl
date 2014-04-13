@@ -1,8 +1,23 @@
 #context-box
   border 1px solid #2b2b2b
-  max-height 535px
+  height 600px
+  display none
+  overflow hidden
+  padding 0
+  margin 0
+
+.context-box-header
+  padding 0 15px 10px 15px
+  margin 0
+  height 90px
+  border-bottom 1px #999 solid
+
+.context-box-content
+  height 500px
+  padding 15px 15px 0 15px
+  margin 0
   overflow auto
-  display: none
+  box-shadow:inset 3px 3px 7px 1px rgba(0, 0, 0, 0.1)
 
 #context-box h2
   margin 5px
@@ -16,7 +31,6 @@
   text-align center
 
 #context-box .dataTable
-  margin-top 15px
   font-size 0.9em
 
 #context-box .table > tbody > tr > td
@@ -30,9 +44,11 @@
   border-right 1px solid #dddddd
 
 #context-box .table > tbody > tr.special > td
-  background-color #2b2b2b
+  background-color #999
+  line-height 0.6
+  font-weight bold
   color #fff
-  border 1px solid #ddd
+  border 1px solid #999
 
 // #context-box .table > tbody > tr.special > td
 //   background-color #fff

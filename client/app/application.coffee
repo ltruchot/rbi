@@ -11,6 +11,9 @@ module.exports =
 
     initialize: ->
 
+        # set global L (leaflet map plugin) image directory
+        L.Icon.Default.imagePath = 'images/leaflet'
+
         # set globals app, collections, data
         window.app = @
         window.collections = {}
@@ -71,6 +74,16 @@ module.exports =
             map:
                 encoded: "&#57538;"
                 decoded: ""
+            marker: L.icon
+                iconUrl: 'images/leaflet/marker-icon-mini.png'
+                iconRetinaUrl: 'images/leaflet/marker-icon-mini.png'
+                iconSize: [12, 20]
+                iconAnchor: [6, 20]
+                popupAnchor: [0, -10]
+                shadowUrl: 'images/leaflet/marker-shadow-mini.png'
+                shadowRetinaUrl: 'images/leaflet/marker-shadow-mini.png'
+                shadowSize: [20, 20]
+                shadowAnchor: [10, 20]
 
 
         #instantiate collections: banks, operations, amounts

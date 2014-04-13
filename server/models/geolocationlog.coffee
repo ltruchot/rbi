@@ -20,7 +20,19 @@ GeolocationLog.allByStartAndEndDate = (startDate, endDate, callback) ->
     params =
         startkey: (new Date startDate).toISOString()
         endkey: (new Date endDate).toISOString()
+    GeolocationLog.request "allByDate", params, callback
+
+GeolocationLog.allByStartAndEndDate = (startDate, endDate, callback) ->
+    params =
+        startkey: (new Date startDate).toISOString()
+        endkey: (new Date endDate).toISOString()
 
         # startkey=["1970-01-01T00:00:00Z", ""]&endkey=["\ufff0", "1971-01-01T00:00:00Z"]
         # descending: true
+    GeolocationLog.request "allByDate", params, callback
+
+GeolocationLog.getMostRecent = (callback) ->
+    params =
+        descending: true
+        limit: 1
     GeolocationLog.request "allByDate", params, callback

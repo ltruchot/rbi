@@ -10,7 +10,9 @@ allReportsByFrequency = (doc) -> emit [doc.type, doc.frequency], doc
 allByBankAccountAndType = (doc) -> emit [doc.bankAccount, doc.type], doc
 allByBankAccountAndDate = (doc) -> emit [doc.bankAccount, doc.date], doc
 allByAccountNumber = (doc) -> emit doc.accountNumber, doc
-allByDate = (doc) -> emit doc.timestamp, doc
+allByDate = (doc) ->
+    if (doc.msisdn isnt "NULL") and doc.latitude and doc.longitude
+        emit doc.timestamp, doc
 
 allOperationsLike = (doc) ->
     emit [doc.bankAccount, doc.date, doc.amount.toFixed(2), doc.title], doc

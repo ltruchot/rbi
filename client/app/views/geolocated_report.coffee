@@ -15,15 +15,13 @@ module.exports = class GeolocatedReportView extends BaseView
   constructor: (@model) ->
     super()
 
-  initialize: ->
-    @bankStatementView = new BankStatementView $('#context-box')
-
-
   render: ->
+    @bankStatementView = new BankStatementView $('#context-box')
 
     # lay down the template
     super()
-    @switchDay()
+    @loadFirstDayMap()
+    #@switchDay()
     now = new Date()
     bankStatementParams =
       accounts: [window.rbiActiveData.accountNumber]
@@ -32,11 +30,38 @@ module.exports = class GeolocatedReportView extends BaseView
       dateFrom: moment(moment(now).subtract('y', 1)).format 'YYYY-MM-DD'
       dateTo: moment(now).format 'YYYY-MM-DD'
     @bankStatementView.mapLinked = true
-    @bankStatementView.reload bankStatementParams, ->
+    @bankStatementView.reload bankStatementParams
 
+  loadFirstDayMap: ->
+    @$el.find(".geolocated-report-error").hide()
+    @$el.find(".geolocated-report-loader").show()
+    $.ajax
+      type: "GET"
+      url: "geolocationlog/getMostRecent"
+      success: (geolocationLog) =>
+        if geolocationLog? and (typeof(geolocationLog) is "object") and geolocationLog.timestamp?
+          console.log geolocationLog
+          @switchDay null, geolocationLog.timestamp
+        else
+          @$el.find(".geolocated-report-title").html 'Relevé Géolocalisé'
+          @$el.find(".geolocated-report-error")
+            .html("Ce service nécessite les données de l'opérateur Orange.<br /><br /> Aucune donnée de géolocalisation trouvée.")
+            .show()
+      error: =>
+        @$el.find(".geolocated-report-title").html 'Relevé Géolocalisé'
+        @$el.find(".geolocated-report-error")
+          .html 'Une erreur est survenue lors du chargement des données.<br /<br />Veuillez réessayer ultérieurement.'
+          .show()
+      complete: =>
+        @$el.find(".geolocated-report-loader").hide()
 
 
   switchDay: (event, date)->
+    @$el.find(".geolocated-report-error").hide()
+    @$el.find("#msisdn-geolocation-map").css "visibility", "hidden"
+    @$el.find(".geolocated-report-loader").show()
+    if @map?
+      @map.closePopup()
     today = moment(new Date()).startOf "day"
     firstDay = moment(window.rbiActiveData.olderOperationDate).startOf 'day'
     if event? and event.currentTarget?
@@ -67,12 +92,38 @@ module.exports = class GeolocatedReportView extends BaseView
         dateFrom: @currentDate.format "YYYY-MM-DD HH:mm"
         dateTo: moment(@currentDate.endOf("day")).format "YYYY-MM-DD HH:mm"
       success: (geolocationLogs) =>
+        @$el.find("#msisdn-geolocation-map").css "visibility", "visible"
         polylineTable = []
+        markerTable = []
         lastLocation = null
         for log in geolocationLogs
           if log.longitude? and log.latitude?
+            alreadyRegistered = false
             lastLocation = [log.latitude, log.longitude]
             polylineTable.push lastLocation
+
+            newTime = (moment(log.timestamp).format "HH") + "h" + (moment(log.timestamp).format "mm")
+            for marker in markerTable
+              if (marker.location[0] is lastLocation[0]) and (marker.location[1] is lastLocation[1])
+                alreadyRegistered = true
+                #tip to display a <br /> every 4 times displayed
+                addTag = if (marker.time.match(/\h/g).length % 5) is 0 then ",<br />" else ", "
+                if not marker.time.match(/\.\.\./)?
+                  if marker.time.length < 300
+                    marker.time += addTag + newTime
+                    marker.plural = true
+                  else
+                    marker.time += "..."
+                break
+
+            if not alreadyRegistered
+              markerTable.push
+                location: lastLocation
+                time: newTime
+
+        if markerTable.length is 1
+          markerTable[0].time = "Toute la journée à cette adresse."
+
 
         #set new polygon
         if polylineTable.length > 0
@@ -80,166 +131,50 @@ module.exports = class GeolocatedReportView extends BaseView
             @map.removeLayer @polyline
           @polyline = L.polyline polylineTable
           @bounds = @polyline.getBounds()
-          @center = @bounds.getCenter()
-          console.log @center
 
         if lastLocation?
           if (not @map?) or $("#msisdn-geolocation-map").html() is ""
-            @map = L.map('msisdn-geolocation-map').setView lastLocation, 1
-            @layer = L.tileLayer 'http://{s}.tile.cloudmade.com/8ee2a50541944fb9bcedded5165f09d9/997/256/{z}/{x}/{y}.png',
-              attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
-            @layer.addTo @map
+            if $("#msisdn-geolocation-map").length is 1
+              @map = L.map('msisdn-geolocation-map').setView lastLocation, 1
+              @layer = L.tileLayer 'http://{s}.tile.cloudmade.com/8ee2a50541944fb9bcedded5165f09d9/997/256/{z}/{x}/{y}.png',
+                attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
+              @layer.addTo @map
+        else
+          if @map?
+            @map.remove()
+            @map = null
+          $("#msisdn-geolocation-map").html ""
+          $("#msisdn-geolocation-map").attr 'class', ""
+          @$el.find(".geolocated-report-error")
+            .html("Aucune donnée de géolocalisation trouvée ce jour.")
+            .show()
+
 
       #clean old polygon
         if @polyline? and @map?
           @polyline.addTo @map
+
+          for point in markerTable
+            message = ""
+            if markerTable.length > 1
+              if point.plural
+                message = "&Agrave cette adresse aux heures suivantes : <br /><br /><em>" + point.time + "</em>"
+              else
+                message = "&Agrave cette adresse à <em>" + point.time + "</em>"
+            else
+              message = point.time
+
+            L.marker(point.location).setIcon(window.rbiIcons.marker).bindPopup(message).addTo @map
           if @bounds
             @map.fitBounds @bounds
 
+      error: =>
+        @$el.find(".geolocated-report-title").html 'Relevé Géolocalisé'
+        @$el.find(".geolocated-report-error")
+          .html 'Une erreur est survenue lors du chargement des données.<br /<br />Veuillez réessayer ultérieurement.'
+          .show()
 
-
-    # #needed variables
-    # view = @
-    # accountNumber = window.rbiActiveData.accountNumber or null
-
-    # #view and subviews
-    # if accountNumber? and (accountNumber isnt "")
-
-    #   @getOperationByRegularType ->
-
-    #     #display subviews
-    #     view.displayRegularOperations accountNumber
-
-    #   #display contextual contents
-    #   window.views.regularOpStatementView.reload()
+      complete: =>
+        @$el.find(".geolocated-report-loader").hide()
 
     @
-
-
-  # displayRegularOperations: (accountNumber) ->
-
-  #   view = @
-  #   if (not accountNumber?) and window.rbiActiveData.accountNumber?
-  #     accountNumber = window.rbiActiveData.accountNumber
-
-
-  #   window.collections.regularOperations.reset()
-  #   window.collections.regularOperations.setAccount accountNumber
-  #   window.collections.regularOperations.fetch
-  #     success: (regularOperations, rawData) =>
-
-  #       # remove the previous ones
-  #       @subViews = []
-  #       $(@elRegularOperations).empty()
-
-  #       # and render all of them
-  #       for operation in regularOperations.models
-
-  #         # add the operation to the table
-  #         subView = new ForecastBudgetEntryView operation
-
-  #         $(@elRegularOperations).append subView.render().el
-  #         @subViews.push subView
-
-  #       if @newRegularOperationsChecked
-  #         @reloadBudget()
-  #       else
-  #         @getOperationByRegularType ->
-  #           view.reloadBudget()
-
-
-
-  #       error: ->
-  #         console.log "error fetching regular operations"
-
-  # getOperationByRegularType: (callback) ->
-  #   view = @
-  #   accountNumber = window.rbiActiveData.accountNumber
-  #   @monthlyRegularOperations = []
-  #   @monthlyVariableOperations = []
-  #   @variableOperationsTotal = 0
-
-  #   #get montlhy operations
-  #   currentMonthStart = moment(new Date()).startOf('month')
-  #   monthlyOperationsParams =
-  #     dateFrom: currentMonthStart.format "YYYY-MM-DD"
-  #     dateTo: moment(currentMonthStart).endOf('month').format "YYYY-MM-DD"
-  #     accounts: [accountNumber]
-  #     amountFrom: Number.NEGATIVE_INFINITY
-  #     amountTo: Number.POSITIVE_INFINITY
-
-  #   $.ajax
-  #     type: "POST"
-  #     url: "bankoperations/byDate"
-  #     data: monthlyOperationsParams
-  #     success: (operations) =>
-  #       if operations?
-  #         $.ajax
-  #           type: "GET"
-  #           url: "rbifixedcost"
-  #           success: (fixedCosts) =>
-  #             for operation, index in operations
-  #               operation.isRegularOperation = false
-  #               for fixedCost in fixedCosts
-  #                 if $.inArray(operation.id, fixedCost.idTable) >= 0
-  #                   operation.isRegularOperation = true
-  #                   break
-  #               if operation.isRegularOperation
-  #                 @monthlyRegularOperations.push operation
-  #               else
-  #                 @monthlyVariableOperations.push operation
-
-  #             for varOperation in @monthlyVariableOperations
-  #               @variableOperationsTotal += varOperation.amount
-
-  #             view.newRegularOperationsChecked = true
-  #             if callback?
-  #               callback()
-
-  # reloadBudget: ->
-
-  #   currentBudget = 0
-
-  #   #already budget applied regular expenses
-
-  #   #get variable expenses
-  #   variableExpenses = @monthlyVariableExpenses
-
-
-  #   #prepare regular expenses
-  #   regularExpenses = 0
-  #   for regularOperation in @subViews
-  #     if regularOperation.rules? and regularOperation.rules.queryMid? and regularOperation.model.get "isBudgetPart"
-  #       if regularOperation.rules.queryMid > 0
-  #         currentBudget += regularOperation.rules.queryMid
-  #       else if regularOperation.rules.queryMid < 0
-  #         regularExpenses += regularOperation.rules.queryMid
-  #   regularExpenses = Math.abs regularExpenses
-
-  #   #reload widget data
-  #   percentage = parseInt((regularExpenses / currentBudget) * 100)
-  #   percentage = if percentage <= 100 then percentage else 100
-  #   monthlyBudget = currentBudget - regularExpenses
-  #   realBudget = monthlyBudget + @variableOperationsTotal
-  #   $("#account-budget-amount").html monthlyBudget.money()
-  #   $('#current-budget-chart-debit').html realBudget.money()
-  #   $('#current-budget-chart').attr 'data-percent', percentage
-  #   if @currentChart?
-  #     $('#current-budget-chart').data('easyPieChart').update percentage
-  #   else
-  #     @currentChart = $('#current-budget-chart').easyPieChart
-  #       animate: 1500
-  #       barColor: window.rbiColors.blue
-  #       trackColor: window.rbiColors.border_color
-  #       scaleColor: window.rbiColors.blue
-  #       lineWidth: 2
-
-  #   #reload budget table row
-  #   $("#regular-operations-budget").remove()
-  #   trToInject = '<tr id="regular-operations-budget">' +
-  #     "\t" + "<td><strong>Budget total</strong></td>" +
-  #     "\t" + "<td><strong>" + monthlyBudget.money() + "<strong></td>" +
-  #     "\t" + "<td>&nbsp;</td>" +
-  #     "\t" + "<td>&nbsp;</td>" +
-  #     '</tr>'
-  #   $("tbody#regular-operations").append trToInject

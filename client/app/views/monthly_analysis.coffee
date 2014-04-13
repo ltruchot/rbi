@@ -17,10 +17,8 @@ module.exports = class MonthlyAnalysisView extends BaseView
     'click #fixed-cost-search-btn' : 'searchAllFixedCost'
     'click #variable-cost-search-btn' : 'searchAllVariableCost'
 
-  initialize: ->
-    @bankStatementView = new BankStatementView $('#context-box')
-
   render: ->
+    @bankStatementView = new BankStatementView $('#context-box')
     # lay down the template
     super()
 
@@ -81,6 +79,7 @@ module.exports = class MonthlyAnalysisView extends BaseView
       bankStatementParams =
         dateFrom: @currentMonthStart
         dateTo: moment(@currentMonthStart).endOf 'month'
+      console.log "monthly launch reload"
       @bankStatementView.reload bankStatementParams, (operations)=>
         @displayMonthlySums operations
         @displayPieChart operations

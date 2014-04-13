@@ -2,58 +2,59 @@ h1
   span.month-switcher.previous-month.pull-left.fs1(aria-hidden="true", data-icon="&#57613;")
   span#current-month Analyse mensuelle
   span.month-switcher.next-month.pull-right.fs1(aria-hidden="true", data-icon="&#57614;")
-table#monthly-report
-  tr
-    td.amount-month
-      div
-        |solde de début de mois
-        hr
-        span#amount-month-start.amount-number
-    td.amount-month
-      div
-        |solde de fin de mois
-        hr
-        span#amount-month-end.amount-number
+.interface-box-content
+  table#monthly-report
+    tr
+      td.amount-month
+        div
+          |solde de début de mois
+          hr
+          span#amount-month-start.amount-number
+      td.amount-month
+        div
+          |solde de fin de mois
+          hr
+          span#amount-month-end.amount-number
+          br
+          span#amount-month-differential.blue-text.amount-number-diff
+    tr
+      td.search-panel-td1(colspan="2")
+        .col-md-1
+        .search-panel.col-md-10
+          .search-btn-container.col-lg-5.col-md-6.col-sm-6
+            #credits-search-btn.search-btn.grey1
+              span.pull-left.fs1.big-size-icon(aria-hidden="true", data-icon="&#57602;")
+              span#credits-sum.pull-right.big-size-text 0 &euro;
+              br
+              span.pull-right.little-size-text Crédits
+          div.col-lg-2.search-separator
+          .search-btn-container.col-lg-5.col-md-6.col-sm-6
+            #debits-search-btn.search-btn.grey2
+              span.pull-left.fs1.big-size-icon(aria-hidden="true", data-icon="&#57601;")
+              span#debits-sum.pull-right.big-size-text 0 &euro;
+              br
+              span.pull-right.little-size-text Débits
+        .col-md-1
+    tr
+      td.search-panel-td2(colspan="2")
+        .col-md-1
+        .search-panel.col-md-10
+          .search-btn-container.col-lg-5.col-md-6.col-sm-6
+            #fixed-cost-search-btn.search-btn.grey3
+              span.pull-left.fs1.big-size-icon(aria-hidden="true", data-icon="&#57481;")
+              span#fixed-cost-sum.pull-right.big-size-text 0 &euro;
+              br
+              span.pull-right.little-size-text Frais fixes
+          div.col-lg-2.search-separator
+          .search-btn-container.col-lg-5.col-md-6.col-sm-6
+            #variable-cost-search-btn.search-btn.grey4
+              span.pull-left.fs1.big-size-icon(aria-hidden="true", data-icon="&#57393;")
+              span#variable-cost-sum.pull-right.big-size-text 0 &euro;
+              br
+              span.pull-right.little-size-text Dépenses
+        .col-md-1
+    tr
+      td.google-pie-chart(colspan="2")
+        div#pie_chart(style="min-height:180px;margin:auto;") &nbsp;
         br
-        span#amount-month-differential.blue-text.amount-number-diff
-  tr
-    td.search-panel-td1(colspan="2")
-      .col-md-1
-      .search-panel.col-md-10
-        .search-btn-container.col-lg-5.col-md-6.col-sm-6
-          #credits-search-btn.search-btn.grey1
-            span.pull-left.fs1.big-size-icon(aria-hidden="true", data-icon="&#57602;")
-            span#credits-sum.pull-right.big-size-text 0 &euro;
-            br
-            span.pull-right.little-size-text Crédits
-        div.col-lg-2.search-separator
-        .search-btn-container.col-lg-5.col-md-6.col-sm-6
-          #debits-search-btn.search-btn.grey2
-            span.pull-left.fs1.big-size-icon(aria-hidden="true", data-icon="&#57601;")
-            span#debits-sum.pull-right.big-size-text 0 &euro;
-            br
-            span.pull-right.little-size-text Débits
-      .col-md-1
-  tr
-    td.search-panel-td2(colspan="2")
-      .col-md-1
-      .search-panel.col-md-10
-        .search-btn-container.col-lg-5.col-md-6.col-sm-6
-          #fixed-cost-search-btn.search-btn.grey3
-            span.pull-left.fs1.big-size-icon(aria-hidden="true", data-icon="&#57481;")
-            span#fixed-cost-sum.pull-right.big-size-text 0 &euro;
-            br
-            span.pull-right.little-size-text Frais fixes
-        div.col-lg-2.search-separator
-        .search-btn-container.col-lg-5.col-md-6.col-sm-6
-          #variable-cost-search-btn.search-btn.grey4
-            span.pull-left.fs1.big-size-icon(aria-hidden="true", data-icon="&#57393;")
-            span#variable-cost-sum.pull-right.big-size-text 0 &euro;
-            br
-            span.pull-right.little-size-text Dépenses
-      .col-md-1
-  tr
-    td.google-pie-chart(colspan="2")
-      div#pie_chart(style="min-height:180px;margin:auto;") &nbsp;
-      br
-      br
+        br

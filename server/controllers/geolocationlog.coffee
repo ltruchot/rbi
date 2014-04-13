@@ -56,3 +56,10 @@ module.exports.allByDate = (req, res) ->
             res.send 500, error: 'Server error occurred while retrieving data'
         else
             res.send 200, geolocationLogs
+
+module.exports.getMostRecent = (req, res) ->
+    GeolocationLog.getMostRecent (err, geolocationLog) ->
+        if err?
+            res.send 500, error: 'Server error occurred while retrieving data'
+        else
+            res.send 200, (geolocationLog[0] or null)
