@@ -33,7 +33,6 @@ module.exports = class BankStatementView extends BaseView
         @
 
     reload: (params, callback) ->
-        console.log "reload"
         view = @
 
         #client or server search ?
@@ -140,19 +139,23 @@ module.exports = class BankStatementView extends BaseView
             dateTo:     dateToVal
             accounts:   [accountNumber]
 
-        searchTextVal = $("input#search-text").val()
-        if searchTextVal? and (searchTextVal isnt "")
-            if searchTextVal is "#credits"
-                @data.credits = true
-            else if searchTextVal is "#debits"
-                @data.debits = true
-            else if searchTextVal is "#frais-fixes"
-                @data.fixedCosts = true
-            else if searchTextVal is "#depenses"
-                @data.variableCosts = true
-            else
-                @data.searchText = searchTextVal
-
+        if @enhancedLinked
+            @data.searchText = "intermarché"
+        else if @mapLinked
+            @data.searchText = ""
+        else
+            searchTextVal = $("input#search-text").val()
+            if searchTextVal? and (searchTextVal isnt "")
+                if searchTextVal is "#credits"
+                    @data.credits = true
+                else if searchTextVal is "#debits"
+                    @data.debits = true
+                else if searchTextVal is "#frais-fixes"
+                    @data.fixedCosts = true
+                else if searchTextVal is "#depenses"
+                    @data.variableCosts = true
+                else
+                    @data.searchText = searchTextVal
 
     addAll: ->
         console.log "addAll"

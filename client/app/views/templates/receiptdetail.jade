@@ -1,0 +1,10 @@
+.col-md-6
+  .row
+    .receiptdetail
+      //-img.image(src='http://drive.intermarche.com/ressources/images/produit/vignette/0#{receiptDetail.barcode}.jpg', onerror="if (this.src != 'images/sac.png') this.src = 'imgages/sac.png';")
+      img.image(src='http://drive.intermarche.com/ressources/images/produit/fiche/0#{receiptDetail.barcode}.jpg', onerror="if (this.src != 'images/sac.png') this.src = 'images/sac.png';")
+      .detail
+        .lab= receiptDetail.name
+        p.vol= receiptDetail.quantityLabel
+        .price= receiptDetail.price.toFixed(2)
+          |&nbsp;€

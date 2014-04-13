@@ -999,18 +999,6 @@ module.exports = BankOperation = (function(_super) {
 
 });
 
-;require.register("models/receipt--mesconsos", function(exports, require, module) {
-var Receipt, Receipts;
-
-Receipt = require('../models/receipt');
-
-module.exports = Receipts = Backbone.Collection.extend({
-  model: Receipt,
-  url: 'receipts'
-});
-
-});
-
 ;require.register("models/receipt", function(exports, require, module) {
 var Receipt, _ref,
   __hasProp = {}.hasOwnProperty,
@@ -1050,7 +1038,21 @@ module.exports = RegularOperation = (function(_super) {
 });
 
 ;require.register("models/section", function(exports, require, module) {
+var Section, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
+module.exports = Section = (function(_super) {
+  __extends(Section, _super);
+
+  function Section() {
+    _ref = Section.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  return Section;
+
+})(Backbone.Model);
 
 });
 
@@ -1317,7 +1319,6 @@ module.exports = BankStatementView = (function(_super) {
 
   BankStatementView.prototype.reload = function(params, callback) {
     var displayFixedCosts, displayVariableCosts, view;
-    console.log("reload");
     view = this;
     this.model = window.rbiActiveData.bankAccount;
     if ((params != null) && (params.dateFrom != null)) {
@@ -1418,18 +1419,24 @@ module.exports = BankStatementView = (function(_super) {
       dateTo: dateToVal,
       accounts: [accountNumber]
     };
-    searchTextVal = $("input#search-text").val();
-    if ((searchTextVal != null) && (searchTextVal !== "")) {
-      if (searchTextVal === "#credits") {
-        return this.data.credits = true;
-      } else if (searchTextVal === "#debits") {
-        return this.data.debits = true;
-      } else if (searchTextVal === "#frais-fixes") {
-        return this.data.fixedCosts = true;
-      } else if (searchTextVal === "#depenses") {
-        return this.data.variableCosts = true;
-      } else {
-        return this.data.searchText = searchTextVal;
+    if (this.enhancedLinked) {
+      return this.data.searchText = "intermarché";
+    } else if (this.mapLinked) {
+      return this.data.searchText = "";
+    } else {
+      searchTextVal = $("input#search-text").val();
+      if ((searchTextVal != null) && (searchTextVal !== "")) {
+        if (searchTextVal === "#credits") {
+          return this.data.credits = true;
+        } else if (searchTextVal === "#debits") {
+          return this.data.debits = true;
+        } else if (searchTextVal === "#frais-fixes") {
+          return this.data.fixedCosts = true;
+        } else if (searchTextVal === "#depenses") {
+          return this.data.variableCosts = true;
+        } else {
+          return this.data.searchText = searchTextVal;
+        }
       }
     }
   };
@@ -2179,13 +2186,17 @@ module.exports = BankSubTitleView = (function(_super) {
 });
 
 ;require.register("views/enhanced_report", function(exports, require, module) {
-var BaseView, EnhancedReportView, ReceiptCollection, _ref,
+var BankStatementView, BaseView, EnhancedReportView, ReceiptCollection, ReceiptView, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
 ReceiptCollection = require("../collections/receipts");
+
+ReceiptView = require('./receipt');
+
+BankStatementView = require("./bank_statement");
 
 module.exports = EnhancedReportView = (function(_super) {
   __extends(EnhancedReportView, _super);
@@ -2199,18 +2210,33 @@ module.exports = EnhancedReportView = (function(_super) {
 
   EnhancedReportView.prototype.el = 'div#interface-box';
 
-  EnhancedReportView.prototype.subViews = [];
+  EnhancedReportView.currentReceipt = null;
 
   EnhancedReportView.prototype.initialize = function() {
     return this.allReceipts = new ReceiptCollection();
   };
 
   EnhancedReportView.prototype.render = function() {
-    var view,
+    var bankStatementParams, now, view,
       _this = this;
+    this.bankStatementView = new BankStatementView($('#context-box'));
+    now = new Date();
+    bankStatementParams = {
+      accounts: [window.rbiActiveData.accountNumber],
+      amountFrom: Number.NEGATIVE_INFINITY,
+      amountTo: Number.POSITIVE_INFINITY,
+      dateFrom: moment(moment(now).subtract('y', 1)).format('YYYY-MM-DD'),
+      dateTo: moment(now).format('YYYY-MM-DD')
+    };
+    this.bankStatementView.enhancedLinked = true;
+    this.bankStatementView.reload(bankStatementParams);
     this.allReceipts.fetch({
       success: function(receipts) {
-        return _this.displayReceipt();
+        if ((receipts.models[0] != null) && (receipts.models[0].get("timestamp") != null)) {
+          return _this.displayReceipt(receipts.models[0].get("timestamp"));
+        } else {
+          return $('#enhanced-report-info').show();
+        }
       }
     });
     EnhancedReportView.__super__.render.call(this);
@@ -2218,19 +2244,23 @@ module.exports = EnhancedReportView = (function(_super) {
     return this;
   };
 
-  EnhancedReportView.prototype.displayReceipt = function(receiptId) {
-    var attr, foundModel, value, _ref1, _results;
+  EnhancedReportView.prototype.displayReceipt = function(receiptTs) {
+    var currentNbOfArticles, currentTotal, currentTs, date, foundModel, newTitle, time;
     foundModel = this.allReceipts.where({
-      timestamp: "2013-04-11T15:40:31.000Z"
+      timestamp: receiptTs
     });
     if (foundModel[0] != null) {
-      _ref1 = foundModel[0].attributes;
-      _results = [];
-      for (attr in _ref1) {
-        value = _ref1[attr];
-        _results.push(this.$el.find(".interface-box-content").append(attr + " : " + value + '<br />'));
-      }
-      return _results;
+      this.currentReceipt = new ReceiptView(foundModel[0]);
+      this.currentReceipt.render();
+      console.log(this.currentReceipt);
+      currentTs = moment(this.currentReceipt.model.get("timestamp"));
+      currentNbOfArticles = this.currentReceipt.model.get("articlesCount");
+      currentTotal = this.currentReceipt.model.get("total").money();
+      date = currentTs.format('DD/MM/YYYY');
+      time = currentTs.format('HH') + "h" + currentTs.format('mm');
+      newTitle = "Ticket du " + date + " à " + time + " : " + currentNbOfArticles + " Art. / " + currentTotal;
+      this.$el.find("h1").html(newTitle);
+      return this.$el.find("#current-receipt").html(this.currentReceipt.$el);
     }
   };
 
@@ -3428,61 +3458,56 @@ module.exports = OnlineShoppingView = (function(_super) {
 
 });
 
-;require.register("views/receipt--mesconsos", function(exports, require, module) {
-var Receipt, SectionCollection, SectionView;
+;require.register("views/receipt", function(exports, require, module) {
+var BaseView, Receipt, SectionCollection, SectionView,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
 
 SectionView = require("./section");
 
 SectionCollection = require("../collections/sections");
 
-module.exports = Receipt = Backbone.View.extend({
-  tagName: "div",
-  template: require("../templates/receipt"),
-  events: {
-    "click .receipt": "toggleSections"
-  },
-  initialize: function() {
-    this.collection = new SectionCollection([], {
+module.exports = Receipt = (function(_super) {
+  __extends(Receipt, _super);
+
+  Receipt.prototype.tagName = "div";
+
+  Receipt.prototype.template = require("./templates/receipt");
+
+  function Receipt(model) {
+    this.model = model;
+    Receipt.__super__.constructor.call(this);
+  }
+
+  Receipt.prototype.initialize = function() {
+    return this.collection = new SectionCollection([], {
       receiptId: this.model.attributes.receiptId
     });
-  },
-  render: function() {
+  };
+
+  Receipt.prototype.render = function() {
     this.$el.html(this.template({
       receipt: this.model.toJSON()
     }));
-  },
-  btnState: function(state) {
-    var states;
-    states = {
-      opened: "img/moins.png",
-      closed: "img/plus.png",
-      loading: "img/ajax-loader_b.gif"
-    };
-    this.$el.find(".toggle-btn").attr("src", states[state]);
-  },
-  toggleSections: function(event) {
-    if (!this.open) {
-      this.open = true;
-      this.btnState("loading");
-      this.listenTo(this.collection, "add", this.onSectionAdded);
-      this.collection.fetch();
-    } else {
-      this.stopListening(this.collection);
-      this.$el.find(".sections").empty();
-      this.btnState("closed");
-      this.open = false;
-    }
-  },
-  onSectionAdded: function(section) {
+    this.listenTo(this.collection, "add", this.onSectionAdded);
+    this.collection.fetch();
+    return this;
+  };
+
+  Receipt.prototype.onSectionAdded = function(section) {
     var sectionView;
-    this.btnState("opened");
     sectionView = new SectionView({
       model: section
     });
     sectionView.render();
-    this.$el.find(".sections").append(sectionView.$el);
-  }
-});
+    return this.$el.find(".sections").append(sectionView.$el);
+  };
+
+  return Receipt;
+
+})(BaseView);
 
 });
 
@@ -4101,18 +4126,34 @@ module.exports = RegularOpStatementEntryView = (function(_super) {
 
 });
 
-;require.register("views/section--mesconsos", function(exports, require, module) {
-var Section;
+;require.register("views/section", function(exports, require, module) {
+var BaseView, Section, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-module.exports = Section = Backbone.View.extend({
-  tagName: "div",
-  template: require("../templates/section"),
-  render: function() {
+BaseView = require('../lib/base_view');
+
+module.exports = Section = (function(_super) {
+  __extends(Section, _super);
+
+  function Section() {
+    _ref = Section.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  Section.prototype.tagName = "div";
+
+  Section.prototype.template = require("./templates/section");
+
+  Section.prototype.render = function() {
     this.$el.html(this.template({
       section: this.model.toJSON()
     }));
-  }
-});
+  };
+
+  return Section;
+
+})(BaseView);
 
 });
 
@@ -4244,7 +4285,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1>Relevé augmenté</h1><div class="interface-box-content"></div>');
+buf.push('<h1 id="current-receipt-title">Relevé augmenté</h1><div class="interface-box-content"><div id="enhanced-report-info">Aucun ticket intermarché n\'a été trouvé.</div><div id="current-receipt"></div></div>');
 }
 return buf.join("");
 };
@@ -4339,22 +4380,30 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div class="row item_a receipt"><div class="col-md-6"><div class="row"><div title="Détails sur votre magasin." class="col-xs-2 box map"><a');
-buf.push(attrs({ 'href':("http://fc1.1bis.com/intermarche/map.asp?id=IMARC" + (receipt.intermarcheShopId) + ""), 'target':("_blank") }, {"href":true,"target":true}));
-buf.push('><img src="img/pin.png"/></a></div><div title="Date ou vous avez fait des achats." class="col-xs-5 box">');
- var dt = new Date(receipt.timestamp)
-var __val__ = dt.toString('d/MM')
+buf.push('<div class="sections"></div>');
+}
+return buf.join("");
+};
+});
+
+;require.register("views/templates/receiptdetail", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<div class="col-md-6"><div class="row"><div class="receiptdetail"><img');
+buf.push(attrs({ 'src':('http://drive.intermarche.com/ressources/images/produit/fiche/0' + (receiptDetail.barcode) + '.jpg'), 'onerror':("if (this.src != 'images/sac.png') this.src = 'images/sac.png';"), "class": ('image') }, {"src":true,"onerror":true}));
+buf.push('/><div class="detail"><div class="lab">');
+var __val__ = receiptDetail.name
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</div><div title="Heure de votre passage en caisse." class="col-xs-5 box">');
-var __val__ = dt.toString('H:mm')
+buf.push('</div><p class="vol">');
+var __val__ = receiptDetail.quantityLabel
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</div></div></div><div class="col-md-6"><div class="row"><div title="Nombre d\'articles." class="col-xs-5 box">');
-var __val__ = receipt.articlesCount
+buf.push('</p><div class="price">');
+var __val__ = receiptDetail.price.toFixed(2)
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('&nbsp; articles</div><div title="Total du ticket de caisse." class="col-xs-5 box price">');
-var __val__ = receipt.total.toFixed(2)
-buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('€</div><div title="Cliquez pour plus de détails" class="col-xs-2 box toggle"><img src="img/plus.png" class="toggle-btn"/></div></div></div></div><div class="sections"></div>');
+buf.push('&nbsp;€</div></div></div></div></div>');
 }
 return buf.join("");
 };
@@ -4404,6 +4453,33 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
+buf.push('<div class="sectionhead"><img');
+buf.push(attrs({ 'src':("images/Sections/" + (section.section) + ".png"), 'onerror':("if (this.src != 'images/Sections/vide.png') this.src = 'images/Sections/vide.png';"), 'title':("" + (section.sectionLabel) + ""), "class": ('sectionlogo') }, {"src":true,"onerror":true,"title":true}));
+buf.push('/></div><div class="sectioninner"><div class="row section">');
+ for (var i2 in section.receiptDetails) {
+ var receiptDetail = section.receiptDetails[i2];
+{
+ if (receiptDetail.amount >= 1)
+{
+ for (var i=0; i<receiptDetail.amount; i++)
+{
+buf.push('<div class="col-md-6"><div class="row"><div class="receiptdetail"><img');
+buf.push(attrs({ 'src':('http://drive.intermarche.com/ressources/images/produit/fiche/0' + (receiptDetail.barcode) + '.jpg'), 'onerror':("if (this.src != 'images/sac.png') this.src = 'images/sac.png';"), "class": ('image') }, {"src":true,"onerror":true}));
+buf.push('/><div class="detail"><div class="lab">');
+var __val__ = receiptDetail.name
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</div><p class="vol">');
+var __val__ = receiptDetail.quantityLabel
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</p><div class="price">');
+var __val__ = receiptDetail.price.toFixed(2)
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('&nbsp;€</div></div></div></div></div>');
+}
+}
+}
+ }
+buf.push('</div></div>');
 }
 return buf.join("");
 };

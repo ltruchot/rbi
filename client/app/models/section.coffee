@@ -1,0 +1,1 @@
+module.exports = class Section extends Backbone.Model

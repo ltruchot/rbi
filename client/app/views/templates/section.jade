@@ -1,11 +1,11 @@
-//- .sectionhead
-//-     img.sectionlogo(src="img/Sections/#{section.section}.png", onerror="if (this.src != 'img/Sections/vide.png') this.src = 'img/Sections/vide.png';", title="#{section.sectionLabel}")
+.sectionhead
+  img.sectionlogo(src="images/Sections/#{section.section}.png", onerror="if (this.src != 'images/Sections/vide.png') this.src = 'images/Sections/vide.png';", title="#{section.sectionLabel}")
 
-//- .sectioninner
-//-     .row.section
-//-         - for (var i2 in section.receiptDetails) {
-//-         -   var receiptDetail = section.receiptDetails[i2];
-//-             - if (receiptDetail.amount >= 1)
-//-                 - for (var i=0; i<receiptDetail.amount; i++)
-//-                     include receiptdetail
-//-         - }
+.sectioninner
+  .row.section
+    - for (var i2 in section.receiptDetails) {
+    - var receiptDetail = section.receiptDetails[i2];
+      - if (receiptDetail.amount >= 1)
+        - for (var i=0; i<receiptDetail.amount; i++)
+            include receiptdetail
+    - }
