@@ -186,11 +186,6 @@ module.exports = class RegularOpStatementView extends BaseView
     @checkButtonAddState()
     view = @
 
-    #client or server search ?
-    # isClientSearch = false
-    # if params.clientSearch
-    #     isClientSearch = true
-
 
     @model = window.rbiActiveData.bankAccount
 
