@@ -47,6 +47,9 @@ module.exports =
             grey : "#999999"
 
         window.rbiIcons =
+            evolution:
+                encoded: "&#57496;"
+                decoded: ""
             plus:
                 encoded: "&#57602;"
                 decoded: ""

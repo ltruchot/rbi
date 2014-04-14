@@ -172,7 +172,7 @@ module.exports = class ForcastBudgetView extends BaseView
 
     #prepare currently modified budget
     #realBudget = forecastBudget + @variableOperationsTotal
-    realBudget = realBudget - realExpenses - @variableOperationsTotal
+    realBudget = (realBudget - realExpenses) + @variableOperationsTotal
 
     #display budgets
     $("#account-budget-amount").html roundedForecastBudget.money()

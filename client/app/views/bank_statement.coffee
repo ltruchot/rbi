@@ -65,37 +65,62 @@ module.exports = class BankStatementView extends BaseView
                 data: @data
                 success: (operations) =>
                     if operations
-                        window.rbiActiveData.currentOperations = {}
-                        finalOperations = []
-                        for operation, index in operations
+                        $.ajax
+                            type: "GET"
+                            url: "rbifixedcost"
+                            success: (fixedCosts) =>
+                                window.rbiActiveData.currentOperations = {}
+                                finalOperations = []
+                                for operation, index in operations
 
-                            if @enhancedLinked
-                                allReceipts = window.views.enhancedReportView.allReceipts
-                                operation.hasReceipt = false
-                                for model in allReceipts.models
-                                    id = model.get "id"
-                                    amount = Math.abs(model.get "amount")
-                                    date = moment(model.get "timestamp")
-                                    minDate = moment(moment(operation.date).subtract("days", 3))
-                                    maxDate = moment(moment(operation.date).add("days", 3))
-                                    if (Math.abs(operation.amount) is amount) and (minDate < date) and (maxDate > date)
-                                        operation.hasReceipt = true
-                                        operation.receiptModel = model
-                                        break
+                                    if @enhancedLinked
+                                        allReceipts = window.views.enhancedReportView.allReceipts
+                                        operation.hasReceipt = false
+                                        for model in allReceipts.models
+                                            id = model.get "id"
+                                            amount = Math.abs(model.get "amount")
+                                            date = moment(model.get "timestamp")
+                                            minDate = moment(moment(operation.date).subtract("days", 3))
+                                            maxDate = moment(moment(operation.date).add("days", 3))
+                                            if (Math.abs(operation.amount) is amount) and (minDate < date) and (maxDate > date)
+                                                operation.hasReceipt = true
+                                                operation.receiptModel = model
+                                                break
 
-                                if operation.hasReceipt
-                                    finalOperations.push operation
-                                    window.rbiActiveData.currentOperations[operation.id] = operation
-                            else
-                                finalOperations.push operation
-                                window.rbiActiveData.currentOperations[operation.id] = operation
+                                        if operation.hasReceipt
+                                            finalOperations.push operation
+                                            window.rbiActiveData.currentOperations[operation.id] = operation
 
-                        if callback?
-                            callback window.rbiActiveData.currentOperations
-                        window.collections.operations.reset finalOperations
-                        window.collections.operations.setComparator "date"
-                        window.collections.operations.sort()
-                        view.addAll()
+                                    else if (@mapLinked isnt true) and (@enhancedLinked isnt true)
+                                        operation.isRegularOperation = false
+                                        if operation.amount < 0
+                                            for fixedCost in fixedCosts
+                                                if $.inArray(operation.id, fixedCost.idTable) >= 0
+                                                    operation.isRegularOperation = true
+                                                    operation.fixedCostId = fixedCost.id
+                                                    break
+
+                                        #adjustement for fixed/variable cost search
+                                        operationRemoved = false
+                                        if displayFixedCosts and (not operation.isRegularOperation)
+                                            operationRemoved = true
+                                        else if displayVariableCosts and (operation.isRegularOperation or (operation.amount > 0))
+                                            operationRemoved = true
+                                        if not operationRemoved
+                                            finalOperations.push operation
+                                            window.rbiActiveData.currentOperations[operation.id] = operation
+                                    else
+                                        finalOperations.push operation
+                                        window.rbiActiveData.currentOperations[operation.id] = operation
+
+                                if callback?
+                                    callback window.rbiActiveData.currentOperations
+                                window.collections.operations.reset finalOperations
+                                window.collections.operations.setComparator "date"
+                                window.collections.operations.sort()
+                                view.addAll()
+                            error: (err) ->
+                                console.log "getting fixed cost failed."
 
                     else
                         window.collections.operations.reset()

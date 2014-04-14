@@ -136,6 +136,10 @@ module.exports = {
       grey: "#999999"
     };
     window.rbiIcons = {
+      evolution: {
+        encoded: "&#57496;",
+        decoded: ""
+      },
       plus: {
         encoded: "&#57602;",
         decoded: ""
@@ -1359,45 +1363,76 @@ module.exports = BankStatementView = (function(_super) {
         url: "bankoperations/byDate",
         data: this.data,
         success: function(operations) {
-          var allReceipts, amount, date, finalOperations, id, index, maxDate, minDate, model, operation, _i, _j, _len, _len1, _ref;
           if (operations) {
-            window.rbiActiveData.currentOperations = {};
-            finalOperations = [];
-            for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
-              operation = operations[index];
-              if (_this.enhancedLinked) {
-                allReceipts = window.views.enhancedReportView.allReceipts;
-                operation.hasReceipt = false;
-                _ref = allReceipts.models;
-                for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-                  model = _ref[_j];
-                  id = model.get("id");
-                  amount = Math.abs(model.get("amount"));
-                  date = moment(model.get("timestamp"));
-                  minDate = moment(moment(operation.date).subtract("days", 3));
-                  maxDate = moment(moment(operation.date).add("days", 3));
-                  if ((Math.abs(operation.amount) === amount) && (minDate < date) && (maxDate > date)) {
-                    operation.hasReceipt = true;
-                    operation.receiptModel = model;
-                    break;
+            return $.ajax({
+              type: "GET",
+              url: "rbifixedcost",
+              success: function(fixedCosts) {
+                var allReceipts, amount, date, finalOperations, fixedCost, id, index, maxDate, minDate, model, operation, operationRemoved, _i, _j, _k, _len, _len1, _len2, _ref;
+                window.rbiActiveData.currentOperations = {};
+                finalOperations = [];
+                for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
+                  operation = operations[index];
+                  if (_this.enhancedLinked) {
+                    allReceipts = window.views.enhancedReportView.allReceipts;
+                    operation.hasReceipt = false;
+                    _ref = allReceipts.models;
+                    for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+                      model = _ref[_j];
+                      id = model.get("id");
+                      amount = Math.abs(model.get("amount"));
+                      date = moment(model.get("timestamp"));
+                      minDate = moment(moment(operation.date).subtract("days", 3));
+                      maxDate = moment(moment(operation.date).add("days", 3));
+                      if ((Math.abs(operation.amount) === amount) && (minDate < date) && (maxDate > date)) {
+                        operation.hasReceipt = true;
+                        operation.receiptModel = model;
+                        break;
+                      }
+                    }
+                    if (operation.hasReceipt) {
+                      finalOperations.push(operation);
+                      window.rbiActiveData.currentOperations[operation.id] = operation;
+                    }
+                  } else if ((_this.mapLinked !== true) && (_this.enhancedLinked !== true)) {
+                    operation.isRegularOperation = false;
+                    if (operation.amount < 0) {
+                      for (_k = 0, _len2 = fixedCosts.length; _k < _len2; _k++) {
+                        fixedCost = fixedCosts[_k];
+                        if ($.inArray(operation.id, fixedCost.idTable) >= 0) {
+                          operation.isRegularOperation = true;
+                          operation.fixedCostId = fixedCost.id;
+                          break;
+                        }
+                      }
+                    }
+                    operationRemoved = false;
+                    if (displayFixedCosts && (!operation.isRegularOperation)) {
+                      operationRemoved = true;
+                    } else if (displayVariableCosts && (operation.isRegularOperation || (operation.amount > 0))) {
+                      operationRemoved = true;
+                    }
+                    if (!operationRemoved) {
+                      finalOperations.push(operation);
+                      window.rbiActiveData.currentOperations[operation.id] = operation;
+                    }
+                  } else {
+                    finalOperations.push(operation);
+                    window.rbiActiveData.currentOperations[operation.id] = operation;
                   }
                 }
-                if (operation.hasReceipt) {
-                  finalOperations.push(operation);
-                  window.rbiActiveData.currentOperations[operation.id] = operation;
+                if (callback != null) {
+                  callback(window.rbiActiveData.currentOperations);
                 }
-              } else {
-                finalOperations.push(operation);
-                window.rbiActiveData.currentOperations[operation.id] = operation;
+                window.collections.operations.reset(finalOperations);
+                window.collections.operations.setComparator("date");
+                window.collections.operations.sort();
+                return view.addAll();
+              },
+              error: function(err) {
+                return console.log("getting fixed cost failed.");
               }
-            }
-            if (callback != null) {
-              callback(window.rbiActiveData.currentOperations);
-            }
-            window.collections.operations.reset(finalOperations);
-            window.collections.operations.setComparator("date");
-            window.collections.operations.sort();
-            return view.addAll();
+            });
           } else {
             return window.collections.operations.reset();
           }
@@ -2472,7 +2507,7 @@ module.exports = ForcastBudgetView = (function(_super) {
     percentage = percentage <= 100 ? percentage : 100;
     forecastBudget = currentBudget - regularExpenses;
     roundedForecastBudget = Math.floor((forecastBudget + 5) / 10) * 10;
-    realBudget = realBudget - realExpenses - this.variableOperationsTotal;
+    realBudget = (realBudget - realExpenses) + this.variableOperationsTotal;
     $("#account-budget-amount").html(roundedForecastBudget.money());
     $('#current-budget-chart-debit').html(realBudget.money());
     $('#current-budget-chart').attr('data-percent', percentage);
@@ -4372,7 +4407,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<ul><li class="menu-item active"><span class="current-arrow"></span><a href="#analyse-mensuelle"><div class="icon"><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span></div>Analyse mensuelle</a></li><li class="menu-item"><a href="#budget-previsionnel"><div class="icon"><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span></div>Budget prévisionnel</a></li><li class="menu-item"><a href="#releve-augmente"><div class="icon"><span aria-hidden="true" data-icon="&#57602;" class="fs1"></span></div>Relevé augmenté</a></li><li class="menu-item"><a href="#releve-geolocalise"><div class="icon"><span aria-hidden="true" data-icon="&#57538;" class="fs1"></span></div>Relevé géolocalisé</a></li><li class="menu-item"><a href="#parametres"><div class="icon"><span aria-hidden="true" data-icon="&#57486;" class="fs1"></span></div>Paramètres</a></li></ul>');
+buf.push('<ul><li class="menu-item active"><span class="current-arrow"></span><a href="#analyse-mensuelle"><div class="icon"><span aria-hidden="true" data-icon="&#57496;" class="fs1"></span></div>Analyse mensuelle</a></li><li class="menu-item"><a href="#budget-previsionnel"><div class="icon"><span aria-hidden="true" data-icon="&#57802;" class="fs1"></span></div>Budget prévisionnel</a></li><li class="menu-item"><a href="#releve-augmente"><div class="icon"><span aria-hidden="true" data-icon="&#57602;" class="fs1"></span></div>Relevé augmenté</a></li><li class="menu-item"><a href="#releve-geolocalise"><div class="icon"><span aria-hidden="true" data-icon="&#57538;" class="fs1"></span></div>Relevé géolocalisé</a></li><li class="menu-item"><a href="#parametres"><div class="icon"><span aria-hidden="true" data-icon="&#57486;" class="fs1"></span></div>Paramètres</a></li></ul>');
 }
 return buf.join("");
 };
@@ -4384,7 +4419,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><div class="interface-box-content"><table id="monthly-report"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2" class="search-panel-td1"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="credits-search-btn" class="search-btn green1"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1 big-size-icon"></span><span id="credits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Crédits</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="debits-search-btn" class="search-btn grey2"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1 big-size-icon"></span><span id="debits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Débits</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="search-panel-td2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="fixed-cost-search-btn" class="search-btn grey3"><span aria-hidden="true" data-icon="&#57481;" class="pull-left fs1 big-size-icon"></span><span id="fixed-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Frais fixes</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="variable-cost-search-btn" class="search-btn grey4"><span aria-hidden="true" data-icon="&#57393;" class="pull-left fs1 big-size-icon"></span><span id="variable-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Autre dépenses</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="google-pie-chart"><div id="pie_chart" style="min-height:180px;margin:auto;">&nbsp;</div><br/><br/></td></tr></table></div>');
+buf.push('<h1><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><div class="interface-box-content"><table id="monthly-report"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2" class="search-panel-td1"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="credits-search-btn" title="entrées d\'argent ce mois" class="search-btn green1"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1 big-size-icon"></span><span id="credits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Crédits</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="debits-search-btn" title="toutes les dépenses ce mois" class="search-btn grey2"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1 big-size-icon"></span><span id="debits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Débits</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="search-panel-td2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="fixed-cost-search-btn" title="dépenses parmi vos opérations régulières ce mois" class="search-btn grey3"><span aria-hidden="true" data-icon="&#57481;" class="pull-left fs1 big-size-icon"></span><span id="fixed-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Frais fixes</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="variable-cost-search-btn" title="dépenses hors opérations régulières ce mois" class="search-btn grey4"><span aria-hidden="true" data-icon="&#57393;" class="pull-left fs1 big-size-icon"></span><span id="variable-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Autre dépenses</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="google-pie-chart"><div id="pie_chart" style="min-height:180px;margin:auto;">&nbsp;</div><br/><br/></td></tr></table></div>');
 }
 return buf.join("");
 };
