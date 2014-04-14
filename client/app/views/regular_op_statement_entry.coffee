@@ -51,8 +51,8 @@ module.exports = class RegularOpStatementEntryView extends BaseView
     minAmount = (currentAmount - modifier).toFixed(2)
     maxAmount = (currentAmount + modifier).toFixed(2)
     $("input#search-regular-operations").val title
-    if minAmount isnt 0 then $("#search-min-amount").val minAmount
-    if maxAmount isnt 0 then $("#search-max-amount").val maxAmount
+    if minAmount isnt 0 then $("#search-min-amount").val minAmount.toString()
+    if maxAmount isnt 0 then $("#search-max-amount").val maxAmount.toString()
     $("input#search-regular-operations").keyup()
 
   destroyPopupFixedCost: (event) ->

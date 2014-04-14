@@ -30,14 +30,12 @@ module.exports = class RegularOpStatementView extends BaseView
   constructor: (@el) ->
     super()
 
-  # initialize: ->
-  #     @listenTo window.activeObjects, 'changeActiveAccount', @reload
+  initialize: ->
+      @listenTo window.activeObjects, 'changeActiveAccount', @reload
 
 
   render: ->
     @$el.html require "./templates/regular_op_statement_empty"
-      # $("#layout-2col-column-right").niceScroll()
-      # $("#layout-2col-column-right").getNiceScroll().onResize()
     @
 
   emptyAllFields: ->
@@ -69,13 +67,30 @@ module.exports = class RegularOpStatementView extends BaseView
         uniquery += separator + rules.pattern
         minAmount = rules.minAmount or "NEGATIVE_INFINITY"
         maxAmount = rules.maxAmount or "POSITIVE_INFINITY"
-        uniquery += separator + minAmount
-        uniquery += separator + maxAmount
+        uniquery += separator + minAmount.toString()
+        uniquery += separator + maxAmount.toString()
     return uniquery
 
-  addToRegularOperation: ->
-    rules = @getCurrentRules() or null
+  deserializeUniquery: (uniquery)->
+    queryParts = []
+    rules = {}
 
+    if uniquery? and ((typeof uniquery) is "string")
+      queryParts = uniquery.split("(#|#)")
+
+    rules.accountNumber = queryParts[0] or ""
+    rules.pattern = queryParts[1] or ""
+    rules.minAmount = if (queryParts[2]? and (queryParts[2] isnt "NEGATIVE_INFINITY")) then parseFloat(queryParts[2]).toFixed(2) else null
+    rules.maxAmount = if (queryParts[3]? and (queryParts[3] isnt "POSITIVE_INFINITY")) then parseFloat(queryParts[3]).toFixed(2) else null
+
+    return rules
+
+  addToRegularOperation: (e, settedRules, callback) ->
+    rules = settedRules or @getCurrentRules() or null
+    if typeof(rules.minAmount) is Number
+      rules.minAmount = parseFloat(rules.minAmount).toFixed 2
+    if typeof(rules.maxAmount) is Number
+      rules.maxAmount = parseFloat(rules.maxAmount).toFixed 2
     #get or set needed data
     if rules?
       data =
@@ -105,7 +120,7 @@ module.exports = class RegularOpStatementView extends BaseView
               type: "standard"
               accountNumber: rules.accountNumber
               idTable: []
-              uniquery: @serializeUniquery rules
+              uniquery: @serializeUniquery(rules)
               isBudgetPart: true
 
             #add operations to id table
@@ -117,6 +132,8 @@ module.exports = class RegularOpStatementView extends BaseView
               $('#search-regular-operations').keyup()
               window.views.forecastBudgetView.newRegularOperationsChecked = false
               window.views.forecastBudgetView.displayRegularOperations rules.accountNumber
+            if callback?
+              callback()
           # else
           #  console.log "Operation(s) not found"
         error: (err) ->
@@ -136,9 +153,6 @@ module.exports = class RegularOpStatementView extends BaseView
       data: fixedCost
 
       success: (objects) =>
-        #console.log "saved !"
-        # console.log fixedCosts
-        #console.log "fixed cost sent successfully!"
 
         #refresh monthly analysis
         for id in fixedCost.idTable
@@ -161,6 +175,11 @@ module.exports = class RegularOpStatementView extends BaseView
         buttonAdd.attr "disabled", false
       else
         buttonAdd.attr "disabled", true
+
+  saveMostRecentOperationChecked: (date) ->
+    window.rbiActiveData.userConfiguration.save
+      mostRecentOperationDate: date or ""
+
 
   reload: (params, callback) ->
 
@@ -191,54 +210,69 @@ module.exports = class RegularOpStatementView extends BaseView
         type: "POST"
         url: "bankoperations/byDate"
         data: @data
-        success: (operations) ->
+        success: (operations) =>
+          window.rbiActiveData.userConfiguration.fetch
+            success: (currentConfig) =>
+              currentRegisteredDate = currentConfig.get("mostRecentOperationDate") or null
+              if currentRegisteredDate? and (currentRegisteredDate isnt "")
+                @mostRecentOperationDate = moment(currentRegisteredDate)
+              else
+                @mostRecentOperationDate = null
 
-          if operations?
-            $.ajax
-              type: "GET"
-              url: "rbifixedcost"
-              success: (fixedCosts) =>
-                #console.log "getting fixed cost success."
-                window.rbiActiveData.currentOperations = {}
-                finalOperations = []
-                for operation, index in operations
-                  operation.isRegularOperation = false
-                  for fixedCost in fixedCosts
-                    if $.inArray(operation.id, fixedCost.idTable) >= 0
-                      operation.isRegularOperation = true
-                      operation.fixedCostId = fixedCost.id
-                      break
 
-                  #adjustement for fixed/variable cost search
-                  operationRemoved = false
-                  # if (displayFixedCosts and (not operation.isRegularOperation))
-                  #   operationRemoved = true
-                  # else if (displayVariableCosts and (operation.isRegularOperation or (operation.amount > 0)))
-                  #   operationRemoved = true
-                  if not operationRemoved
-                    finalOperations.push operation
-                    window.rbiActiveData.currentOperations[operation.id] = operation
+              if operations?
+                $.ajax
+                  type: "GET"
+                  url: "rbifixedcost"
+                  success: (fixedCosts) =>
+                    #console.log "getting fixed cost success."
+                    window.rbiActiveData.currentOperations = {}
+                    finalOperations = []
+                    for operation, index in operations
+                      operation.isRegularOperation = false
+                      for fixedCost in fixedCosts
+                        if $.inArray(operation.id, fixedCost.idTable) >= 0
+                          operation.isRegularOperation = true
+                          operation.fixedCostId = fixedCost.id
+                          break
 
-                if callback?
-                  callback window.rbiActiveData.currentOperations
-                window.collections.operations.reset finalOperations
-                window.collections.operations.setComparator "date"
-                window.collections.operations.sort()
-                view.addAll()
+                      #adjustement for fixed/variable cost search
+                      # operationRemoved = false
+                      # if (displayFixedCosts and (not operation.isRegularOperation))
+                      #   operationRemoved = true
+                      # else if (displayVariableCosts and (operation.isRegularOperation or (operation.amount > 0)))
+                      #   operationRemoved = true
+                      #if not operationRemoved
+                      finalOperations.push operation
+                      window.rbiActiveData.currentOperations[operation.id] = operation
 
-                #display alert about already existing regular operation
-                isSearchFieldEmpty = $("#search-regular-operations").val() is ""
-                if view.alreadyRegular and (not isSearchFieldEmpty)
-                  $("#regular-op-light-info").hide()
-                  $("#regular-op-exists").show()
-                else
-                  $("#regular-op-exists").hide()
-                  $("#regular-op-light-info").show()
+                    if callback?
+                      callback window.rbiActiveData.currentOperations
+                    window.collections.operations.reset finalOperations
+                    window.collections.operations.setComparator "date"
+                    window.collections.operations.sort()
+                    lastOperation = moment(window.collections.operations.models[0].get "date") or null
+                    isRecentOperationEmpty = (not @mostRecentOperationDate?)
+                    isRecentOperationOutdated = (moment(@mostRecentOperationDate).format() < moment(lastOperation).format())
+                    if lastOperation? and (fixedCosts.length > 0) and (isRecentOperationEmpty or isRecentOperationOutdated)
+                      for oldFixedCost, index in fixedCosts
+                        @addToRegularOperation null, @deserializeUniquery(oldFixedCost.uniquery)
+                      @saveMostRecentOperationChecked moment(lastOperation).format()
+                    view.addAll()
 
-              error: (err) ->
-                console.log "getting fixed cost failed."
-          else
-            window.collections.operations.reset()
+                    #display alert about already existing regular operation
+                    isSearchFieldEmpty = $("#search-regular-operations").val() is ""
+                    if view.alreadyRegular and (not isSearchFieldEmpty)
+                      $("#regular-op-light-info").hide()
+                      $("#regular-op-exists").show()
+                    else
+                      $("#regular-op-exists").hide()
+                      $("#regular-op-light-info").show()
+
+                  error: (err) ->
+                    console.log "getting fixed cost failed."
+              else
+                window.collections.operations.reset()
 
         error: (err) ->
           console.log "there was an error"
@@ -246,9 +280,6 @@ module.exports = class RegularOpStatementView extends BaseView
             callback null
 
   updateFilters: ->
-    # console.log '----------------------'
-    # console.log 'update filter params :'
-    # console.log @params
 
     # get elements
     jqAmountMin = if ($("#search-min-amount").length is 1) then ($("#search-min-amount").val()).replace(",",".") else null
@@ -264,7 +295,7 @@ module.exports = class RegularOpStatementView extends BaseView
 
     # check that there are things to send
     unless dateFrom or dateTo
-      #console.log "Empty query"
+
       @send = false
       window.collections.operations.reset()
       return

@@ -17,9 +17,11 @@ RbiFixedCost.set = (hash, callback) ->
         return callback err if err
         alreadyExist = false
         for cost in fixedCosts
+            console.log cost.uniquery + " = " + hash.uniquery
             if cost.uniquery? and cost.uniquery isnt "" and cost.uniquery is hash.uniquery
                 alreadyExist = true
                 cost.updateAttributes hash, callback
+        console.log alreadyExist
         if not alreadyExist
             RbiFixedCost.create hash, callback
 

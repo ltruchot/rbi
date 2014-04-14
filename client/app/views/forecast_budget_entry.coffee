@@ -71,8 +71,8 @@ module.exports = class ForecastBudgetEntryView extends BaseView
 
   modifyRegularOperation: (currentEvent) ->
     $("#search-regular-operations").val @rules.queryPattern
-    $("#search-min-amount").val @rules.queryMin
-    $("#search-max-amount").val @rules.queryMax
+    if (@rules.queryMax? and (@rules.queryMax isnt "")) then $("#search-min-amount").val parseFloat(@rules.queryMin).toFixed(2)
+    if (@rules.queryMax? and (@rules.queryMax isnt "")) then $("#search-max-amount").val parseFloat(@rules.queryMax).toFixed(2)
     $("#search-regular-operations").keyup()
 
   deserializeUniquery: (uniquery)->

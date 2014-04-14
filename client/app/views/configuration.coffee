@@ -86,63 +86,24 @@ module.exports = class ConfigurationView extends BaseView
       error: (err) ->
         console.log "getting fixed cost failed."
 
-
-  # setBudget: (event, view) ->
-  #   budgetValue = 0
-  #   jqBudgetInput = $(event.currentTarget)
-  #   budgetValue = jqBudgetInput.val()
-  #   if not /^(\d+(?:[\.\,]\d{2})?)$/.test(budgetValue)
-  #     $('.info-user').css('color', window.rbiColors.red).html 'La valeur du budget semble incomplète ou érronée&nbsp;'
-  #   else
-  #     $('.info-user').css('color', 'inherit').html 'Les modifications sont prises en compte instantanément&nbsp;'
-  #     budgetValue = parseFloat(budgetValue.replace(" ", "").replace(",", "."))
-  #     if isNaN budgetValue
-  #       budgetValue = 0
-  #     if budgetValue > 0
-  #       accountNumber = window.rbiActiveData.accountNumber
-  #       window.rbiActiveData.budgetByAccount[accountNumber] = budgetValue
-  #       window.rbiActiveData.userConfiguration.save budgetByAccount: window.rbiActiveData.budgetByAccount,
-  #         success:=>
-  #           callerId = jqBudgetInput.attr('id')
-  #           if view
-  #             view.reloadBudget callerId
-  #           else
-  #             @reloadBudget callerId
-  #         error: ->
-  #           console.log 'Error: budget configuration not saved'
-
-
-
-  # afterRender: ->
-
-  #   #patch chrome and IE for click on select > option
-  #   # $(@elAccounts).change ->
-  #   #   this.options[this.selectedIndex].click()
-
-  #   #general widget budget keyup
-  #   view = @
-  #   $('#account-budget-amount').keyup (event) ->
-  #     view.setBudget event, view
-
   render: ->
+
     window.views.appView.cleanBankStatement()
-    # lay down the template
     super()
 
     #check current configuration
     window.rbiActiveData.userConfiguration.fetch
       success: (currentConfig) =>
 
-        #prepare chosen account number and budget
+        #prepare chosen account number
         accountNumber = currentConfig.get('accountNumber') or ""
         if accountNumber? and accountNumber isnt ""
           window.rbiActiveData.accountNumber = accountNumber
-          # budgetByAccount = currentConfig.get('budgetByAccount') or {}
-          # window.rbiActiveData.budgetByAccount = budgetByAccount
-          # @reloadBudget()
+
         else
+
+          #stop loading process and display configuration interface
           if window.views.appView.isLoading
-            #window.app.router.navigate 'parametres', {trigger: true}
             window.views.appView.displayInterfaceView()
 
         # prepare the banks list
@@ -150,14 +111,18 @@ module.exports = class ConfigurationView extends BaseView
         treatment = (bank, callback) ->
           viewBank = new ConfigurationBankView bank
           view.subViews.push viewBank
+
           # load loading placeholder
           $(view.elAccounts).append viewBank.el
+
           # get bank accounts
           bank.accounts.fetch
             success: (col) ->
+
               # return the number of accounts
               callback null, col.length
               viewBank.render() if col.length > 0
+
             error: (col, err, opts) ->
               callback null, col.length
               viewBank.$el.html ""
@@ -173,9 +138,6 @@ module.exports = class ConfigurationView extends BaseView
             if @accounts == 0
               $(view.elAccounts).prepend require "./templates/configuration_bank_empty"
 
-            #no account number
-            # if accountNumber is ""
-            #   $('#configuration-btn').click()
 
       error: ->
         console.log 'error during user configuration fetching process'

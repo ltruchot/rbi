@@ -51,6 +51,15 @@
     },
     "RbiFixedCost": {
       "description": "Afin de sauvegarder les règles et données liées à vos frais fixes."
+    },
+    "GeolocationLog" : {
+      "description": "Afin de produire des marqueurs de localisation sur la carte du relevé géolocalisé."
+    },
+    "Receipt": {
+      "description": "Visualiser la liste de vos tickets de caisse."
+    },
+    "ReceiptDetail": {
+      "description": "Visualiser les lignes de vos tickets de caisse."
     }
   },
   "cozy-displayName": "Mon Relevé Malin"

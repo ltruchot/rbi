@@ -195,7 +195,7 @@ module.exports = class BankStatementView extends BaseView
         if (window.collections.operations.models.length is 0) and (not @enhancedLinked)
             $("#table-operations").append $('<tr><td>Aucune opération ne correspond à ces critères.</td></tr>')
             return
-        else if (window.collections.operations.models.length is 0) and  @enhancedLinked
+        else if (window.collections.operations.models.length is 0) and @enhancedLinked
             $("#table-operations").append $('<tr><td>Aucune opération ne semble liée à un ticket intermarché.</td></tr>')
             return
 

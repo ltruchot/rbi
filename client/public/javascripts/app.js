@@ -2610,8 +2610,12 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
 
   ForecastBudgetEntryView.prototype.modifyRegularOperation = function(currentEvent) {
     $("#search-regular-operations").val(this.rules.queryPattern);
-    $("#search-min-amount").val(this.rules.queryMin);
-    $("#search-max-amount").val(this.rules.queryMax);
+    if ((this.rules.queryMax != null) && (this.rules.queryMax !== "")) {
+      $("#search-min-amount").val(parseFloat(this.rules.queryMin).toFixed(2));
+    }
+    if ((this.rules.queryMax != null) && (this.rules.queryMax !== "")) {
+      $("#search-max-amount").val(parseFloat(this.rules.queryMax).toFixed(2));
+    }
     return $("#search-regular-operations").keyup();
   };
 
@@ -3611,6 +3615,10 @@ module.exports = RegularOpStatementView = (function(_super) {
     RegularOpStatementView.__super__.constructor.call(this);
   }
 
+  RegularOpStatementView.prototype.initialize = function() {
+    return this.listenTo(window.activeObjects, 'changeActiveAccount', this.reload);
+  };
+
   RegularOpStatementView.prototype.render = function() {
     this.$el.html(require("./templates/regular_op_statement_empty"));
     return this;
@@ -3653,17 +3661,37 @@ module.exports = RegularOpStatementView = (function(_super) {
         uniquery += separator + rules.pattern;
         minAmount = rules.minAmount || "NEGATIVE_INFINITY";
         maxAmount = rules.maxAmount || "POSITIVE_INFINITY";
-        uniquery += separator + minAmount;
-        uniquery += separator + maxAmount;
+        uniquery += separator + minAmount.toString();
+        uniquery += separator + maxAmount.toString();
       }
     }
     return uniquery;
   };
 
-  RegularOpStatementView.prototype.addToRegularOperation = function() {
+  RegularOpStatementView.prototype.deserializeUniquery = function(uniquery) {
+    var queryParts, rules;
+    queryParts = [];
+    rules = {};
+    if ((uniquery != null) && ((typeof uniquery) === "string")) {
+      queryParts = uniquery.split("(#|#)");
+    }
+    rules.accountNumber = queryParts[0] || "";
+    rules.pattern = queryParts[1] || "";
+    rules.minAmount = (queryParts[2] != null) && (queryParts[2] !== "NEGATIVE_INFINITY") ? parseFloat(queryParts[2]).toFixed(2) : null;
+    rules.maxAmount = (queryParts[3] != null) && (queryParts[3] !== "POSITIVE_INFINITY") ? parseFloat(queryParts[3]).toFixed(2) : null;
+    return rules;
+  };
+
+  RegularOpStatementView.prototype.addToRegularOperation = function(e, settedRules, callback) {
     var data, rules,
       _this = this;
-    rules = this.getCurrentRules() || null;
+    rules = settedRules || this.getCurrentRules() || null;
+    if (typeof rules.minAmount === Number) {
+      rules.minAmount = parseFloat(rules.minAmount).toFixed(2);
+    }
+    if (typeof rules.maxAmount === Number) {
+      rules.maxAmount = parseFloat(rules.maxAmount).toFixed(2);
+    }
     if (rules != null) {
       data = {
         accounts: [rules.accountNumber],
@@ -3690,11 +3718,14 @@ module.exports = RegularOpStatementView = (function(_super) {
               object = objects[_i];
               fixedCostToRegister.idTable.push(object.id);
             }
-            return _this.saveFixedCost(fixedCostToRegister, function() {
+            _this.saveFixedCost(fixedCostToRegister, function() {
               $('#search-regular-operations').keyup();
               window.views.forecastBudgetView.newRegularOperationsChecked = false;
               return window.views.forecastBudgetView.displayRegularOperations(rules.accountNumber);
             });
+            if (callback != null) {
+              return callback();
+            }
           }
         },
         error: function(err) {
@@ -3743,8 +3774,15 @@ module.exports = RegularOpStatementView = (function(_super) {
     }
   };
 
+  RegularOpStatementView.prototype.saveMostRecentOperationChecked = function(date) {
+    return window.rbiActiveData.userConfiguration.save({
+      mostRecentOperationDate: date || ""
+    });
+  };
+
   RegularOpStatementView.prototype.reload = function(params, callback) {
-    var displayFixedCosts, displayVariableCosts, view;
+    var displayFixedCosts, displayVariableCosts, view,
+      _this = this;
     this.checkButtonAddState();
     view = this;
     this.model = window.rbiActiveData.bankAccount;
@@ -3767,55 +3805,72 @@ module.exports = RegularOpStatementView = (function(_super) {
         url: "bankoperations/byDate",
         data: this.data,
         success: function(operations) {
-          var _this = this;
-          if (operations != null) {
-            return $.ajax({
-              type: "GET",
-              url: "rbifixedcost",
-              success: function(fixedCosts) {
-                var finalOperations, fixedCost, index, isSearchFieldEmpty, operation, operationRemoved, _i, _j, _len, _len1;
-                window.rbiActiveData.currentOperations = {};
-                finalOperations = [];
-                for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
-                  operation = operations[index];
-                  operation.isRegularOperation = false;
-                  for (_j = 0, _len1 = fixedCosts.length; _j < _len1; _j++) {
-                    fixedCost = fixedCosts[_j];
-                    if ($.inArray(operation.id, fixedCost.idTable) >= 0) {
-                      operation.isRegularOperation = true;
-                      operation.fixedCostId = fixedCost.id;
-                      break;
-                    }
-                  }
-                  operationRemoved = false;
-                  if (!operationRemoved) {
-                    finalOperations.push(operation);
-                    window.rbiActiveData.currentOperations[operation.id] = operation;
-                  }
-                }
-                if (callback != null) {
-                  callback(window.rbiActiveData.currentOperations);
-                }
-                window.collections.operations.reset(finalOperations);
-                window.collections.operations.setComparator("date");
-                window.collections.operations.sort();
-                view.addAll();
-                isSearchFieldEmpty = $("#search-regular-operations").val() === "";
-                if (view.alreadyRegular && (!isSearchFieldEmpty)) {
-                  $("#regular-op-light-info").hide();
-                  return $("#regular-op-exists").show();
-                } else {
-                  $("#regular-op-exists").hide();
-                  return $("#regular-op-light-info").show();
-                }
-              },
-              error: function(err) {
-                return console.log("getting fixed cost failed.");
+          return window.rbiActiveData.userConfiguration.fetch({
+            success: function(currentConfig) {
+              var currentRegisteredDate;
+              currentRegisteredDate = currentConfig.get("mostRecentOperationDate") || null;
+              if ((currentRegisteredDate != null) && (currentRegisteredDate !== "")) {
+                _this.mostRecentOperationDate = moment(currentRegisteredDate);
+              } else {
+                _this.mostRecentOperationDate = null;
               }
-            });
-          } else {
-            return window.collections.operations.reset();
-          }
+              if (operations != null) {
+                return $.ajax({
+                  type: "GET",
+                  url: "rbifixedcost",
+                  success: function(fixedCosts) {
+                    var finalOperations, fixedCost, index, isRecentOperationEmpty, isRecentOperationOutdated, isSearchFieldEmpty, lastOperation, oldFixedCost, operation, _i, _j, _k, _len, _len1, _len2;
+                    window.rbiActiveData.currentOperations = {};
+                    finalOperations = [];
+                    for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
+                      operation = operations[index];
+                      operation.isRegularOperation = false;
+                      for (_j = 0, _len1 = fixedCosts.length; _j < _len1; _j++) {
+                        fixedCost = fixedCosts[_j];
+                        if ($.inArray(operation.id, fixedCost.idTable) >= 0) {
+                          operation.isRegularOperation = true;
+                          operation.fixedCostId = fixedCost.id;
+                          break;
+                        }
+                      }
+                      finalOperations.push(operation);
+                      window.rbiActiveData.currentOperations[operation.id] = operation;
+                    }
+                    if (callback != null) {
+                      callback(window.rbiActiveData.currentOperations);
+                    }
+                    window.collections.operations.reset(finalOperations);
+                    window.collections.operations.setComparator("date");
+                    window.collections.operations.sort();
+                    lastOperation = moment(window.collections.operations.models[0].get("date")) || null;
+                    isRecentOperationEmpty = _this.mostRecentOperationDate == null;
+                    isRecentOperationOutdated = moment(_this.mostRecentOperationDate).format() < moment(lastOperation).format();
+                    if ((lastOperation != null) && (fixedCosts.length > 0) && (isRecentOperationEmpty || isRecentOperationOutdated)) {
+                      for (index = _k = 0, _len2 = fixedCosts.length; _k < _len2; index = ++_k) {
+                        oldFixedCost = fixedCosts[index];
+                        _this.addToRegularOperation(null, _this.deserializeUniquery(oldFixedCost.uniquery));
+                      }
+                      _this.saveMostRecentOperationChecked(moment(lastOperation).format());
+                    }
+                    view.addAll();
+                    isSearchFieldEmpty = $("#search-regular-operations").val() === "";
+                    if (view.alreadyRegular && (!isSearchFieldEmpty)) {
+                      $("#regular-op-light-info").hide();
+                      return $("#regular-op-exists").show();
+                    } else {
+                      $("#regular-op-exists").hide();
+                      return $("#regular-op-light-info").show();
+                    }
+                  },
+                  error: function(err) {
+                    return console.log("getting fixed cost failed.");
+                  }
+                });
+              } else {
+                return window.collections.operations.reset();
+              }
+            }
+          });
         },
         error: function(err) {
           console.log("there was an error");
@@ -3987,10 +4042,10 @@ module.exports = RegularOpStatementEntryView = (function(_super) {
     maxAmount = (currentAmount + modifier).toFixed(2);
     $("input#search-regular-operations").val(title);
     if (minAmount !== 0) {
-      $("#search-min-amount").val(minAmount);
+      $("#search-min-amount").val(minAmount.toString());
     }
     if (maxAmount !== 0) {
-      $("#search-max-amount").val(maxAmount);
+      $("#search-max-amount").val(maxAmount.toString());
     }
     return $("input#search-regular-operations").keyup();
   };
