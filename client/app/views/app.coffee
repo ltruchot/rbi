@@ -91,5 +91,13 @@ module.exports = class AppView extends BaseView
     $('#two-cols-box').show()
     @isLoading = false
 
+  cleanBankStatement: ->
+    window.views.monthlyAnalysisView.bankStatementView?.destroy()
+    window.views.enhancedReportView.bankStatementView?.destroy()
+    window.views.geolocatedReportView.bankStatementView?.destroy()
+    if $("#context-box").length is 0
+      $("#interface-box").after $('<div id="context-box"></div>')
+
+
 
 

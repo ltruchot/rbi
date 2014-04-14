@@ -12,11 +12,18 @@ module.exports = class GeolocatedReportView extends BaseView
 
   bounds: null
 
+  allMarkers: []
+
   constructor: (@model) ->
     super()
 
+
+
   render: ->
+    window.views.appView.cleanBankStatement()
     @bankStatementView = new BankStatementView $('#context-box')
+    @bankStatementView.mapLinked = true
+    @bankStatementView.render()
 
     # lay down the template
     super()
@@ -29,7 +36,6 @@ module.exports = class GeolocatedReportView extends BaseView
       amountTo: Number.POSITIVE_INFINITY
       dateFrom: moment(moment(now).subtract('y', 1)).format 'YYYY-MM-DD'
       dateTo: moment(now).format 'YYYY-MM-DD'
-    @bankStatementView.mapLinked = true
     @bankStatementView.reload bankStatementParams
 
   loadFirstDayMap: ->
@@ -40,7 +46,6 @@ module.exports = class GeolocatedReportView extends BaseView
       url: "geolocationlog/getMostRecent"
       success: (geolocationLog) =>
         if geolocationLog? and (typeof(geolocationLog) is "object") and geolocationLog.timestamp?
-          console.log geolocationLog
           @switchDay null, geolocationLog.timestamp
         else
           @$el.find(".geolocated-report-title").html 'Relevé Géolocalisé'
@@ -132,6 +137,14 @@ module.exports = class GeolocatedReportView extends BaseView
           @polyline = L.polyline polylineTable
           @bounds = @polyline.getBounds()
 
+        #remove previous markers
+        if @map? and @allMarkers? and (@allMarkers.length > 0)
+          for previousMarker in @allMarkers
+            @map.removeLayer previousMarker
+          @allMarkers = []
+
+
+
         if lastLocation?
           if (not @map?) or $("#msisdn-geolocation-map").html() is ""
             if $("#msisdn-geolocation-map").length is 1
@@ -163,8 +176,10 @@ module.exports = class GeolocatedReportView extends BaseView
                 message = "&Agrave cette adresse à <em>" + point.time + "</em>"
             else
               message = point.time
+            @allMarkers.push L.marker(point.location)
+            @allMarkers[@allMarkers.length - 1].setIcon(window.rbiIcons.marker).bindPopup(message)
+            @map.addLayer @allMarkers[@allMarkers.length - 1]
 
-            L.marker(point.location).setIcon(window.rbiIcons.marker).bindPopup(message).addTo @map
           if @bounds
             @map.fitBounds @bounds
 

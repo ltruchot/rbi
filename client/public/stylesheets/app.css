@@ -11137,6 +11137,10 @@ cursor not-allowed {
   position: relative;
   margin: 0 5px;
 }
+.green1 {
+  background-color: #dff0d8;
+  color: #333 !important;
+}
 .grey1 {
   background-color: #e0e0e0;
 }
@@ -11625,6 +11629,9 @@ cursor not-allowed {
   background: -ms-linear-gradient(top, #ececec 0%, #b2b2b2 100%);
   background: linear-gradient(top, #ececec 0%, #b2b2b2 100%);
 /* W3C */
+  border-top: 3px solid #49b6df;
+  border-bottom: 1px solid #49b6df;
+  margin-bottom: 10px;
 }
 .row.section {
   margin: 18px;

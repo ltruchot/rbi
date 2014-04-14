@@ -1267,6 +1267,22 @@ module.exports = AppView = (function(_super) {
     return this.isLoading = false;
   };
 
+  AppView.prototype.cleanBankStatement = function() {
+    var _ref1, _ref2, _ref3;
+    if ((_ref1 = window.views.monthlyAnalysisView.bankStatementView) != null) {
+      _ref1.destroy();
+    }
+    if ((_ref2 = window.views.enhancedReportView.bankStatementView) != null) {
+      _ref2.destroy();
+    }
+    if ((_ref3 = window.views.geolocatedReportView.bankStatementView) != null) {
+      _ref3.destroy();
+    }
+    if ($("#context-box").length === 0) {
+      return $("#interface-box").after($('<div id="context-box"></div>'));
+    }
+  };
+
   return AppView;
 
 })(BaseView);
@@ -1303,6 +1319,8 @@ module.exports = BankStatementView = (function(_super) {
 
   BankStatementView.prototype.mapLinked = false;
 
+  BankStatementView.prototype.enhancedLinked = false;
+
   function BankStatementView(el) {
     this.el = el;
     BankStatementView.__super__.constructor.call(this);
@@ -1318,7 +1336,8 @@ module.exports = BankStatementView = (function(_super) {
   };
 
   BankStatementView.prototype.reload = function(params, callback) {
-    var displayFixedCosts, displayVariableCosts, view;
+    var displayFixedCosts, displayVariableCosts, view,
+      _this = this;
     view = this;
     this.model = window.rbiActiveData.bankAccount;
     if ((params != null) && (params.dateFrom != null)) {
@@ -1340,46 +1359,45 @@ module.exports = BankStatementView = (function(_super) {
         url: "bankoperations/byDate",
         data: this.data,
         success: function(operations) {
-          var _this = this;
+          var allReceipts, amount, date, finalOperations, id, index, maxDate, minDate, model, operation, _i, _j, _len, _len1, _ref;
           if (operations) {
-            return $.ajax({
-              type: "GET",
-              url: "rbifixedcost",
-              success: function(fixedCosts) {
-                var finalOperations, fixedCost, index, operation, operationRemoved, _i, _j, _len, _len1;
-                window.rbiActiveData.currentOperations = {};
-                finalOperations = [];
-                for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
-                  operation = operations[index];
-                  operation.isRegularOperation = false;
-                  if (operation.amount < 0) {
-                    for (_j = 0, _len1 = fixedCosts.length; _j < _len1; _j++) {
-                      fixedCost = fixedCosts[_j];
-                      if ($.inArray(operation.id, fixedCost.idTable) >= 0) {
-                        operation.isRegularOperation = true;
-                        operation.fixedCostId = fixedCost.id;
-                        break;
-                      }
-                    }
-                  }
-                  operationRemoved = false;
-                  if (!operationRemoved) {
-                    finalOperations.push(operation);
-                    window.rbiActiveData.currentOperations[operation.id] = operation;
+            window.rbiActiveData.currentOperations = {};
+            finalOperations = [];
+            for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
+              operation = operations[index];
+              if (_this.enhancedLinked) {
+                allReceipts = window.views.enhancedReportView.allReceipts;
+                operation.hasReceipt = false;
+                _ref = allReceipts.models;
+                for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+                  model = _ref[_j];
+                  id = model.get("id");
+                  amount = Math.abs(model.get("amount"));
+                  date = moment(model.get("timestamp"));
+                  minDate = moment(moment(operation.date).subtract("days", 3));
+                  maxDate = moment(moment(operation.date).add("days", 3));
+                  if ((Math.abs(operation.amount) === amount) && (minDate < date) && (maxDate > date)) {
+                    operation.hasReceipt = true;
+                    operation.receiptModel = model;
+                    break;
                   }
                 }
-                if (callback != null) {
-                  callback(window.rbiActiveData.currentOperations);
+                if (operation.hasReceipt) {
+                  finalOperations.push(operation);
+                  window.rbiActiveData.currentOperations[operation.id] = operation;
                 }
-                window.collections.operations.reset(finalOperations);
-                window.collections.operations.setComparator("date");
-                window.collections.operations.sort();
-                return view.addAll();
-              },
-              error: function(err) {
-                return console.log("getting fixed cost failed.");
+              } else {
+                finalOperations.push(operation);
+                window.rbiActiveData.currentOperations[operation.id] = operation;
               }
-            });
+            }
+            if (callback != null) {
+              callback(window.rbiActiveData.currentOperations);
+            }
+            window.collections.operations.reset(finalOperations);
+            window.collections.operations.setComparator("date");
+            window.collections.operations.sort();
+            return view.addAll();
           } else {
             return window.collections.operations.reset();
           }
@@ -1414,6 +1432,7 @@ module.exports = BankStatementView = (function(_super) {
     }
     dateFromVal = new Date(dateFrom || null);
     dateToVal = new Date(dateTo || new Date());
+    this.data = null;
     this.data = {
       dateFrom: dateFromVal,
       dateTo: dateToVal,
@@ -1422,7 +1441,7 @@ module.exports = BankStatementView = (function(_super) {
     if (this.enhancedLinked) {
       return this.data.searchText = "intermarché";
     } else if (this.mapLinked) {
-      return this.data.searchText = "";
+      return this.data.searchText = $("input#search-text").val();
     } else {
       searchTextVal = $("input#search-text").val();
       if ((searchTextVal != null) && (searchTextVal !== "")) {
@@ -1442,8 +1461,7 @@ module.exports = BankStatementView = (function(_super) {
   };
 
   BankStatementView.prototype.addAll = function() {
-    var index, operation, subView, subViewDate, view, _i, _j, _len, _len1, _ref, _ref1, _results;
-    console.log("addAll");
+    var index, operation, subView, subViewDate, view, _i, _j, _len, _len1, _ref, _ref1;
     this.$("#table-operations").html("");
     this.$(".loading").remove();
     _ref = this.subViews;
@@ -1452,30 +1470,33 @@ module.exports = BankStatementView = (function(_super) {
       view.destroy();
     }
     this.subViews = [];
-    if (window.collections.operations.models.length === 0) {
+    if ((window.collections.operations.models.length === 0) && (!this.enhancedLinked)) {
       $("#table-operations").append($('<tr><td>Aucune opération ne correspond à ces critères.</td></tr>'));
+      return;
+    } else if ((window.collections.operations.models.length === 0) && this.enhancedLinked) {
+      $("#table-operations").append($('<tr><td>Aucune opération ne semble liée à un ticket intermarché.</td></tr>'));
       return;
     }
     _ref1 = window.collections.operations.models;
-    _results = [];
     for (index = _j = 0, _len1 = _ref1.length; _j < _len1; index = ++_j) {
       operation = _ref1[index];
-      subView = new BalanceOperationView(operation, this.model, false, this.mapLinked);
+      subView = new BalanceOperationView(operation, this.model, false, this.mapLinked, this.enhancedLinked);
       subViewDate = subView.render().model.get('date');
       if ((this.subViewLastDate !== subViewDate) || (index === 0)) {
         this.subViewLastDate = subViewDate;
         this.$("#table-operations").append($('<tr class="special"><td colspan="4">' + moment(this.subViewLastDate).format("DD/MM/YYYY" + '</td></tr>')));
       }
-      _results.push(this.$("#table-operations").append(subView.render().el));
+      this.$("#table-operations").append(subView.render().el);
     }
-    return _results;
+    if (this.enhancedLinked && $(".operation-title:eq(0)").length === 1) {
+      return $(".operation-title:eq(0)").click();
+    }
   };
 
   BankStatementView.prototype.reloadMap = function(event) {
     var date;
     if (this.mapLinked) {
       date = moment($(event.currentTarget).children("td").text(), "DD/MM/YYYY").format("YYYY-MM-DD");
-      console.log(date);
       return window.views.geolocatedReportView.switchDay(null, new Date(date));
     }
   };
@@ -1514,17 +1535,15 @@ module.exports = EntryView = (function(_super) {
   EntryView.prototype.tagName = 'tr';
 
   EntryView.prototype.events = {
-    'click': 'reloadMap',
-    'click #cancel-fixed-cost': 'destroyPopupFixedCost',
-    'click #save-fixed-cost': 'prepareFixedCost',
-    'click #remove-fixed-cost': 'removeFixedCost'
+    'click': 'reloadInterface'
   };
 
-  function EntryView(model, account, showAccountNum, mapLinked) {
+  function EntryView(model, account, showAccountNum, mapLinked, enhancedLinked) {
     this.model = model;
     this.account = account;
     this.showAccountNum = showAccountNum != null ? showAccountNum : false;
     this.mapLinked = mapLinked;
+    this.enhancedLinked = enhancedLinked;
     EntryView.__super__.constructor.call(this);
   }
 
@@ -1542,7 +1561,7 @@ module.exports = EntryView = (function(_super) {
       this.model.hint = "" + (this.model.get('raw'));
     }
     EntryView.__super__.render.call(this);
-    if (this.mapLinked) {
+    if (this.mapLinked || this.enhancedLinked) {
       this.$el.find("td").css({
         "cursor": "pointer"
       });
@@ -1550,9 +1569,15 @@ module.exports = EntryView = (function(_super) {
     return this;
   };
 
-  EntryView.prototype.reloadMap = function() {
+  EntryView.prototype.reloadInterface = function() {
+    var modelOperation;
     if (this.mapLinked) {
       return window.views.geolocatedReportView.switchDay(null, new Date(this.model.get('date')));
+    } else if (this.enhancedLinked) {
+      modelOperation = window.rbiActiveData.currentOperations[this.model.get("id")] || null;
+      if ((modelOperation != null) && (modelOperation.receiptModel != null)) {
+        return window.views.enhancedReportView.displayReceipt(modelOperation.receiptModel);
+      }
     }
   };
 
@@ -1752,6 +1777,7 @@ module.exports = ConfigurationView = (function(_super) {
 
   ConfigurationView.prototype.render = function() {
     var _this = this;
+    window.views.appView.cleanBankStatement();
     ConfigurationView.__super__.render.call(this);
     window.rbiActiveData.userConfiguration.fetch({
       success: function(currentConfig) {
@@ -2212,47 +2238,38 @@ module.exports = EnhancedReportView = (function(_super) {
 
   EnhancedReportView.currentReceipt = null;
 
-  EnhancedReportView.prototype.initialize = function() {
-    return this.allReceipts = new ReceiptCollection();
-  };
-
   EnhancedReportView.prototype.render = function() {
-    var bankStatementParams, now, view,
-      _this = this;
+    var _this = this;
+    this.allReceipts = new ReceiptCollection();
+    window.views.appView.cleanBankStatement();
     this.bankStatementView = new BankStatementView($('#context-box'));
-    now = new Date();
-    bankStatementParams = {
-      accounts: [window.rbiActiveData.accountNumber],
-      amountFrom: Number.NEGATIVE_INFINITY,
-      amountTo: Number.POSITIVE_INFINITY,
-      dateFrom: moment(moment(now).subtract('y', 1)).format('YYYY-MM-DD'),
-      dateTo: moment(now).format('YYYY-MM-DD')
-    };
     this.bankStatementView.enhancedLinked = true;
-    this.bankStatementView.reload(bankStatementParams);
+    this.bankStatementView.render();
     this.allReceipts.fetch({
       success: function(receipts) {
-        if ((receipts.models[0] != null) && (receipts.models[0].get("timestamp") != null)) {
-          return _this.displayReceipt(receipts.models[0].get("timestamp"));
-        } else {
-          return $('#enhanced-report-info').show();
-        }
+        var bankStatementParams, now;
+        now = new Date();
+        bankStatementParams = {
+          accounts: [window.rbiActiveData.accountNumber],
+          amountFrom: Number.NEGATIVE_INFINITY,
+          amountTo: Number.POSITIVE_INFINITY,
+          dateFrom: moment(moment(now).subtract('y', 1)).format('YYYY-MM-DD'),
+          dateTo: moment(now).format('YYYY-MM-DD')
+        };
+        _this.bankStatementView.reload(bankStatementParams);
+        _this.bankStatementView.$el.find(".search-field").remove();
+        return _this.bankStatementView.$el.find(".context-box-header").append('<p class="light-info">Selectionnez une opération pour consulter le ticket de caisse intermarché qui lui est associé.</p>');
       }
     });
     EnhancedReportView.__super__.render.call(this);
-    view = this;
     return this;
   };
 
-  EnhancedReportView.prototype.displayReceipt = function(receiptTs) {
-    var currentNbOfArticles, currentTotal, currentTs, date, foundModel, newTitle, time;
-    foundModel = this.allReceipts.where({
-      timestamp: receiptTs
-    });
-    if (foundModel[0] != null) {
-      this.currentReceipt = new ReceiptView(foundModel[0]);
+  EnhancedReportView.prototype.displayReceipt = function(receiptModel) {
+    var currentNbOfArticles, currentTotal, currentTs, date, newTitle, time;
+    if (receiptModel != null) {
+      this.currentReceipt = new ReceiptView(receiptModel);
       this.currentReceipt.render();
-      console.log(this.currentReceipt);
       currentTs = moment(this.currentReceipt.model.get("timestamp"));
       currentNbOfArticles = this.currentReceipt.model.get("articlesCount");
       currentTotal = this.currentReceipt.model.get("total").money();
@@ -2307,12 +2324,10 @@ module.exports = ForcastBudgetView = (function(_super) {
 
   ForcastBudgetView.prototype.newRegularOperationsChecked = false;
 
-  ForcastBudgetView.prototype.initialize = function() {
-    return window.views.regularOpStatementView = new RegularOpStatementView($('#context-box'));
-  };
-
   ForcastBudgetView.prototype.render = function() {
     var accountNumber, view;
+    window.views.appView.cleanBankStatement();
+    window.views.regularOpStatementView = new RegularOpStatementView($('#context-box'));
     ForcastBudgetView.__super__.render.call(this);
     view = this;
     accountNumber = window.rbiActiveData.accountNumber || null;
@@ -2422,7 +2437,7 @@ module.exports = ForcastBudgetView = (function(_super) {
   };
 
   ForcastBudgetView.prototype.reloadBudget = function() {
-    var currentBudget, forecastBudget, forecastTitle, percentage, realBudget, realExpenses, realTitle, regularExpenses, regularOperation, roundedForecastBudget, trToInject, _i, _len, _ref1;
+    var currentBudget, forecastBudget, forecastTitle, percentage, realBudget, realExpenses, regularExpenses, regularOperation, roundedForecastBudget, trToInject, _i, _len, _ref1;
     currentBudget = 0;
     realBudget = 0;
     regularExpenses = 0;
@@ -2457,7 +2472,7 @@ module.exports = ForcastBudgetView = (function(_super) {
     percentage = percentage <= 100 ? percentage : 100;
     forecastBudget = currentBudget - regularExpenses;
     roundedForecastBudget = Math.floor((forecastBudget + 5) / 10) * 10;
-    realBudget = realBudget - realExpenses;
+    realBudget = realBudget - realExpenses - this.variableOperationsTotal;
     $("#account-budget-amount").html(roundedForecastBudget.money());
     $('#current-budget-chart-debit').html(realBudget.money());
     $('#current-budget-chart').attr('data-percent', percentage);
@@ -2474,8 +2489,7 @@ module.exports = ForcastBudgetView = (function(_super) {
     }
     $("#regular-operations-budget").remove();
     forecastTitle = "La somme des mouvements d'argent attendus sur votre compte ce mois-ci.";
-    realTitle = "La somme des mouvements d'argent réellement survenus ce mois-ci, et de ceux à venir.";
-    trToInject = '<tr id="regular-operations-budget">' + "\t" + "<td><strong title=\"" + forecastTitle + "\">Prévisionnel</strong></td>" + "\t" + "<td>&#8776; " + roundedForecastBudget.money() + "</td>" + "\t" + "<td><strong title=\"" + realTitle + "\">Affiné </strong></td>" + "\t" + "<td>= " + realBudget.money() + "</td>" + '</tr>';
+    trToInject = '<tr id="regular-operations-budget">' + "\t" + "<td><strong title=\"" + forecastTitle + "\">Budget prévisionnel</strong></td>" + "\t" + "<td>&#8776; " + roundedForecastBudget.money() + "</td>" + "\t" + "<td>&nbsp;</td>" + "\t" + "<td>&nbsp;</td>" + '</tr>';
     return $("tbody#regular-operations").append(trToInject);
   };
 
@@ -2607,7 +2621,7 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
     var allOperationsById, id, idTable, startOfMonth, sum, _i, _len, _results;
     idTable = this.model.get("idTable");
     allOperationsById = window.rbiActiveData.allOperationsById;
-    startOfMonth = moment(moment(new Date()).subtract("month", 3)).startOf("month");
+    startOfMonth = moment(new Date()).startOf("month");
     this.rules.alreadyPaid = false;
     this.rules.textAlreadyPaid = "non";
     if ((idTable != null) && (allOperationsById != null) && idTable.length > 0) {
@@ -2675,6 +2689,8 @@ module.exports = GeolocatedReportView = (function(_super) {
 
   GeolocatedReportView.prototype.bounds = null;
 
+  GeolocatedReportView.prototype.allMarkers = [];
+
   function GeolocatedReportView(model) {
     this.model = model;
     GeolocatedReportView.__super__.constructor.call(this);
@@ -2682,7 +2698,10 @@ module.exports = GeolocatedReportView = (function(_super) {
 
   GeolocatedReportView.prototype.render = function() {
     var bankStatementParams, now;
+    window.views.appView.cleanBankStatement();
     this.bankStatementView = new BankStatementView($('#context-box'));
+    this.bankStatementView.mapLinked = true;
+    this.bankStatementView.render();
     GeolocatedReportView.__super__.render.call(this);
     this.loadFirstDayMap();
     now = new Date();
@@ -2693,7 +2712,6 @@ module.exports = GeolocatedReportView = (function(_super) {
       dateFrom: moment(moment(now).subtract('y', 1)).format('YYYY-MM-DD'),
       dateTo: moment(now).format('YYYY-MM-DD')
     };
-    this.bankStatementView.mapLinked = true;
     return this.bankStatementView.reload(bankStatementParams);
   };
 
@@ -2706,7 +2724,6 @@ module.exports = GeolocatedReportView = (function(_super) {
       url: "geolocationlog/getMostRecent",
       success: function(geolocationLog) {
         if ((geolocationLog != null) && (typeof geolocationLog === "object") && (geolocationLog.timestamp != null)) {
-          console.log(geolocationLog);
           return _this.switchDay(null, geolocationLog.timestamp);
         } else {
           _this.$el.find(".geolocated-report-title").html('Relevé Géolocalisé');
@@ -2763,7 +2780,7 @@ module.exports = GeolocatedReportView = (function(_super) {
         dateTo: moment(this.currentDate.endOf("day")).format("YYYY-MM-DD HH:mm")
       },
       success: function(geolocationLogs) {
-        var addTag, alreadyRegistered, lastLocation, log, marker, markerTable, message, newTime, point, polylineTable, _i, _j, _k, _len, _len1, _len2;
+        var addTag, alreadyRegistered, lastLocation, log, marker, markerTable, message, newTime, point, polylineTable, previousMarker, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref;
         _this.$el.find("#msisdn-geolocation-map").css("visibility", "visible");
         polylineTable = [];
         markerTable = [];
@@ -2809,6 +2826,14 @@ module.exports = GeolocatedReportView = (function(_super) {
           _this.polyline = L.polyline(polylineTable);
           _this.bounds = _this.polyline.getBounds();
         }
+        if ((_this.map != null) && (_this.allMarkers != null) && (_this.allMarkers.length > 0)) {
+          _ref = _this.allMarkers;
+          for (_k = 0, _len2 = _ref.length; _k < _len2; _k++) {
+            previousMarker = _ref[_k];
+            _this.map.removeLayer(previousMarker);
+          }
+          _this.allMarkers = [];
+        }
         if (lastLocation != null) {
           if ((_this.map == null) || $("#msisdn-geolocation-map").html() === "") {
             if ($("#msisdn-geolocation-map").length === 1) {
@@ -2830,8 +2855,8 @@ module.exports = GeolocatedReportView = (function(_super) {
         }
         if ((_this.polyline != null) && (_this.map != null)) {
           _this.polyline.addTo(_this.map);
-          for (_k = 0, _len2 = markerTable.length; _k < _len2; _k++) {
-            point = markerTable[_k];
+          for (_l = 0, _len3 = markerTable.length; _l < _len3; _l++) {
+            point = markerTable[_l];
             message = "";
             if (markerTable.length > 1) {
               if (point.plural) {
@@ -2842,7 +2867,9 @@ module.exports = GeolocatedReportView = (function(_super) {
             } else {
               message = point.time;
             }
-            L.marker(point.location).setIcon(window.rbiIcons.marker).bindPopup(message).addTo(_this.map);
+            _this.allMarkers.push(L.marker(point.location));
+            _this.allMarkers[_this.allMarkers.length - 1].setIcon(window.rbiIcons.marker).bindPopup(message);
+            _this.map.addLayer(_this.allMarkers[_this.allMarkers.length - 1]);
           }
           if (_this.bounds) {
             return _this.map.fitBounds(_this.bounds);
@@ -3110,7 +3137,9 @@ module.exports = MonthlyAnalysisView = (function(_super) {
   };
 
   MonthlyAnalysisView.prototype.render = function() {
+    window.views.appView.cleanBankStatement();
     this.bankStatementView = new BankStatementView($('#context-box'));
+    this.bankStatementView.render();
     MonthlyAnalysisView.__super__.render.call(this);
     this.switchMonth();
     return this;
@@ -3170,7 +3199,6 @@ module.exports = MonthlyAnalysisView = (function(_super) {
         dateFrom: this.currentMonthStart,
         dateTo: moment(this.currentMonthStart).endOf('month')
       };
-      console.log("monthly launch reload");
       return this.bankStatementView.reload(bankStatementParams, function(operations) {
         _this.displayMonthlySums(operations);
         _this.displayPieChart(operations);
@@ -4297,7 +4325,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1>Budget prévisionnel</h1><div class="interface-box-content"><div id="forecast-budget-content"><span class="light-info">Définissez votre budget mensuel en désignant vos opérations régulières (salaires, loyers, factures de téléphone, ...).</span><table class="col-md-12"><thead><tr><th title="Le libellé ou le morceau de texte choisi pour retrouver les opérations.">Motif</th><th title="La moyenne des montants de cette opération régulière payés les mois précédents.">Montant moyen</th><th title="Gérer la présence ou non des opérations régulières dans votre budget de ce mois-ci.">Budget</th><th title="Lorsque qu\'une opération régulière est payée ce mois-ci, le budget prévisionnel est affiné.">Déjà payée</th><th>&nbsp;</th></tr></thead><tbody id="regular-operations"></tbody></table><span class="light-info">Survolez quelques instants un label en gras pour en savoir plus.</span></div></div>');
+buf.push('<h1>Budget prévisionnel</h1><div class="interface-box-content"><div id="forecast-budget-content"><span class="light-info">Définissez votre budget mensuel en désignant vos opérations régulières (salaires, loyers, factures de téléphone, ...).</span><table class="col-md-12"><thead><tr><th title="Le libellé ou le morceau de texte choisi pour retrouver les opérations.">Motif</th><th title="La moyenne des montants de cette opération régulière payés les mois précédents.">Montant moyen</th><th title="Gérer la présence ou non des opérations régulières dans votre budget de ce mois-ci.">Budget</th><th>&nbsp;</th></tr></thead><tbody id="regular-operations"></tbody></table><span class="light-info">Survolez quelques instants un label en gras pour en savoir plus.</span></div></div>');
 }
 return buf.join("");
 };
@@ -4320,7 +4348,7 @@ buf.push('<input type="checkbox" checked="true" class="toogle-monthly-budget"/>'
 buf.push('<input type="checkbox" class="toogle-monthly-budget"/>');
 }
  }
-buf.push('</td><td><em>' + escape((interp = (model.get("rules")).textAlreadyPaid) == null ? '' : interp) + '</em></td><td><span aria-hidden="true" data-icon="&#57512;" class="fs1 remove-regular-operation red-text"></span></td>');
+buf.push('</td><td><span aria-hidden="true" data-icon="&#57512;" class="fs1 remove-regular-operation red-text"></span></td>');
 }
 return buf.join("");
 };
@@ -4356,7 +4384,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<h1><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><div class="interface-box-content"><table id="monthly-report"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2" class="search-panel-td1"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="credits-search-btn" class="search-btn grey1"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1 big-size-icon"></span><span id="credits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Crédits</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="debits-search-btn" class="search-btn grey2"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1 big-size-icon"></span><span id="debits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Débits</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="search-panel-td2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="fixed-cost-search-btn" class="search-btn grey3"><span aria-hidden="true" data-icon="&#57481;" class="pull-left fs1 big-size-icon"></span><span id="fixed-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Frais fixes</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="variable-cost-search-btn" class="search-btn grey4"><span aria-hidden="true" data-icon="&#57393;" class="pull-left fs1 big-size-icon"></span><span id="variable-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Dépenses</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="google-pie-chart"><div id="pie_chart" style="min-height:180px;margin:auto;">&nbsp;</div><br/><br/></td></tr></table></div>');
+buf.push('<h1><span aria-hidden="true" data-icon="&#57613;" class="month-switcher previous-month pull-left fs1"></span><span id="current-month">Analyse mensuelle</span><span aria-hidden="true" data-icon="&#57614;" class="month-switcher next-month pull-right fs1"></span></h1><div class="interface-box-content"><table id="monthly-report"><tr><td class="amount-month"><div>solde de début de mois<hr/><span id="amount-month-start" class="amount-number"></span></div></td><td class="amount-month"><div>solde de fin de mois<hr/><span id="amount-month-end" class="amount-number"></span><br/><span id="amount-month-differential" class="blue-text amount-number-diff"></span></div></td></tr><tr><td colspan="2" class="search-panel-td1"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="credits-search-btn" class="search-btn green1"><span aria-hidden="true" data-icon="&#57602;" class="pull-left fs1 big-size-icon"></span><span id="credits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Crédits</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="debits-search-btn" class="search-btn grey2"><span aria-hidden="true" data-icon="&#57601;" class="pull-left fs1 big-size-icon"></span><span id="debits-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Débits</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="search-panel-td2"><div class="col-md-1"></div><div class="search-panel col-md-10"><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="fixed-cost-search-btn" class="search-btn grey3"><span aria-hidden="true" data-icon="&#57481;" class="pull-left fs1 big-size-icon"></span><span id="fixed-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Frais fixes</span></div></div><div class="col-lg-2 search-separator"></div><div class="search-btn-container col-lg-5 col-md-6 col-sm-6"><div id="variable-cost-search-btn" class="search-btn grey4"><span aria-hidden="true" data-icon="&#57393;" class="pull-left fs1 big-size-icon"></span><span id="variable-cost-sum" class="pull-right big-size-text">0 &euro;</span><br/><span class="pull-right little-size-text">Autre dépenses</span></div></div></div><div class="col-md-1"></div></td></tr><tr><td colspan="2" class="google-pie-chart"><div id="pie_chart" style="min-height:180px;margin:auto;">&nbsp;</div><br/><br/></td></tr></table></div>');
 }
 return buf.join("");
 };

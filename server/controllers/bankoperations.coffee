@@ -139,14 +139,3 @@ module.exports.byDate = (req, res) ->
                     # if fixedCosts or variableCosts
                     #     console.log 'costs !'
                     res.send 200, results
-
-
-###
-    dev only
-###
-module.exports.create = (req, res) ->
-    BankOperation.create body, (err, operation) ->
-        if err?
-            res.send 500, error: "Server error while creating bank operation"
-        else
-            res.send 201, operation

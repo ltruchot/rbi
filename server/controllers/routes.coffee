@@ -1,5 +1,4 @@
 # See documentation on https://github.com/frankrousseau/americano#routes
-index = require './index'
 banks         = require './banks'
 bankaccounts = require './bankaccounts'
 bankoperations = require './bankoperations'
@@ -11,8 +10,6 @@ receiptdetails = require './receiptdetails'
 receipts = require './receipts'
 
 module.exports =
-    'foo':
-        get: index.main
     'banks':
         get: banks.index
     'bankID': param: banks.loadBank
@@ -20,7 +17,6 @@ module.exports =
         get: banks.show
     'banks/getAccounts/:bankID':
         get: banks.getAccounts
-
     'bankaccounts':
         get: bankaccounts.index
     'bankAccountID': param: bankaccounts.loadBankAccount
@@ -34,7 +30,6 @@ module.exports =
 
     'bankoperations':
         get: bankoperations.index
-        post: bankoperations.create
     'bankOperationID': param: bankoperations.loadBankOperation
     'bankoperations/:bankOperationID':
         get: bankoperations.show

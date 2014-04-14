@@ -22,12 +22,10 @@ module.exports = class ForcastBudgetView extends BaseView
 
   newRegularOperationsChecked: false
 
-
-  initialize: ->
-    window.views.regularOpStatementView = new RegularOpStatementView $('#context-box')
-
-
   render: ->
+
+    window.views.appView.cleanBankStatement()
+    window.views.regularOpStatementView = new RegularOpStatementView $('#context-box')
 
     # lay down the template
     super()
@@ -123,6 +121,7 @@ module.exports = class ForcastBudgetView extends BaseView
                 else
                   @monthlyVariableOperations.push operation
 
+
               for varOperation in @monthlyVariableOperations
                 @variableOperationsTotal += varOperation.amount
 
@@ -131,6 +130,7 @@ module.exports = class ForcastBudgetView extends BaseView
                 callback()
 
   reloadBudget: ->
+
 
     currentBudget = 0
     realBudget = 0
@@ -172,7 +172,7 @@ module.exports = class ForcastBudgetView extends BaseView
 
     #prepare currently modified budget
     #realBudget = forecastBudget + @variableOperationsTotal
-    realBudget = realBudget - realExpenses
+    realBudget = realBudget - realExpenses - @variableOperationsTotal
 
     #display budgets
     $("#account-budget-amount").html roundedForecastBudget.money()
@@ -193,11 +193,13 @@ module.exports = class ForcastBudgetView extends BaseView
     #reload budget table row
     $("#regular-operations-budget").remove()
     forecastTitle = "La somme des mouvements d'argent attendus sur votre compte ce mois-ci."
-    realTitle = "La somme des mouvements d'argent réellement survenus ce mois-ci, et de ceux à venir."
+    # realTitle = "La somme des mouvements d'argent réellement survenus ce mois-ci, et de ceux à venir."
     trToInject = '<tr id="regular-operations-budget">' +
-      "\t" + "<td><strong title=\"" + forecastTitle + "\">Prévisionnel</strong></td>" +
+      "\t" + "<td><strong title=\"" + forecastTitle + "\">Budget prévisionnel</strong></td>" +
       "\t" + "<td>&#8776; " + roundedForecastBudget.money() + "</td>" +
-      "\t" + "<td><strong title=\"" + realTitle + "\">Affiné </strong></td>" +
-      "\t" + "<td>= " + realBudget.money() + "</td>" +
+      # "\t" + "<td><strong title=\"" + realTitle + "\">Affiné </strong></td>" +
+      # "\t" + "<td>= " + realBudget.money() + "</td>" +
+      "\t" + "<td>&nbsp;</td>" +
+      "\t" + "<td>&nbsp;</td>" +
       '</tr>'
     $("tbody#regular-operations").append trToInject

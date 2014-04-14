@@ -108,7 +108,7 @@ module.exports = class ForecastBudgetEntryView extends BaseView
   addAlreadyPaidToRules: ->
     idTable = @model.get "idTable"
     allOperationsById = window.rbiActiveData.allOperationsById
-    startOfMonth = moment(moment(new Date()).subtract("month", 3)).startOf "month"
+    startOfMonth = moment(new Date()).startOf "month"
     @rules.alreadyPaid = false
     @rules.textAlreadyPaid = "non"
     if idTable? and allOperationsById? and idTable.length > 0
