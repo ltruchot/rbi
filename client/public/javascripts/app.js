@@ -1368,7 +1368,7 @@ module.exports = BankStatementView = (function(_super) {
               type: "GET",
               url: "rbifixedcost",
               success: function(fixedCosts) {
-                var allReceipts, amount, date, finalOperations, fixedCost, id, index, maxDate, minDate, model, operation, operationRemoved, _i, _j, _k, _len, _len1, _len2, _ref;
+                var allReceipts, amount, amountMax, amountMin, date, finalOperations, fixedCost, id, index, minDate, model, opAmount, operation, operationRemoved, _i, _j, _k, _len, _len1, _len2, _ref;
                 window.rbiActiveData.currentOperations = {};
                 finalOperations = [];
                 for (index = _i = 0, _len = operations.length; _i < _len; index = ++_i) {
@@ -1380,11 +1380,13 @@ module.exports = BankStatementView = (function(_super) {
                     for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
                       model = _ref[_j];
                       id = model.get("id");
-                      amount = Math.abs(model.get("amount"));
+                      opAmount = Math.abs(operation.amount);
+                      amount = Math.abs(model.get("paidAmound") || model.get("paidAmount") || model.get("amount") || model.get("total") || 0);
+                      amountMin = Math.round(amount) - 1;
+                      amountMax = Math.round(amount) + 1;
                       date = moment(model.get("timestamp"));
                       minDate = moment(moment(operation.date).subtract("days", 3));
-                      maxDate = moment(moment(operation.date).add("days", 3));
-                      if ((Math.abs(operation.amount) === amount) && (minDate < date) && (maxDate > date)) {
+                      if (((opAmount >= amountMin) && (opAmount <= amountMax)) && (minDate < date)) {
                         operation.hasReceipt = true;
                         operation.receiptModel = model;
                         break;
@@ -1474,7 +1476,7 @@ module.exports = BankStatementView = (function(_super) {
       accounts: [accountNumber]
     };
     if (this.enhancedLinked) {
-      return this.data.searchText = "intermarché";
+      return this.data.searchText = "intermarch";
     } else if (this.mapLinked) {
       return this.data.searchText = $("input#search-text").val();
     } else {
@@ -2686,7 +2688,7 @@ module.exports = ForecastBudgetEntryView = (function(_super) {
     regularOperationId = (this.model.get("id")) || null;
     if (regularOperationId != null) {
       return $.ajax({
-        url: '/rbifixedcost/' + regularOperationId,
+        url: 'rbifixedcost/' + regularOperationId,
         type: 'DELETE',
         success: function(result) {
           window.views.forecastBudgetView.newRegularOperationsChecked = false;
@@ -2779,7 +2781,7 @@ module.exports = GeolocatedReportView = (function(_super) {
     });
   };
 
-  GeolocatedReportView.prototype.switchDay = function(event, date) {
+  GeolocatedReportView.prototype.switchDay = function(evt, date) {
     var firstDay, jqSwitcher, today,
       _this = this;
     this.$el.find(".geolocated-report-error").hide();
@@ -2790,15 +2792,18 @@ module.exports = GeolocatedReportView = (function(_super) {
     }
     today = moment(new Date()).startOf("day");
     firstDay = moment(window.rbiActiveData.olderOperationDate).startOf('day');
-    if ((event != null) && (event.currentTarget != null)) {
-      jqSwitcher = $(event.currentTarget);
+    if ((evt != null) && (evt.currentTarget != null)) {
+      jqSwitcher = $(evt.currentTarget);
       if (jqSwitcher.hasClass('previous-day')) {
         this.currentDate.subtract('day', 1).startOf('day');
       } else if (jqSwitcher.hasClass('next-day')) {
         this.currentDate.add('day', 1).startOf('day');
       }
     } else {
-      this.currentDate = moment(date || today).startOf("day");
+      if ((date != null) && (date !== "")) {
+        date = new Date(new Date(date).setUTCHours(3));
+      }
+      this.currentDate = moment(moment(date || today).startOf("day"));
     }
     if (moment(this.currentDate).format("YYYY-MM-DD") === today.format("YYYY-MM-DD")) {
       $('.next-day').hide();

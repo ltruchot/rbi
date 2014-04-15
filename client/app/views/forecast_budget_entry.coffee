@@ -125,7 +125,7 @@ module.exports = class ForecastBudgetEntryView extends BaseView
     regularOperationId = (@model.get "id") or null
     if regularOperationId?
       $.ajax
-          url: '/rbifixedcost/' + regularOperationId
+          url: 'rbifixedcost/' + regularOperationId
           type: 'DELETE'
           success: (result) =>
             window.views.forecastBudgetView.newRegularOperationsChecked = false

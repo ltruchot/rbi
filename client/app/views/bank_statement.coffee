@@ -78,11 +78,18 @@ module.exports = class BankStatementView extends BaseView
                                         operation.hasReceipt = false
                                         for model in allReceipts.models
                                             id = model.get "id"
-                                            amount = Math.abs(model.get "amount")
+                                            opAmount = Math.abs(operation.amount)
+                                            amount = Math.abs(model.get("paidAmound") or model.get("paidAmount") or model.get("amount") or model.get("total") or 0)
+                                            amountMin = Math.round(amount) - 1
+                                            amountMax = Math.round(amount) + 1
                                             date = moment(model.get "timestamp")
                                             minDate = moment(moment(operation.date).subtract("days", 3))
-                                            maxDate = moment(moment(operation.date).add("days", 3))
-                                            if (Math.abs(operation.amount) is amount) and (minDate < date) and (maxDate > date)
+                                            # console.log minDate
+                                            # console.log date
+                                            # console.log amountMin
+                                            # console.log opAmount
+                                            # console.log amountMax
+                                            if ((opAmount >= amountMin) and (opAmount <= amountMax)) and (minDate < date)
                                                 operation.hasReceipt = true
                                                 operation.receiptModel = model
                                                 break
@@ -165,7 +172,7 @@ module.exports = class BankStatementView extends BaseView
             accounts:   [accountNumber]
 
         if @enhancedLinked
-            @data.searchText = "intermarché"
+            @data.searchText = "intermarch"
         else if @mapLinked
             @data.searchText = $("input#search-text").val()
         else

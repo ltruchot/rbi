@@ -61,7 +61,7 @@ module.exports = class GeolocatedReportView extends BaseView
         @$el.find(".geolocated-report-loader").hide()
 
 
-  switchDay: (event, date)->
+  switchDay: (evt, date)->
     @$el.find(".geolocated-report-error").hide()
     @$el.find("#msisdn-geolocation-map").css "visibility", "hidden"
     @$el.find(".geolocated-report-loader").show()
@@ -69,14 +69,19 @@ module.exports = class GeolocatedReportView extends BaseView
       @map.closePopup()
     today = moment(new Date()).startOf "day"
     firstDay = moment(window.rbiActiveData.olderOperationDate).startOf 'day'
-    if event? and event.currentTarget?
-      jqSwitcher = $(event.currentTarget)
+    if evt? and evt.currentTarget?
+      jqSwitcher = $(evt.currentTarget)
       if jqSwitcher.hasClass 'previous-day'
         @currentDate.subtract('day', 1).startOf 'day'
       else if jqSwitcher.hasClass 'next-day'
         @currentDate.add('day', 1).startOf('day')
     else
-      @currentDate = moment(date or today).startOf "day"
+
+      #tip to avoid GMT modifier bug
+      if date? and (date isnt "") then date = new Date(new Date(date).setUTCHours(3))
+
+      @currentDate = moment(moment(date or today).startOf "day")
+
 
     #show/hide previous/next month button
     if moment(@currentDate).format("YYYY-MM-DD") is today.format("YYYY-MM-DD")

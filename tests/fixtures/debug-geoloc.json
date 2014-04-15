@@ -1,0 +1,14 @@
+
+[
+  {
+    "docType": "GeolocationLog",
+    "idMesInfos": "0000aa10",
+    "latitude": 48.8661,
+    "longitude": 2.37083,
+    "msisdn": "33645678912",
+    "origin": "Orange",
+    "radius": 339,
+    "snippet": "2014-03-31T22:15:19.000Z - geo:48.8661,2.37083",
+    "timestamp": "2014-03-31T22:15:19.000Z"
+  }
+]
